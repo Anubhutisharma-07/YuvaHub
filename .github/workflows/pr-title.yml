@@ -10,6 +10,8 @@ jobs:
   main:
     name: Validate PR title
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - uses: amannn/action-semantic-pull-request@v6
         env:
@@ -54,3 +56,18 @@ jobs:
           ignoreLabels: |
             bot
             ignore-semantic-pull-request
+
+      - name: Leave comment on failure
+        if: failure()
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const author = context.payload.pull_request.user.login;
+            const message = `👋 Hi @${author}, your PR title doesn't follow the semantic formatting rules! Please update your PR title to start with one of the allowed prefixes (e.g. \`feat:\`, \`fix:\`, \`chore:\`).`;
+            
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            });

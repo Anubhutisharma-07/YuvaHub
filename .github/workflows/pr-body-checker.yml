@@ -6,6 +6,8 @@ on:
 jobs:
   check-body:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - name: Validate PR Body
         uses: actions/github-script@v8
@@ -30,7 +32,15 @@ jobs:
             if (errors.length > 0) {
               const author = context.payload.pull_request.user.login;
               const errorMessage = `👋 Hi @${author}, your PR description is missing some required elements. Please edit your PR message to include:\n\n` + errors.join('\n');
-              core.setFailed(errorMessage);
+              
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: errorMessage
+              });
+              
+              core.setFailed("PR description is missing required elements. Please check the bot comment for details.");
             } else {
               console.log("✅ PR description looks good!");
             }
