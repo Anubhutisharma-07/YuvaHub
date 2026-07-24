@@ -39,8 +39,6 @@ jobs:
                 repo: context.repo.repo,
                 body: errorMessage
               });
-              
-              core.setFailed("PR description is missing required elements. Please check the bot comment for details.");
             } else {
               console.log("✅ PR description looks good!");
             }

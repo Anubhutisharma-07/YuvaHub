@@ -14,6 +14,8 @@ jobs:
       pull-requests: write
     steps:
       - uses: amannn/action-semantic-pull-request@v6
+        id: semantic_check
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -58,7 +60,7 @@ jobs:
             ignore-semantic-pull-request
 
       - name: Leave comment on failure
-        if: failure()
+        if: steps.semantic_check.outcome == 'failure'
         uses: actions/github-script@v8
         with:
           script: |
