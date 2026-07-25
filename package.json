@@ -8,14 +8,16 @@
     "start:worker": "tsx src/worker.ts",
     "dev": "concurrently \"vite\" \"tsx server.ts\"",
     "dev:server": "tsx server.ts",
-    "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "build": "vite build && node scripts/verify-client-secrets.mjs && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "scrape": "tsx scrape-cli.ts",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "verify:client-secrets": "node scripts/verify-client-secrets.mjs",
+    "test:client-secrets": "vitest run tests/client-secret-boundary.test.ts"
   },
   "dependencies": {
     "@bull-board/api": "^8.1.2",
