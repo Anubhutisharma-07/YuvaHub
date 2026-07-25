@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
 import { ObjectId } from "mongodb";
 import { safeObjectId } from "../../lib/utils.js";
+import escapeHtml from "escape-html";
 
 const containsProfanity = (text: string): boolean => {
   const profanityRegex = /\b(badword|abuse|hate|spam|scam|idiot|stupid|bastard)\b/i;
@@ -49,9 +50,9 @@ export const createPost = async (req: Request, res: Response) => {
     }
 
     const post = {
-      title: title || "Community Discussion",
-      content,
-      author: author || req.user?.name || req.user?.email || "Anonymous",
+      title: escapeHtml(title || "Community Discussion"),
+      content: escapeHtml(content),
+      author: escapeHtml(author || req.user?.name || req.user?.email || "Anonymous"),
       authorUid: userUid,
       type: type || "Update",
       tags: Array.isArray(tags) ? tags : ["General"],
@@ -138,8 +139,8 @@ export const createComment = async (req: Request, res: Response) => {
       _id: commentId,
       postId,
       parentId: parentId || null,
-      content,
-      author,
+      content: escapeHtml(content),
+      author: escapeHtml(author),
       path,
       upvotes: 0,
       upvoted_by: [] as string[],
