@@ -40,21 +40,33 @@ export const awardKarma = async (req: Request, res: Response) => {
       if (type === 'daily_login') {
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
-        const existing = await dbCommand.collection("transactions").findOne({
+        const result = await dbCommand.collection("transactions").findOneAndUpdate(
+          {
+            userId: user.uid,
+            type: 'daily_login',
+            timestamp: { $gte: startOfDay.getTime() }
+          },
+          {
+            $setOnInsert: {
+              userId: user.uid,
+              amount,
+              type: 'daily_login',
+              timestamp: Date.now(),
+              metadata
+            }
+          },
+          { upsert: true, returnDocument: 'before' }
+        );
+        if (result?.value) return res.status(400).json({ error: "Daily login already claimed" });
+      } else {
+        await dbCommand.collection("transactions").insertOne({
           userId: user.uid,
-          type: 'daily_login',
-          timestamp: { $gte: startOfDay.getTime() }
+          amount,
+          type,
+          timestamp: Date.now(),
+          metadata
         });
-        if (existing) return res.status(400).json({ error: "Daily login already claimed" });
       }
-
-      await dbCommand.collection("transactions").insertOne({
-        userId: user.uid,
-        amount,
-        type,
-        timestamp: Date.now(),
-        metadata
-      });
     }
     res.json({ success: true, awarded: amount });
   } catch (err: any) {
