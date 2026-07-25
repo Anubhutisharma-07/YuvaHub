@@ -16,16 +16,7 @@ export const authSync = async (req: Request, res: Response) => {
     const idToken = authHeader.substring(7);
 
     // 1. Fetch Firebase config to get API key
-    const firebaseConfigPath = path.join(process.cwd(), "firebase-applet-config.json");
-    let firebaseApiKey = "";
-    if (fs.existsSync(firebaseConfigPath)) {
-      try {
-        const config = JSON.parse(fs.readFileSync(firebaseConfigPath, "utf-8"));
-        firebaseApiKey = config.apiKey || "";
-      } catch (e) {
-        console.error("[Auth] Error parsing firebase-applet-config.json:", e);
-      }
-    }
+    let firebaseApiKey = process.env.VITE_FIREBASE_API_KEY || "";
 
     let uid = "";
     let email = "";

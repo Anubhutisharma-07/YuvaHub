@@ -9,6 +9,7 @@ import { setSocketIO } from "./src/api/socketInstance.js";
 import { setupSocketEvents } from "./src/socket/index.js";
 import { runDeadlineChecks, runWeeklyDigest } from "./src/services/deadlineScheduler.js";
 import { dbCommand, dbQuery } from "./src/api/db.js";
+import { analyticsBuffer } from "./src/api/analytics.js";
 
 // Import Main API Router
 import apiRoutes from "./src/api/routes/index.js";
@@ -212,12 +213,28 @@ startServer();
 
 // Graceful Shutdown Handling
 const gracefulShutdown = (signal: string) => {
-  console.log(`[Core] Received ${signal}. Starting graceful shutdown...`);
-  server.close(() => {
-    console.log("[Core] HTTP server closed.");
-    process.exit(0);
+  console.log(`\n[Core] Received ${signal}. Starting graceful shutdown...`);
+  
+  analyticsBuffer.drainAndStop().then(() => {
+    console.log("[Core] Analytics buffer drained.");
+    if (server) {
+      server.close(() => {
+        console.log("[Core] HTTP server closed.");
+        process.exit(0);
+      });
+    } else {
+      process.exit(0);
+    }
+  }).catch(err => {
+    console.error("[Core] Error during analytics shutdown:", err);
+    process.exit(1);
   });
 };
 
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("message", (msg) => {
+  if (msg === "shutdown") {
+    gracefulShutdown("IPC shutdown");
+  }
+});
