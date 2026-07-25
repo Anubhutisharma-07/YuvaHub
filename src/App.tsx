@@ -35,6 +35,7 @@ import HackathonJudgeStudio from './components/Tabs/HackathonJudgeStudio';
 import MentorshipAdvisoryStudio from './components/Tabs/MentorshipAdvisoryStudio';
 import ResearchGrantPortal from './components/Tabs/ResearchGrantPortal';
 import ProjectShowcaseVault from './components/Tabs/ProjectShowcaseVault';
+import StarInterviewStudio from './components/Tabs/StarInterviewStudio';
 import Legal from './components/Tabs/Legal';
 import Privacy from './components/Tabs/Privacy';
 import Terms from './components/Tabs/Terms';
@@ -119,6 +120,7 @@ function App() {
     { id: 'mentorship_advisory', label: '1-on-1 Mentorship Advisory', icon: Activity },
     { id: 'research_grants', label: 'Research Grant Portal', icon: Activity },
     { id: 'project_showcase', label: 'Project Showcase Vault', icon: Activity },
+    { id: 'star_interview', label: 'STAR Behavioral Studio', icon: Activity },
     { id: 'submit', label: 'Submit Opportunity', icon: PlusCircle },
     { id: 'mentorship', label: 'Mentorship', icon: Users },
     { id: 'community', label: 'Community', icon: MessageSquare },
@@ -148,6 +150,7 @@ function App() {
       case 'mentorship_advisory': return <MentorshipAdvisoryStudio />;
       case 'research_grants': return <ResearchGrantPortal />;
       case 'project_showcase': return <ProjectShowcaseVault />;
+      case 'star_interview': return <StarInterviewStudio />;
       case 'submit': return <SubmitOpportunity />;
       case 'mentorship': return <Mentorship />;
       case 'community': return <Community />;
