@@ -33,6 +33,7 @@ import InterviewPrepStudio from './components/Tabs/InterviewPrepStudio';
 import OpenSourceBountyStudio from './components/Tabs/OpenSourceBountyStudio';
 import OpportunityMatchStudio from './components/Tabs/OpportunityMatchStudio';
 import TechEcosystemStudio from './components/Tabs/TechEcosystemStudio';
+import HackathonJudgeStudio from './components/Tabs/HackathonJudgeStudio';
 import Legal from './components/Tabs/Legal';
 import Support from './components/Tabs/Support';
 import HelpCenter from './components/Tabs/HelpCenter';
@@ -224,6 +225,7 @@ function App() {
     { id: 'opensource_bounties', label: 'Open Source Bounties', icon: Activity },
     { id: 'opportunity_match', label: 'AI Opportunity Recommender', icon: Activity },
     { id: 'tech_ecosystem', label: 'Tech Ecosystem Studio', icon: Activity },
+    { id: 'hackathon_judge', label: 'Hackathon Judging Console', icon: Activity },
     { id: 'submit', label: 'Submit Opportunity', icon: PlusCircle },
     { id: 'mentorship', label: 'Mentorship', icon: Users },
     { id: 'bounty_board', label: 'Bounty Board', icon: Sparkles },
@@ -252,6 +254,7 @@ function App() {
       case 'opensource_bounties': return <OpenSourceBountyStudio />;
       case 'opportunity_match': return <OpportunityMatchStudio />;
       case 'tech_ecosystem': return <TechEcosystemStudio />;
+      case 'hackathon_judge': return <HackathonJudgeStudio />;
       case 'submit': return <SubmitOpportunity />;
       case 'mentorship': return <Mentorship />;
       case 'bounty_board': return <BountyBoard />;
