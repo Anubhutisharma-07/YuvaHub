@@ -309,7 +309,7 @@ export async function initializeDatabase(): Promise<void> {
         .then(() => console.log(`[Database] Created compound index on opportunities`))
         .catch((err: any) => console.error(`[Database] Failed to create index:`, err));
 
-      dbQuery.collection("users").createIndex({ uid: 1 }, { unique: true })
+      dbQuery.collection("users").createIndex({ uid: 1 }, { unique: true, sparse: true })
         .then(() => console.log(`[Database] Created unique index on users.uid`))
         .catch((err: any) => console.error(`[Database] Failed to create index on users.uid:`, err));
       dbCommand.collection("users").createIndex({ firebaseUid: 1 }, { unique: true, sparse: true })
