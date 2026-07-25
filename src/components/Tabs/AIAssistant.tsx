@@ -1517,10 +1517,10 @@ function OutreachGenerator({ profile }: { profile: any }) {
   return (
     <div className="animate-fade-in space-y-6">
       <header>
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900 flex items-center gap-3">
+        <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-3">
           <Send className="w-8 h-8 text-pink-600" /> Outreach Message Generator
         </h2>
-        <p className="text-gray-500">Generate personalized, punchy cold emails and LinkedIn messages to recruiters and founders.</p>
+        <p className="text-gray-500 dark:text-gray-400">Generate personalized, punchy cold emails and LinkedIn messages to recruiters and founders.</p>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1540,11 +1540,11 @@ function OutreachGenerator({ profile }: { profile: any }) {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Outreach Type</label>
             <div className="flex gap-4 mt-2">
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <label className="flex items-center gap-2 text-sm cursor-pointer text-gray-700">
                 <input type="radio" name="outreachType" value="Email" checked={outreachType === 'Email'} onChange={() => setOutreachType('Email')} className="text-pink-600 focus:ring-pink-500 w-4 h-4" />
                 Email
               </label>
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <label className="flex items-center gap-2 text-sm cursor-pointer text-gray-700">
                 <input type="radio" name="outreachType" value="LinkedIn Connect" checked={outreachType === 'LinkedIn Connect'} onChange={() => setOutreachType('LinkedIn Connect')} className="text-pink-600 focus:ring-pink-500 w-4 h-4" />
                 LinkedIn
               </label>
