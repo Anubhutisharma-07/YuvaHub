@@ -1,13 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Sparkles, Search, Zap, Code, Lightbulb, Trophy, Target, ArrowRight, Mail, X, 
-  Github, Sun, Moon, ChevronDown, Rocket, Calendar, Users, AlertCircle, CheckCircle2, 
+import {
+  Sparkles, Search, Zap, Code, Lightbulb, Trophy, Target, ArrowRight, Mail, X,
+  Github, Sun, Moon, ChevronDown, Rocket, Calendar, Users, AlertCircle, CheckCircle2,
   Star, ShieldCheck, Flame, Briefcase, GraduationCap, Award, Compass, TrendingUp, Globe
 } from 'lucide-react';
 import { gsap } from 'gsap';
 import { signInWithGoogle, signInWithGithub } from '../lib/firebase';
 import { useAppContext } from '../context/AppContext';
 import LandingNavbar from '../components/LandingNavbar';
+import AboutTab from '../components/Tabs/About';
+import Privacy from '../components/Tabs/Privacy';
+import Terms from '../components/Tabs/Terms';
+import Security from '../components/Tabs/Security';
+import HelpCenter from '../components/Tabs/HelpCenter';
+import Support from '../components/Tabs/Support';
+import Legal from '../components/Tabs/Legal';
+import FAQ from '../components/Tabs/FAQ';
 
 // Reusable Animated Stat Counter Component
 function StatCounter({ targetNumber, suffix = '', prefix = '', duration = 2 }: { targetNumber: number; suffix?: string; prefix?: string; duration?: number }) {
@@ -46,7 +54,7 @@ function StatCounter({ targetNumber, suffix = '', prefix = '', duration = 2 }: {
 }
 
 export default function Landing() {
-  const { setActiveTab } = useAppContext();
+  const { activeTab, setActiveTab } = useAppContext();
   const [loading, setLoading] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -91,9 +99,9 @@ export default function Landing() {
       }
 
       if (floatBadge1Ref.current && floatBadge2Ref.current) {
-        tl.fromTo([floatBadge1Ref.current, floatBadge2Ref.current], 
-          { scale: 0.8, opacity: 0 }, 
-          { scale: 1, opacity: 1, duration: 0.5, stagger: 0.2 }, 
+        tl.fromTo([floatBadge1Ref.current, floatBadge2Ref.current],
+          { scale: 0.8, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.5, stagger: 0.2 },
           '-=0.4'
         );
       }
@@ -201,290 +209,314 @@ export default function Landing() {
     }
   ];
 
-  const filteredOpportunities = featuredOpportunities.filter(item => 
+  const filteredOpportunities = featuredOpportunities.filter(item =>
     (activeCategory === 'all' || item.category === activeCategory) &&
     (searchQuery === '' || item.title.toLowerCase().includes(searchQuery.toLowerCase()) || item.org.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
     <div className="min-h-screen bg-[#fcf9f2] text-[#231f20] font-sans overflow-x-hidden selection:bg-[#f3e4bd] selection:text-[#603620]">
-      
-      {/* ─── Sticky Navbar ─────────────────────────────────────────────── */}
+
+      {/* Sticky Navbar */}
       <LandingNavbar onLoginClick={openLoginModal} onNavClick={scrollToSection} />
 
-      {/* ─── Editorial Hero Section ──────────────────────────────────────── */}
-      <section 
-        className="relative px-6 lg:px-12 pt-20 pb-28 max-w-7xl mx-auto"
-        onMouseMove={handleMouseMove}
-      >
-        <div className="grid lg:grid-cols-12 gap-14 items-center">
-          
-          <div className="lg:col-span-7 space-y-7 text-left">
-            
-            <div ref={heroBadgeRef} className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#f3e4bd] border border-[#e8ded1] text-[#603620] text-xs font-bold uppercase tracking-widest rounded-full shadow-sm">
-              <Sparkles className="w-3.5 h-3.5 text-[#b56b37]" /> India's AI-Powered Student Ecosystem
-            </div>
-            
-            <h1 ref={heroTitleRef} className="text-4xl sm:text-6xl font-serif font-normal tracking-tight text-[#231f20] leading-[1.12]">
-              Unlocking student potential with <span className="italic font-serif text-[#b56b37] underline decoration-[#b5c37c] decoration-wavy decoration-2">intelligent matching.</span>
-            </h1>
-            
-            <p ref={heroParaRef} className="text-base sm:text-lg text-[#603620]/90 font-sans leading-relaxed max-w-xl">
-              YuvaHub aggregates, normalizes, and ranks verified scholarships, hackathons, and software engineering roles for ambitious developers across India.
-            </p>
+      {activeTab === 'dashboard' ? (
+        <>
+          {/* Editorial Hero Section */}
+          <section
+            className="relative px-6 lg:px-12 pt-20 pb-28 max-w-7xl mx-auto"
+            onMouseMove={handleMouseMove}
+          >
+            <div className="grid lg:grid-cols-12 gap-14 items-center">
 
-            <div ref={heroSearchRef} className="relative max-w-xl p-2 bg-white border border-[#e8ded1] rounded-2xl shadow-xl shadow-[#231f20]/5 flex flex-col sm:flex-row items-center gap-2">
-              <div className="flex items-center flex-1 w-full px-3">
-                <Search className="w-5 h-5 text-[#8c7569] shrink-0 mr-2" />
-                <input 
-                  type="text" 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search Google AI hackathons, SDE roles, Reliance scholarship..." 
-                  className="w-full bg-transparent border-none outline-none text-sm text-[#231f20] placeholder:text-[#8c7569] py-2"
-                />
-              </div>
-              <button 
-                onClick={openLoginModal} 
-                className="w-full sm:w-auto px-7 py-3 bg-[#603620] hover:bg-[#b56b37] text-[#fcf9f2] font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0"
-              >
-                Search <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
+              <div className="lg:col-span-7 space-y-7 text-left">
 
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              <span className="text-xs font-bold text-[#8c7569] uppercase tracking-wider">Popular:</span>
-              {['Generative AI', 'Web3 Hackathons', 'SDE Internships', 'Reliance Scholarship'].map((tag) => (
-                <button
-                  key={tag}
-                  onClick={() => { setSearchQuery(tag); openLoginModal(); }}
-                  className="px-3.5 py-1 bg-[#f3e4bd]/60 border border-[#e8ded1] text-[#603620] text-xs font-semibold rounded-full hover:bg-[#b5c37c]/30 hover:border-[#63703d] transition-all cursor-pointer"
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-          </div>
+                <div ref={heroBadgeRef} className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#f3e4bd] border border-[#e8ded1] text-[#603620] text-xs font-bold uppercase tracking-widest rounded-full shadow-sm">
+                  <Sparkles className="w-3.5 h-3.5 text-[#b56b37]" /> India's AI-Powered Student Ecosystem
+                </div>
 
-          <div className="lg:col-span-5 relative perspective-1000">
-            <div ref={heroCardRef} className="relative z-10 bg-[#ffffff] border border-[#e8ded1] rounded-3xl p-7 shadow-2xl shadow-[#231f20]/10 space-y-6">
-              
-              <div className="flex items-center justify-between border-b border-[#e8ded1] pb-4">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-11 h-11 rounded-2xl bg-[#f3e4bd] text-[#603620] flex items-center justify-center font-bold">
-                    <Zap className="w-6 h-6 text-[#b56b37]" />
+                <h1 ref={heroTitleRef} className="text-4xl sm:text-6xl font-serif font-normal tracking-tight text-[#231f20] leading-[1.12]">
+                  Unlocking student potential with <span className="italic font-serif text-[#b56b37] underline decoration-[#b5c37c] decoration-wavy decoration-2">intelligent matching.</span>
+                </h1>
+
+                <p ref={heroParaRef} className="text-base sm:text-lg text-[#603620]/90 font-sans leading-relaxed max-w-xl">
+                  YuvaHub aggregates, normalizes, and ranks verified scholarships, hackathons, and software engineering roles for ambitious developers across India.
+                </p>
+
+                <div ref={heroSearchRef} className="relative max-w-xl p-2 bg-white border border-[#e8ded1] rounded-2xl shadow-xl shadow-[#231f20]/5 flex flex-col sm:flex-row items-center gap-2">
+                  <div className="flex items-center flex-1 w-full px-3">
+                    <Search className="w-5 h-5 text-[#8c7569] shrink-0 mr-2" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search Google AI hackathons, SDE roles, Reliance scholarship..."
+                      className="w-full bg-transparent border-none outline-none text-sm text-[#231f20] placeholder:text-[#8c7569] py-2"
+                    />
                   </div>
-                  <div>
-                    <h4 className="text-sm font-serif font-bold text-[#231f20]">Gemini AI Matcher</h4>
-                    <p className="text-xs text-[#8c7569]">Curated for CS Undergraduate</p>
-                  </div>
-                </div>
-                <span className="px-3 py-1 bg-[#63703d]/10 text-[#63703d] text-xs font-extrabold rounded-full flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-[#63703d] animate-ping" /> 98% Affinity
-                </span>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-[#fcf9f2] border border-[#e8ded1] space-y-1.5">
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="text-[#b56b37] uppercase tracking-wide">GOOGLE AI ODYSSEY 2026</span>
-                  <span className="text-[#63703d]">$50,000 Pool</span>
-                </div>
-                <p className="text-xs text-[#603620]/80">Building LLM-powered applications for social impact.</p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-[#fcf9f2] border border-[#e8ded1] space-y-1.5">
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="text-[#603620] uppercase tracking-wide">ATS RESUME AUDITOR</span>
-                  <span className="text-[#b56b37]">94/100 Match</span>
-                </div>
-                <p className="text-xs text-[#603620]/80">Keywords aligned with Microsoft SDE role descriptions.</p>
-              </div>
-            </div>
-
-            <div ref={floatBadge1Ref} className="absolute -top-6 -left-6 z-20 bg-white border border-[#e8ded1] p-4 rounded-2xl shadow-xl flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#f3e4bd] text-[#603620] flex items-center justify-center">
-                <Trophy className="w-5 h-5 text-[#b56b37]" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-[#231f20]">ETHGlobal Winner</p>
-                <p className="text-[10px] text-[#8c7569]">$10,000 Grant Awarded</p>
-              </div>
-            </div>
-
-            <div ref={floatBadge2Ref} className="absolute -bottom-6 -right-4 z-20 bg-white border border-[#e8ded1] p-4 rounded-2xl shadow-xl flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#b5c37c]/30 text-[#63703d] flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5 text-[#63703d]" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-[#231f20]">SDE Offer at Amazon</p>
-                <p className="text-[10px] text-[#8c7569]">Verified YuvaHub Scholar</p>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      {/* ─── Platform Stats Section with Animated Scroll Counters ──────── */}
-      <section id="stats" className="bg-[#603620] text-[#fcf9f2] py-16 px-6 border-y border-[#231f20]">
-        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          <div className="space-y-1">
-            <StatCounter targetNumber={100} suffix="K+" duration={2} />
-            <div className="text-xs font-bold uppercase tracking-widest text-[#fcf9f2]/80 mt-1">Verified Listings</div>
-          </div>
-          <div className="space-y-1">
-            <StatCounter targetNumber={5} suffix="M+" duration={2} />
-            <div className="text-xs font-bold uppercase tracking-widest text-[#fcf9f2]/80 mt-1">Active Students</div>
-          </div>
-          <div className="space-y-1">
-            <StatCounter targetNumber={50} prefix="₹" suffix="Cr+" duration={2.2} />
-            <div className="text-xs font-bold uppercase tracking-widest text-[#fcf9f2]/80 mt-1">Prizes & Grants</div>
-          </div>
-          <div className="space-y-1">
-            <StatCounter targetNumber={2500} suffix="+" duration={2.5} />
-            <div className="text-xs font-bold uppercase tracking-widest text-[#fcf9f2]/80 mt-1">Top Tech Recruiters</div>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── Explore Section ───────────────────────────────────────────── */}
-      <section id="features" className="py-24 px-6 lg:px-12 max-w-7xl mx-auto">
-        <div className="text-center max-w-2xl mx-auto mb-14 space-y-3">
-          <span className="text-xs font-bold text-[#b56b37] uppercase tracking-widest">Standardized Discovery</span>
-          <h2 className="text-3xl sm:text-4xl font-serif font-normal text-[#231f20]">Curated Opportunity Hubs</h2>
-          <p className="text-sm text-[#603620]">Eliminate manual daily searching. Browse normalized, structured opportunities in one clean feed.</p>
-        </div>
-
-        <div className="flex flex-wrap justify-center gap-3 mb-12">
-          {categories.map(cat => {
-            const Icon = cat.icon;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => setActiveCategory(cat.id)}
-                className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-2 border ${
-                  activeCategory === cat.id
-                    ? 'bg-[#603620] text-[#fcf9f2] border-[#603620] shadow-md scale-105'
-                    : 'bg-[#f3e4bd]/50 text-[#603620] border-[#e8ded1] hover:border-[#b56b37]'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{cat.label}</span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeCategory === cat.id ? 'bg-[#f3e4bd] text-[#603620]' : 'bg-white text-[#8c7569]'}`}>
-                  {cat.count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
-          {filteredOpportunities.map(opp => (
-            <div 
-              key={opp.id} 
-              onClick={openLoginModal}
-              className="group bg-white border border-[#e8ded1] rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col justify-between"
-            >
-              <div className="p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className={`px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest rounded-full ${opp.badgeClass}`}>
-                    {opp.badge}
-                  </span>
-                  <span className="text-xs font-bold text-[#8c7569]">{opp.orgBadge}</span>
+                  <button
+                    onClick={openLoginModal}
+                    className="w-full sm:w-auto px-7 py-3 bg-[#603620] hover:bg-[#b56b37] text-[#fcf9f2] font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0"
+                  >
+                    Search <ArrowRight className="w-4 h-4" />
+                  </button>
                 </div>
 
-                <h3 className="text-lg font-serif font-bold text-[#231f20] leading-snug group-hover:text-[#b56b37] transition-colors">
-                  {opp.title}
-                </h3>
-                <p className="text-xs text-[#603620] font-medium">{opp.org}</p>
-
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {opp.tags.map(t => (
-                    <span key={t} className="px-2.5 py-1 bg-[#fcf9f2] border border-[#e8ded1] text-[#603620] text-[11px] font-semibold rounded-md">
-                      {t}
-                    </span>
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <span className="text-xs font-bold text-[#8c7569] uppercase tracking-wider">Popular:</span>
+                  {['Generative AI', 'Web3 Hackathons', 'SDE Internships', 'Reliance Scholarship'].map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => { setSearchQuery(tag); openLoginModal(); }}
+                      className="px-3.5 py-1 bg-[#f3e4bd]/60 border border-[#e8ded1] text-[#603620] text-xs font-semibold rounded-full hover:bg-[#b5c37c]/30 hover:border-[#63703d] transition-all cursor-pointer"
+                    >
+                      {tag}
+                    </button>
                   ))}
                 </div>
               </div>
 
-              <div className="px-6 py-4 bg-[#fcf9f2] border-t border-[#e8ded1] flex items-center justify-between text-xs font-bold text-[#603620]">
-                <span className="flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-[#b56b37]" />
-                  {opp.dates}
-                </span>
-                <span className="text-[#b56b37] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                  Apply <ArrowRight className="w-3.5 h-3.5" />
-                </span>
+              <div className="lg:col-span-5 relative perspective-1000">
+                <div ref={heroCardRef} className="relative z-10 bg-[#ffffff] border border-[#e8ded1] rounded-3xl p-7 shadow-2xl shadow-[#231f20]/10 space-y-6">
+
+                  <div className="flex items-center justify-between border-b border-[#e8ded1] pb-4">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-11 h-11 rounded-2xl bg-[#f3e4bd] text-[#603620] flex items-center justify-center font-bold">
+                        <Zap className="w-6 h-6 text-[#b56b37]" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-serif font-bold text-[#231f20]">Gemini AI Matcher</h4>
+                        <p className="text-xs text-[#8c7569]">Curated for CS Undergraduate</p>
+                      </div>
+                    </div>
+                    <span className="px-3 py-1 bg-[#63703d]/10 text-[#63703d] text-xs font-extrabold rounded-full flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-[#63703d] animate-ping" /> 98% Affinity
+                    </span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[#fcf9f2] border border-[#e8ded1] space-y-1.5">
+                    <div className="flex items-center justify-between text-xs font-bold">
+                      <span className="text-[#b56b37] uppercase tracking-wide">GOOGLE AI ODYSSEY 2026</span>
+                      <span className="text-[#63703d]">$50,000 Pool</span>
+                    </div>
+                    <p className="text-xs text-[#603620]/80">Building LLM-powered applications for social impact.</p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[#fcf9f2] border border-[#e8ded1] space-y-1.5">
+                    <div className="flex items-center justify-between text-xs font-bold">
+                      <span className="text-[#603620] uppercase tracking-wide">ATS RESUME AUDITOR</span>
+                      <span className="text-[#b56b37]">94/100 Match</span>
+                    </div>
+                    <p className="text-xs text-[#603620]/80">Keywords aligned with Microsoft SDE role descriptions.</p>
+                  </div>
+                </div>
+
+                <div ref={floatBadge1Ref} className="absolute -top-6 -left-6 z-20 bg-white border border-[#e8ded1] p-4 rounded-2xl shadow-xl flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#f3e4bd] text-[#603620] flex items-center justify-center">
+                    <Trophy className="w-5 h-5 text-[#b56b37]" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-[#231f20]">ETHGlobal Winner</p>
+                    <p className="text-[10px] text-[#8c7569]">$10,000 Grant Awarded</p>
+                  </div>
+                </div>
+
+                <div ref={floatBadge2Ref} className="absolute -bottom-6 -right-4 z-20 bg-white border border-[#e8ded1] p-4 rounded-2xl shadow-xl flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#b5c37c]/30 text-[#63703d] flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5 text-[#63703d]" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-[#231f20]">SDE Offer at Amazon</p>
+                    <p className="text-[10px] text-[#8c7569]">Verified YuvaHub Scholar</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </section>
+
+          {/* Platform Stats Section with Animated Scroll Counters */}
+          <section id="stats" className="bg-[#603620] text-[#fcf9f2] py-16 px-6 border-y border-[#231f20]">
+            <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+              <div className="space-y-1">
+                <StatCounter targetNumber={100} suffix="K+" duration={2} />
+                <div className="text-xs font-bold uppercase tracking-widest text-[#fcf9f2]/80 mt-1">Verified Listings</div>
+              </div>
+              <div className="space-y-1">
+                <StatCounter targetNumber={5} suffix="M+" duration={2} />
+                <div className="text-xs font-bold uppercase tracking-widest text-[#fcf9f2]/80 mt-1">Active Students</div>
+              </div>
+              <div className="space-y-1">
+                <StatCounter targetNumber={50} prefix="₹" suffix="Cr+" duration={2.2} />
+                <div className="text-xs font-bold uppercase tracking-widest text-[#fcf9f2]/80 mt-1">Prizes & Grants</div>
+              </div>
+              <div className="space-y-1">
+                <StatCounter targetNumber={2500} suffix="+" duration={2.5} />
+                <div className="text-xs font-bold uppercase tracking-widest text-[#fcf9f2]/80 mt-1">Top Tech Recruiters</div>
               </div>
             </div>
-          ))}
-        </div>
-      </section>
+          </section>
 
-      {/* ─── Frequently Asked Questions (Auto-Open on Hover) ──────────── */}
-      <section id="faq" className="py-24 px-6 lg:px-12 max-w-4xl mx-auto">
-        <div className="text-center mb-14 space-y-2">
-          <span className="text-xs font-bold text-[#b56b37] uppercase tracking-widest">FAQ</span>
-          <h2 className="text-3xl sm:text-4xl font-serif font-normal text-[#231f20]">Frequently Asked Questions</h2>
-          <p className="text-sm text-[#603620]">Hover over any question to expand automatically.</p>
-        </div>
+          {/* Explore Section */}
+          <section id="features" className="py-24 px-6 lg:px-12 max-w-7xl mx-auto">
+            <div className="text-center max-w-2xl mx-auto mb-14 space-y-3">
+              <span className="text-xs font-bold text-[#b56b37] uppercase tracking-widest">Standardized Discovery</span>
+              <h2 className="text-3xl sm:text-4xl font-serif font-normal text-[#231f20]">Curated Opportunity Hubs</h2>
+              <p className="text-sm text-[#603620]">Eliminate manual daily searching. Browse normalized, structured opportunities in one clean feed.</p>
+            </div>
 
-        <div className="space-y-4">
-          {[
-            {
-              q: "What is YuvaHub and who is it for?",
-              a: "YuvaHub is a unified discovery and matching platform designed specifically for students, developers, and early-career tech professionals to find verified hackathons, competitions, fellowships, and internships."
-            },
-            {
-              q: "Is YuvaHub free to use for students?",
-              a: "Yes, YuvaHub is completely free for students and early-career developers. You can explore, match, and apply for opportunities without any charges."
-            },
-            {
-              q: "How does Google Gemini AI calculate opportunity match scores?",
-              a: "Our AI engine analyzes your skills, college year, domain preferences, and past achievements against live opportunity metadata to calculate affinity match scores."
-            },
-            {
-              q: "How do I host or list an opportunity on YuvaHub?",
-              a: "Organizations, GDSC leads, and hackathon hosts can easily submit opportunities using the 'Submit Opportunity' feature inside the app."
-            }
-          ].map((item, idx) => {
-            const isOpen = openFaqIndex === idx;
-            return (
-              <div 
-                key={idx}
-                onMouseEnter={() => setOpenFaqIndex(idx)}
-                onMouseLeave={() => setOpenFaqIndex(null)}
-                className={`border rounded-2xl overflow-hidden bg-white transition-all duration-300 cursor-pointer ${
-                  isOpen ? 'border-[#b56b37] shadow-lg scale-[1.01]' : 'border-[#e8ded1] hover:border-[#b56b37]/60'
-                }`}
-              >
-                <button
-                  type="button"
-                  onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
-                  className="w-full text-left p-5 flex justify-between items-center gap-4 bg-transparent border-none cursor-pointer"
+            <div className="flex flex-wrap justify-center gap-3 mb-12">
+              {categories.map(cat => {
+                const Icon = cat.icon;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setActiveCategory(cat.id)}
+                    className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-2 border ${activeCategory === cat.id
+                      ? 'bg-[#603620] text-[#fcf9f2] border-[#603620] shadow-md scale-105'
+                      : 'bg-[#f3e4bd]/50 text-[#603620] border-[#e8ded1] hover:border-[#b56b37]'
+                      }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span>{cat.label}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeCategory === cat.id ? 'bg-[#f3e4bd] text-[#603620]' : 'bg-white text-[#8c7569]'}`}>
+                      {cat.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
+              {filteredOpportunities.map(opp => (
+                <div
+                  key={opp.id}
+                  onClick={openLoginModal}
+                  className="group bg-white border border-[#e8ded1] rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col justify-between"
                 >
-                  <span className={`font-bold text-sm md:text-base transition-colors ${isOpen ? 'text-[#b56b37]' : 'text-[#231f20]'}`}>
-                    {item.q}
-                  </span>
-                  <span className={`p-2 rounded-xl bg-[#fcf9f2] text-[#603620] transition-transform duration-300 ${isOpen ? 'rotate-180 bg-[#f3e4bd] text-[#b56b37]' : ''}`}>
-                    <ChevronDown className="w-4 h-4" />
-                  </span>
-                </button>
-                {isOpen && (
-                  <div className="px-5 pb-5 border-t border-[#e8ded1] pt-4 text-xs md:text-sm text-[#603620] leading-relaxed animate-fade-in">
-                    {item.a}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </section>
+                  <div className="p-6 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className={`px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest rounded-full ${opp.badgeClass}`}>
+                        {opp.badge}
+                      </span>
+                      <span className="text-xs font-bold text-[#8c7569]">{opp.orgBadge}</span>
+                    </div>
 
-      {/* ─── Editorial Full-Width Footer ─────────────────────────────────────── */}
+                    <h3 className="text-lg font-serif font-bold text-[#231f20] leading-snug group-hover:text-[#b56b37] transition-colors">
+                      {opp.title}
+                    </h3>
+                    <p className="text-xs text-[#603620] font-medium">{opp.org}</p>
+
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {opp.tags.map(t => (
+                        <span key={t} className="px-2.5 py-1 bg-[#fcf9f2] border border-[#e8ded1] text-[#603620] text-[11px] font-semibold rounded-md">
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="px-6 py-4 bg-[#fcf9f2] border-t border-[#e8ded1] flex items-center justify-between text-xs font-bold text-[#603620]">
+                    <span className="flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-[#b56b37]" />
+                      {opp.dates}
+                    </span>
+                    <span className="text-[#b56b37] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                      Apply <ArrowRight className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Frequently Asked Questions */}
+          <section id="faq" className="py-24 px-6 lg:px-12 max-w-4xl mx-auto">
+            <div className="text-center mb-14 space-y-2">
+              <span className="text-xs font-bold text-[#b56b37] uppercase tracking-widest">FAQ</span>
+              <h2 className="text-3xl sm:text-4xl font-serif font-normal text-[#231f20]">Frequently Asked Questions</h2>
+              <p className="text-sm text-[#603620]">Hover over any question to expand automatically.</p>
+            </div>
+
+            <div className="space-y-4">
+              {[
+                {
+                  q: "What is YuvaHub and who is it for?",
+                  a: "YuvaHub is a unified discovery and matching platform designed specifically for students, developers, and early-career tech professionals to find verified hackathons, competitions, fellowships, and internships."
+                },
+                {
+                  q: "Is YuvaHub free to use for students?",
+                  a: "Yes, YuvaHub is completely free for students and early-career developers. You can explore, match, and apply for opportunities without any charges."
+                },
+                {
+                  q: "How does Google Gemini AI calculate opportunity match scores?",
+                  a: "Our AI engine analyzes your skills, college year, domain preferences, and past achievements against live opportunity metadata to calculate affinity match scores."
+                },
+                {
+                  q: "How do I host or list an opportunity on YuvaHub?",
+                  a: "Organizations, GDSC leads, and hackathon hosts can easily submit opportunities using the 'Submit Opportunity' feature inside the app."
+                }
+              ].map((item, idx) => {
+                const isOpen = openFaqIndex === idx;
+                return (
+                  <div
+                    key={idx}
+                    onMouseEnter={() => setOpenFaqIndex(idx)}
+                    onMouseLeave={() => setOpenFaqIndex(null)}
+                    className={`border rounded-2xl overflow-hidden bg-white transition-all duration-300 cursor-pointer ${isOpen ? 'border-[#b56b37] shadow-lg scale-[1.01]' : 'border-[#e8ded1] hover:border-[#b56b37]/60'
+                      }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
+                      className="w-full text-left p-5 flex justify-between items-center gap-4 bg-transparent border-none cursor-pointer"
+                    >
+                      <span className={`font-bold text-sm md:text-base transition-colors ${isOpen ? 'text-[#b56b37]' : 'text-[#231f20]'}`}>
+                        {item.q}
+                      </span>
+                      <span className={`p-2 rounded-xl bg-[#fcf9f2] text-[#603620] transition-transform duration-300 ${isOpen ? 'rotate-180 bg-[#f3e4bd] text-[#b56b37]' : ''}`}>
+                        <ChevronDown className="w-4 h-4" />
+                      </span>
+                    </button>
+                    {isOpen && (
+                      <div className="px-5 pb-5 border-t border-[#e8ded1] pt-4 text-xs md:text-sm text-[#603620] leading-relaxed animate-fade-in">
+                        {item.a}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        </>
+      ) : (
+        <div className="max-w-7xl mx-auto px-6 lg:px-12 py-10">
+          <div className="mb-8">
+            <button
+              onClick={() => {
+                setActiveTab('dashboard');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="flex items-center gap-2 text-sm text-[#b56b37] hover:underline font-bold bg-transparent border-none cursor-pointer"
+            >
+              ← Back to Home / Login
+            </button>
+          </div>
+          {activeTab === 'about' && <AboutTab />}
+          {activeTab === 'privacy' && <Privacy />}
+          {activeTab === 'terms' && <Terms />}
+          {activeTab === 'security' && <Security />}
+          {activeTab === 'help' && <HelpCenter />}
+          {activeTab === 'support' && <Support />}
+          {activeTab === 'legal' && <Legal />}
+          {activeTab === 'faq' && <FAQ />}
+        </div>
+      )}
+
+      {/* Footer */}
       <footer id="footer" className="w-full bg-[#231f20] text-[#fcf9f2] border-t-2 border-[#b56b37] pt-20 pb-10 px-6 lg:px-16 transition-colors duration-300">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-12 mb-16">
-          
+
           {/* Brand & Bio Column (4 cols) */}
           <div className="md:col-span-4 space-y-5 text-left">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
@@ -505,15 +537,9 @@ export default function Landing() {
               <a href="https://github.com/uditt490-pixel/YuvaHub" target="_blank" rel="noreferrer" className="w-9 h-9 rounded-full bg-[#603620]/60 border border-[#8c7569]/40 flex items-center justify-center text-[#f3e4bd] hover:bg-[#b56b37] hover:text-white transition-all">
                 <Github className="w-4 h-4" />
               </a>
-              <a href="#footer" onClick={(e) => { e.preventDefault(); openLoginModal(); }} className="w-9 h-9 rounded-full bg-[#603620]/60 border border-[#8c7569]/40 flex items-center justify-center text-[#f3e4bd] hover:bg-[#b56b37] hover:text-white transition-all">
-                <Globe className="w-4 h-4" />
-              </a>
-              <a href="#footer" onClick={(e) => { e.preventDefault(); openLoginModal(); }} className="w-9 h-9 rounded-full bg-[#603620]/60 border border-[#8c7569]/40 flex items-center justify-center text-[#f3e4bd] hover:bg-[#b56b37] hover:text-white transition-all">
-                <Sparkles className="w-4 h-4" />
-              </a>
             </div>
           </div>
-          
+
           {/* Opportunities Column (2 cols) */}
           <div className="md:col-span-2 space-y-3 text-left">
             <h4 className="font-serif font-bold text-xs uppercase tracking-widest text-[#f3e4bd]">Discover</h4>
@@ -550,13 +576,13 @@ export default function Landing() {
             <p className="text-xs text-[#fcf9f2]/80 leading-relaxed">
               Get hand-picked, verified opportunities and AI matching digests delivered directly to your inbox every Monday.
             </p>
-            
+
             <form onSubmit={(e) => { e.preventDefault(); openLoginModal(); }} className="flex gap-2">
-              <input 
-                type="email" 
-                placeholder="Enter your student email" 
+              <input
+                type="email"
+                placeholder="Enter your student email"
                 required
-                className="flex-1 text-xs px-3.5 py-2.5 rounded-xl bg-[#231f20] border border-[#8c7569]/50 text-[#fcf9f2] outline-none placeholder:text-[#8c7569] focus:border-[#b56b37]" 
+                className="flex-1 text-xs px-3.5 py-2.5 rounded-xl bg-[#231f20] border border-[#8c7569]/50 text-[#fcf9f2] outline-none placeholder:text-[#8c7569] focus:border-[#b56b37]"
               />
               <button type="submit" className="bg-[#b56b37] hover:bg-[#63703d] text-white px-4 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0">
                 Join
@@ -587,12 +613,12 @@ export default function Landing() {
         </div>
       </footer>
 
-      {/* ─── Sign In Modal ─────────────────────────────────────────────── */}
+      {/* Sign In Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-[#231f20]/75 backdrop-blur-md z-[60] flex items-center justify-center p-4">
           <div className="bg-[#fcf9f2] rounded-3xl w-full max-w-md shadow-2xl p-8 border border-[#e8ded1] relative space-y-6">
-            
-            <button 
+
+            <button
               onClick={closeLoginModal}
               className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white border border-[#e8ded1] flex items-center justify-center text-[#603620] hover:text-[#231f20] transition-all cursor-pointer"
             >
@@ -606,34 +632,34 @@ export default function Landing() {
               <h3 className="text-2xl font-serif font-bold text-[#231f20]">Welcome to YuvaHub</h3>
               <p className="text-xs text-[#603620]">Sign in to unlock AI matching, ATS resume scores, & mentorship.</p>
             </div>
-            
+
             {errorMsg && (
               <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-600 text-xs font-medium flex items-start gap-2.5">
                 <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                 <span>{errorMsg}</span>
               </div>
             )}
-            
+
             <div className="space-y-3">
-              <button 
-                onClick={handleGoogleLogin} 
-                disabled={loading !== null} 
+              <button
+                onClick={handleGoogleLogin}
+                disabled={loading !== null}
                 className="w-full flex items-center justify-center gap-3 px-5 py-3.5 border border-[#e8ded1] hover:bg-white rounded-2xl bg-white text-[#231f20] font-bold text-sm transition-all disabled:opacity-50 cursor-pointer shadow-sm"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>
                 <span>{loading === 'google' ? 'Connecting...' : 'Continue with Google'}</span>
               </button>
 
-              <button 
-                onClick={handleGithubLogin} 
-                disabled={loading !== null} 
+              <button
+                onClick={handleGithubLogin}
+                disabled={loading !== null}
                 className="w-full flex items-center justify-center gap-3 px-5 py-3.5 border border-[#231f20] hover:bg-[#603620] rounded-2xl bg-[#231f20] text-white font-bold text-sm transition-all disabled:opacity-50 cursor-pointer shadow-sm"
               >
                 <Github className="w-5 h-5 text-white shrink-0" />
                 <span>{loading === 'github' ? 'Connecting...' : 'Continue with GitHub'}</span>
               </button>
             </div>
-            
+
             <p className="text-[11px] text-[#603620] text-center leading-relaxed">
               By continuing, you agree to YuvaHub's{' '}
               <button onClick={() => { closeLoginModal(); setActiveTab('terms'); }} className="text-[#b56b37] hover:underline bg-transparent border-none p-0 font-bold">Terms</button>

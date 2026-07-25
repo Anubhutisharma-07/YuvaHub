@@ -12,6 +12,9 @@ import FAQ from './Tabs/FAQ';
 import Security from './Tabs/Security';
 import Legal from './Tabs/Legal';
 import Support from './Tabs/Support';
+import AboutTab from './Tabs/About';
+import Privacy from './Tabs/Privacy';
+import Terms from './Tabs/Terms';
 
 // Reusable Animated Stat Counter Component
 function StatCounter({ targetNumber, suffix = '', prefix = '', duration = 2 }: { targetNumber: number; suffix?: string; prefix?: string; duration?: number }) {
@@ -602,11 +605,14 @@ export default function SplashAuth() {
               ← Back to Home / Login
             </button>
           </div>
-          {activeTab === 'help' && <HelpCenter />}
-          {activeTab === 'faq' && <FAQ />}
+          {activeTab === 'about' && <AboutTab />}
+          {activeTab === 'privacy' && <Privacy />}
+          {activeTab === 'terms' && <Terms />}
           {activeTab === 'security' && <Security />}
-          {activeTab === 'legal' && <Legal />}
+          {activeTab === 'help' && <HelpCenter />}
           {activeTab === 'support' && <Support />}
+          {activeTab === 'legal' && <Legal />}
+          {activeTab === 'faq' && <FAQ />}
         </div>
       )}
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Zap, Sun, Moon, Menu, X } from 'lucide-react';
+import { Zap, Sun, Moon, Menu, X, ArrowLeft } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 
 interface LandingNavbarProps {
@@ -26,16 +26,21 @@ function scrollToSection(id: string) {
 }
 
 export default function LandingNavbar({ onLoginClick, onNavClick }: LandingNavbarProps) {
-  const { theme, toggleTheme } = useAppContext();
+  const { activeTab, setActiveTab, theme, toggleTheme } = useAppContext();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
     setMobileOpen(false);
-    if (onNavClick) {
-      onNavClick(href);
+    if (activeTab !== 'dashboard') {
+      setActiveTab('dashboard');
+      setTimeout(() => {
+        if (onNavClick) onNavClick(href);
+        else scrollToSection(href);
+      }, 50);
     } else {
-      scrollToSection(href);
+      if (onNavClick) onNavClick(href);
+      else scrollToSection(href);
     }
   };
 
@@ -44,7 +49,13 @@ export default function LandingNavbar({ onLoginClick, onNavClick }: LandingNavba
       <div className="max-w-7xl mx-auto h-[72px] px-6 lg:px-12 flex items-center justify-between">
         
         {/* Brand Mark */}
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+        <div 
+          className="flex items-center gap-3 cursor-pointer" 
+          onClick={() => {
+            setActiveTab('dashboard');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        >
           <div className="w-9 h-9 rounded-full bg-[#603620] flex items-center justify-center shadow-md">
             <Zap className="w-4 h-4 text-[#f3e4bd]" />
           </div>
@@ -53,19 +64,31 @@ export default function LandingNavbar({ onLoginClick, onNavClick }: LandingNavba
           </span>
         </div>
 
-        {/* Desktop Nav Links */}
-        <nav className="hidden md:flex items-center gap-10 text-xs uppercase tracking-widest font-bold text-[#603620]">
-          {NAV_LINKS.map((link) => (
-            <a
-              key={link.href}
-              href={`#${link.href}`}
-              onClick={(e) => handleNavClick(e, link.href)}
-              className="hover:text-[#b56b37] transition-colors cursor-pointer"
-            >
-              {link.label}
-            </a>
-          ))}
-        </nav>
+        {/* Desktop Nav Links or Back Button */}
+        {activeTab === 'dashboard' ? (
+          <nav className="hidden md:flex items-center gap-10 text-xs uppercase tracking-widest font-bold text-[#603620]">
+            {NAV_LINKS.map((link) => (
+              <a
+                key={link.href}
+                href={`#${link.href}`}
+                onClick={(e) => handleNavClick(e, link.href)}
+                className="hover:text-[#b56b37] transition-colors cursor-pointer"
+              >
+                {link.label}
+              </a>
+            ))}
+          </nav>
+        ) : (
+          <button
+            onClick={() => {
+              setActiveTab('dashboard');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#b56b37] hover:text-[#603620] transition-colors bg-transparent border-none cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to Home
+          </button>
+        )}
 
         {/* Actions */}
         <div className="flex items-center gap-3">
@@ -98,16 +121,29 @@ export default function LandingNavbar({ onLoginClick, onNavClick }: LandingNavba
       {/* Mobile Menu */}
       {mobileOpen && (
         <div className="md:hidden bg-[#fcf9f2] border-b border-[#e8ded1] shadow-xl px-6 py-6 flex flex-col gap-4">
-          {NAV_LINKS.map((link) => (
-            <a
-              key={link.href}
-              href={`#${link.href}`}
-              onClick={(e) => handleNavClick(e, link.href)}
-              className="text-sm font-bold uppercase tracking-wider text-[#603620] hover:text-[#b56b37]"
+          {activeTab === 'dashboard' ? (
+            NAV_LINKS.map((link) => (
+              <a
+                key={link.href}
+                href={`#${link.href}`}
+                onClick={(e) => handleNavClick(e, link.href)}
+                className="text-sm font-bold uppercase tracking-wider text-[#603620] hover:text-[#b56b37]"
+              >
+                {link.label}
+              </a>
+            ))
+          ) : (
+            <button
+              onClick={() => {
+                setMobileOpen(false);
+                setActiveTab('dashboard');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="text-sm font-bold uppercase tracking-wider text-[#b56b37] flex items-center gap-2"
             >
-              {link.label}
-            </a>
-          ))}
+              <ArrowLeft className="w-4 h-4" /> Back to Home
+            </button>
+          )}
           <button
             onClick={() => { setMobileOpen(false); onLoginClick(); }}
             className="mt-2 w-full py-3 text-xs font-extrabold uppercase tracking-wider bg-[#b56b37] text-white rounded-full shadow-md text-center"
