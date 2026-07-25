@@ -190,8 +190,9 @@ export const getComments = async (req: Request, res: Response) => {
   try {
     const { postId } = req.params;
     if (dbQuery) {
+      const escapedPostId = postId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const comments = await dbQuery.collection("comments")
-        .find({ $or: [{ postId }, { path: new RegExp('^,' + postId + ',') }] })
+        .find({ $or: [{ postId }, { path: new RegExp('^,' + escapedPostId + ',') }] })
         .sort({ createdAt: -1 })
         .toArray();
 
