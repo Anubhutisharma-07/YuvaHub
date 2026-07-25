@@ -1,6 +1,6 @@
-import { Request, Response } from "express";
+﻿import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
-import { safeObjectId } from "../../lib/utils.js";
+import { safeObjectId, parsePagination, buildPaginationMetadata } from "../../lib/utils.js";
 import escapeHtml from "escape-html";
 import { meiliClient } from "../../services/searchSync.js";
 import { generateOpportunityEmbedding } from "../../services/embedding.js";
@@ -558,3 +558,4 @@ export const updateOpportunity = async (req: Request, res: Response) => {
     sendError(res, "Internal Server Error");
   }
 };
+
