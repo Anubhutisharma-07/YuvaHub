@@ -87,7 +87,7 @@ export const authSync = async (req: Request, res: Response) => {
       });
     }
 
-    const usersCollection = dbQuery.collection("users");
+    const usersCollection = dbCommand.collection("users");
     const existingUser = await usersCollection.findOne({ uid });
 
     const role = email === "uditt490@gmail.com" ? "admin" : "student";
