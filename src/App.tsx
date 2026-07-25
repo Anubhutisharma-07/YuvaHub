@@ -30,6 +30,7 @@ import ResumeAtsStudio from './components/Tabs/ResumeAtsStudio';
 import InterviewPrepStudio from './components/Tabs/InterviewPrepStudio';
 import OpenSourceBountyStudio from './components/Tabs/OpenSourceBountyStudio';
 import OpportunityMatchStudio from './components/Tabs/OpportunityMatchStudio';
+import TechEcosystemStudio from './components/Tabs/TechEcosystemStudio';
 import Legal from './components/Tabs/Legal';
 import Privacy from './components/Tabs/Privacy';
 import Terms from './components/Tabs/Terms';
@@ -109,6 +110,7 @@ function App() {
     { id: 'interview_prep', label: 'AI Interview Studio', icon: Activity },
     { id: 'opensource_bounties', label: 'Open Source Bounties', icon: Activity },
     { id: 'opportunity_match', label: 'AI Opportunity Recommender', icon: Activity },
+    { id: 'tech_ecosystem', label: 'Tech Ecosystem Studio', icon: Activity },
     { id: 'submit', label: 'Submit Opportunity', icon: PlusCircle },
     { id: 'mentorship', label: 'Mentorship', icon: Users },
     { id: 'community', label: 'Community', icon: MessageSquare },
@@ -133,6 +135,7 @@ function App() {
       case 'interview_prep': return <InterviewPrepStudio />;
       case 'opensource_bounties': return <OpenSourceBountyStudio />;
       case 'opportunity_match': return <OpportunityMatchStudio />;
+      case 'tech_ecosystem': return <TechEcosystemStudio />;
       case 'submit': return <SubmitOpportunity />;
       case 'mentorship': return <Mentorship />;
       case 'community': return <Community />;
