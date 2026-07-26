@@ -5,6 +5,31 @@ import {
 } from "../src/lib/pagination";
 
 describe("parsePagination", () => {
+      it("keeps skip within the safe integer range", () => {
+  const result = parsePagination({
+    page: String(Number.MAX_SAFE_INTEGER),
+    limit: "100",
+  });
+
+  expect(Number.isSafeInteger(result.skip)).toBe(true);
+  expect(result.skip).toBeLessThanOrEqual(
+    Number.MAX_SAFE_INTEGER,
+  );
+});
+
+it("handles unsafe numeric strings safely", () => {
+  expect(
+    parsePagination({
+      page: "999999999999999999999999999",
+      limit: "20",
+    }),
+  ).toEqual({
+    page: 1,
+    limit: 20,
+    skip: 0,
+  });
+});
+
   it("returns safe defaults", () => {
     expect(parsePagination({})).toEqual({
       page: 1,

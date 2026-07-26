@@ -1,4 +1,4 @@
-export interface PaginationQuery {
+﻿export interface PaginationQuery {
   page?: unknown;
   limit?: unknown;
   cursor?: unknown;
@@ -19,63 +19,92 @@ export interface PaginationMetadata {
   hasPrevious: boolean;
 }
 
-const parseInteger = (value: unknown): number | null => {
+const parseInteger = (
+  value: unknown,
+): number | null => {
   if (Array.isArray(value)) {
     return parseInteger(value[0]);
   }
 
   if (typeof value === "number") {
-    return Number.isFinite(value) ? Math.trunc(value) : null;
+    return Number.isSafeInteger(value)
+      ? value
+      : null;
   }
 
-  if (typeof value !== "string" || value.trim() === "") {
+  if (
+    typeof value !== "string" ||
+    value.trim() === ""
+  ) {
     return null;
   }
 
-  if (!/^-?\d+$/.test(value.trim())) {
+  const normalized = value.trim();
+
+  if (!/^-?\d+$/.test(normalized)) {
     return null;
   }
 
-  const parsed = Number.parseInt(value, 10);
-  return Number.isSafeInteger(parsed) ? parsed : null;
+  const parsed = Number.parseInt(normalized, 10);
+
+  return Number.isSafeInteger(parsed)
+    ? parsed
+    : null;
 };
 
-/**
- * Parse untrusted HTTP pagination values into safe positive integers.
- *
- * - page defaults to 1
- * - limit defaults to 20
- * - limit is capped by maxLimit
- * - cursor is accepted as a backward-compatible page alias
- */
 export function parsePagination(
-  query: PaginationQuery | Record<string, unknown>,
+  query:
+    | PaginationQuery
+    | Record<string, unknown>,
   maxLimit = 100,
   defaultLimit = 20,
 ): ParsedPagination {
-  const safeMaxLimit = Math.max(1, Math.trunc(maxLimit) || 100);
+  const safeMaxLimit =
+    Number.isSafeInteger(maxLimit) &&
+    maxLimit > 0
+      ? maxLimit
+      : 100;
+
   const safeDefaultLimit = Math.min(
     safeMaxLimit,
-    Math.max(1, Math.trunc(defaultLimit) || 20),
+    Number.isSafeInteger(defaultLimit) &&
+      defaultLimit > 0
+      ? defaultLimit
+      : 20,
   );
 
   const cursor = parseInteger(query.cursor);
-  const requestedPage = cursor && cursor > 0
-    ? cursor
-    : parseInteger(query.page);
+  const parsedPage = parseInteger(query.page);
+  const parsedLimit = parseInteger(query.limit);
 
-  const requestedLimit = parseInteger(query.limit);
-
-  const page = Math.max(1, requestedPage || 1);
   const limit = Math.min(
     safeMaxLimit,
-    Math.max(1, requestedLimit || safeDefaultLimit),
+    parsedLimit !== null && parsedLimit > 0
+      ? parsedLimit
+      : safeDefaultLimit,
   );
+
+  const requestedPage =
+    cursor !== null && cursor > 0
+      ? cursor
+      : parsedPage !== null && parsedPage > 0
+        ? parsedPage
+        : 1;
+
+  const maximumSafePage =
+    Math.floor(Number.MAX_SAFE_INTEGER / limit) + 1;
+
+  const page = Math.min(
+    requestedPage,
+    maximumSafePage,
+  );
+
+  const skip = (page - 1) * limit;
 
   return {
     page,
     limit,
-    skip: (page - 1) * limit,
+    skip,
   };
 }
 
@@ -84,15 +113,36 @@ export function buildPaginationMetadata(
   limit: number,
   total: number,
 ): PaginationMetadata {
-  const safeTotal = Math.max(0, Math.trunc(total) || 0);
-  const totalPages = safeTotal === 0 ? 0 : Math.ceil(safeTotal / limit);
+  const safePage =
+    Number.isSafeInteger(page) && page > 0
+      ? page
+      : 1;
+
+  const safeLimit =
+    Number.isSafeInteger(limit) && limit > 0
+      ? limit
+      : 20;
+
+  const safeTotal =
+    Number.isSafeInteger(total) && total > 0
+      ? total
+      : 0;
+
+  const totalPages =
+    safeTotal === 0
+      ? 0
+      : Math.ceil(safeTotal / safeLimit);
 
   return {
-    page,
-    limit,
+    page: safePage,
+    limit: safeLimit,
     total: safeTotal,
     totalPages,
-    hasNext: totalPages > 0 && page < totalPages,
-    hasPrevious: page > 1 && totalPages > 0,
+    hasNext:
+      totalPages > 0 &&
+      safePage < totalPages,
+    hasPrevious:
+      totalPages > 0 &&
+      safePage > 1,
   };
 }
