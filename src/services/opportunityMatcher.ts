@@ -92,15 +92,15 @@ export async function matchOpportunityAndNotify(db: any, opportunity: any): Prom
 
         // Create the notification document
         const message = `A new ${category} "${title}" matches your preferences. Check it out!`;
-        const notification = {
-          userId,
-          type: matchType,
+        const notificationDoc = {
+          userId: user.uid,
+          type: matchedReason,
           title,
           message,
-          targetId,
+          targetId: opportunityId,
           read: false,
           createdAt: new Date(),
-          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // <-- Add expiration
+          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         };
 
         // Insert into database

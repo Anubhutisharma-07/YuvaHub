@@ -1,7 +1,6 @@
 import { ObjectId } from "mongodb";
 import { enqueueEmail } from "../queues/emailQueue";
 import { enqueuePushNotification } from "../queues/pushQueue";
-import { Notification } from "../models/notificationSchema";
 import { getSocketIO } from "../api/socketInstance.js";
 import { generateDeadlineReminderHtml, generateWeeklyDigestHtml } from "../workers/emailTemplates";
 
@@ -26,7 +25,7 @@ export async function runDeadlineChecks(db: any): Promise<void> {
     const now = new Date();
 
     // Filter users who have deadline reminders enabled
-    const activeUsers = users.filter(user => {
+    const activeUsers = users.filter((user: any) => {
       const prefs = user.notificationPreferences || { deadlineRemindersEnabled: true };
       return prefs.deadlineRemindersEnabled !== false;
     });
@@ -40,7 +39,8 @@ export async function runDeadlineChecks(db: any): Promise<void> {
     const activeUserUids: string[] = [];
 
     for (const user of activeUsers) {
-      if (user.uid) activeUserUids.push(user.uid);
+      const uid = user.uid || user._id?.toString() || user.id;
+      if (uid) activeUserUids.push(uid);
       const bookmarks = user.bookmarks || [];
       for (const oppId of bookmarks) {
         if (oppId) uniqueOppIds.add(String(oppId));
@@ -99,6 +99,7 @@ export async function runDeadlineChecks(db: any): Promise<void> {
 
     // Process each user and bookmark using O(1) in-memory Map & Set lookups
     for (const user of activeUsers) {
+      const userId = user.uid || user._id?.toString() || user.id;
       const prefs = user.notificationPreferences || {
         emailEnabled: true,
         pushEnabled: true,
@@ -153,18 +154,18 @@ export async function runDeadlineChecks(db: any): Promise<void> {
         }
 
         // Check if user was already notified for this exact deadline condition
-        const notifKey = `${user.uid}:${oppId}:${title}`;
+        const notifKey = `${userId}:${oppId}:${title}`;
         if (notifiedSet.has(notifKey)) {
           continue;
         }
 
         // Create the notification document
-        const notification = {
+        const notificationDoc = {
           userId,
           type: "deadline_reminder",
           title,
           message,
-          targetId,
+          targetId: oppIdStr,
           read: false,
           createdAt: new Date(),
           expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
@@ -172,12 +173,12 @@ export async function runDeadlineChecks(db: any): Promise<void> {
 
         await notifCollection.insertOne(notificationDoc);
         notifiedSet.add(notifKey);
-        console.log(`[DeadlineScheduler] Reminded user ${user.uid} of deadline for opportunity ${oppId} (${diffDays} days left)`);
+        console.log(`[DeadlineScheduler] Reminded user ${userId} of deadline for opportunity ${oppId} (${diffDays} days left)`);
 
         // Real-Time Socket.io push (foreground handling)
         const io = getSocketIO();
         if (io) {
-          io.emit(`NOTIFICATION_RECEIVED_${user.uid}`, {
+          io.emit(`NOTIFICATION_RECEIVED_${userId}`, {
             id: oppId + "_" + diffDays,
             ...notificationDoc,
             time: "Just now"
@@ -204,7 +205,7 @@ export async function runDeadlineChecks(db: any): Promise<void> {
         // Enqueue background push job
         if (prefs.pushEnabled && user.fcmToken) {
           await enqueuePushNotification({
-            userId: user.uid,
+            userId: userId,
             message: `[YuvaHub] ${title}: ${opportunity.title}`
           });
         }
@@ -234,7 +235,7 @@ export async function runWeeklyDigest(db: any): Promise<void> {
     const now = new Date();
     const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-    const activeUsers = users.filter(user => {
+    const activeUsers = users.filter((user: any) => {
       if (!user.email) return false;
       const prefs = user.notificationPreferences || { emailEnabled: true };
       return prefs.emailEnabled !== false;
