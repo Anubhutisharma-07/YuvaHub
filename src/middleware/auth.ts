@@ -59,7 +59,7 @@ declare global {
   }
 }
 
-export const authenticateUser = (db: any) => {
+export const authenticateUser = (db?: any) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
 
@@ -112,30 +112,34 @@ export const authenticateUser = (db: any) => {
 
       req.user = decodedToken;
 
-      const activeDb = db || dbCommand;
+      // Dynamically resolve DB reference at runtime (allows test mocks & module-level fallback)
+      const activeDb = db || (req as any).db || dbCommand;
 
-      if (activeDb && !(isDevelopment && mockAuthEnabled)) {
+      if (activeDb) {
         try {
           const usersCollection = activeDb.collection('users');
+          const uid = decodedToken.uid || decodedToken.firebaseUid;
 
           const userDoc = await usersCollection.findOneAndUpdate(
-            { firebaseUid: decodedToken.uid },
+            { firebaseUid: uid },
             {
               $setOnInsert: {
-                firebaseUid: decodedToken.uid,
-                email: decodedToken.email,
+                firebaseUid: uid,
+                email: decodedToken.email || '',
                 name: decodedToken.name || '',
                 picture: decodedToken.picture || '',
                 created_at: new Date(),
+                role: 'student',
               },
             },
             {
               upsert: true,
               returnDocument: 'after',
+              returnOriginal: false,
             },
           );
 
-          const returnedDoc = userDoc && userDoc.value ? userDoc.value : userDoc;
+          const returnedDoc = userDoc && (userDoc.value !== undefined ? userDoc.value : userDoc);
           if (returnedDoc && returnedDoc.role) {
             req.user.role = returnedDoc.role;
           } else {
@@ -146,9 +150,14 @@ export const authenticateUser = (db: any) => {
             '[Auth] Error during JIT user profile creation:',
             dbError,
           );
+          if (!req.user.role) {
+            req.user.role = 'student';
+          }
         }
-      } else if (isDevelopment && mockAuthEnabled) {
-        req.user.role = 'student';
+      } else {
+        if (!req.user.role) {
+          req.user.role = 'student';
+        }
       }
 
       next();
@@ -185,5 +194,5 @@ export const authorizeRoles = (allowedRoles: string[]) => {
   };
 };
 
-export const authMiddleware = authenticateUser(dbCommand);
+export const authMiddleware = authenticateUser();
 export const adminOnly = authorizeRoles(['admin', 'superadmin']);

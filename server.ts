@@ -156,7 +156,7 @@ app.get("/sitemap.xml", async (req: Request, res: Response) => {
 const frontendPath = path.join(process.cwd(), "dist");
 app.use(express.static(frontendPath));
 
-// SPA Fallback: Safely catch non-API GET requests without triggering path-to-regexp errors
+// SPA Fallback: Catch non-API GET requests cleanly without path-to-regexp issues
 app.use((req: Request, res: Response, next: NextFunction) => {
   if (req.method === "GET" && !req.path.startsWith("/api/")) {
     return res.sendFile(path.join(frontendPath, "index.html"));
