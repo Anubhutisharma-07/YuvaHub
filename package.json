@@ -46,7 +46,7 @@
     "express-rate-limit": "^8.5.2",
     "firebase": "^12.16.0",
     "firebase-admin": "^14.2.0",
-    "google-gax": "^5.0.8",
+    "google-gax": "^5.0.4",
     "gsap": "^3.15.0",
     "http-proxy-middleware": "^4.0.0",
     "ioredis": "^5.11.1",
