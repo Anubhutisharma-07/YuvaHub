@@ -84,12 +84,13 @@ export default function Teams() {
         .map(r => r.trim())
         .filter(Boolean);
 
-      await createTeam({
-        name: createForm.name,
-        opportunityTitle: createForm.opportunityTitle || undefined,
-        description: createForm.description,
-        requiredRoles: rolesArray,
-        maxMembers: Number(createForm.maxMembers) || 4,
+      createTeam({
+        name: formData.name,
+        opportunityTitle: formData.opportunityTitle,
+        description: formData.description,
+        requiredRoles: formData.requiredRoles,
+        skills: formData.skills || [], // <-- Add this line
+        maxMembers: formData.maxMembers,
       });
 
       setIsCreateOpen(false);
