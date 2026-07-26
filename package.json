@@ -76,6 +76,7 @@
   "devDependencies": {
     "@playwright/test": "^1.61.1",
     "@types/cors": "^2.8.19",
+    "@types/escape-html": "^1.0.4",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.20.1",

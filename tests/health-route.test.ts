@@ -32,7 +32,9 @@ async function startServer() {
   app.get("/api/v1/health", healthCheck);
 
   // Mirrors the production frontend fallback. Health must resolve first.
-  app.get("*", (_req, res) => {
+  // Express 5 / path-to-regexp v8 requires a named wildcard — bare "*"
+  // throws "Missing parameter name at index 1". Use "*splat" instead.
+  app.get("*splat", (_req, res) => {
     res.status(404).send("SPA fallback");
   });
 
