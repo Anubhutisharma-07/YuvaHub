@@ -97,7 +97,24 @@ export default function Teams() {
       !createForm.description ||
       !createForm.requiredRoles
     ) {
-      setCreateError("Please fill in all required fields.");
+      const requiredRoles = createForm.requiredRoles
+        .split(",")
+        .map((role) => role.trim())
+        .filter(Boolean);
+
+      if (requiredRoles.length === 0) {
+        setError("Please enter at least one required role.");
+        return;
+      }
+
+      await createTeam({
+        name: createForm.name,
+        opportunityTitle: createForm.opportunityTitle,
+        description: createForm.description,
+        requiredRoles,
+        skills: requiredRoles,
+        maxMembers: Number(createForm.maxMembers) || 4,
+      });
       return;
     }
 
