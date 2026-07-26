@@ -1,5 +1,13 @@
-import { useState, useEffect, type FormEvent } from 'react';
-import { Users, PlusCircle, Search, UserCheck, Clock, CheckCircle2, XCircle, AlertCircle, ShieldAlert, Sparkles, Filter } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import type { FormEvent } from 'react';
+import { 
+  Users, 
+  PlusCircle, 
+  Search, 
+  UserCheck, 
+  CheckCircle2, 
+  AlertCircle 
+} from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { Team, JoinRequest } from '../../models/teamSchema';
 import { createTeam, fetchTeams, requestToJoinTeam, fetchTeamRequests, respondToJoinRequest } from '../../services/teamService';
@@ -48,7 +56,7 @@ export default function Teams() {
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [manageError, setManageError] = useState<string | null>(null);
 
-const loadTeams = async () => {
+  const loadTeams = async () => {
     try {
       setLoading(true);
       setError(null);
