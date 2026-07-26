@@ -159,14 +159,15 @@ export async function runDeadlineChecks(db: any): Promise<void> {
         }
 
         // Create the notification document
-        const notificationDoc: Notification = {
-          userId: user.uid,
+        const notification = {
+          userId,
           type: "deadline_reminder",
           title,
           message,
-          targetId: oppId,
+          targetId,
           read: false,
-          createdAt: new Date()
+          createdAt: new Date(),
+          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         };
 
         await notifCollection.insertOne(notificationDoc);
