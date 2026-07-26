@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { Users, PlusCircle, Search, UserCheck, Clock, CheckCircle2, XCircle, AlertCircle, ShieldAlert, Sparkles, Filter } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { Team, JoinRequest } from '../../models/teamSchema';
@@ -69,7 +69,7 @@ const loadTeams = async () => {
     loadTeams();
   }, [searchQuery, selectedRole, filterStatus]);
 
-  const handleCreateTeam = async (e: React.FormEvent) => {
+  const handleCreateTeam = async (e: FormEvent) => {
     e.preventDefault();
     if (!createForm.name || !createForm.description || !createForm.requiredRoles) {
       setCreateError('Please fill in all required fields.');
@@ -109,7 +109,7 @@ const loadTeams = async () => {
     }
   };
 
-  const handleJoinRequest = async (e: React.FormEvent) => {
+  const handleJoinRequest = async (e: FormEvent) => {
     e.preventDefault();
     if (!selectedTeamForJoin || !joinForm.role) return;
 
