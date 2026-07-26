@@ -3,18 +3,17 @@ import cors from "cors";
 import dotenv from "dotenv";
 import http from "http";
 import path from "path";
-import { initializeDatabase } from "./src/api/db.js";
+import * as Sentry from "@sentry/node";
 import { Server as SocketIOServer } from "socket.io";
+
+import { initializeDatabase, dbCommand, dbQuery } from "./src/api/db.js";
 import { setSocketIO } from "./src/api/socketInstance.js";
 import { setupSocketEvents } from "./src/socket/index.js";
 import { runDeadlineChecks, runWeeklyDigest } from "./src/services/deadlineScheduler.js";
-import { dbCommand, dbQuery } from "./src/api/db.js";
 import { analyticsBuffer } from "./src/api/analytics.js";
 
 // Import Main API Router
 import apiRoutes from "./src/api/routes/index.js";
-
-import * as Sentry from "@sentry/node";
 
 import { eventBus } from "./src/events/eventBus.js";
 import { createNotificationConsumer } from "./src/consumers/notificationConsumer.js";
@@ -34,8 +33,8 @@ const server = http.createServer(app);
 const io = new SocketIOServer(server, {
   cors: {
     origin: process.env.FRONTEND_URL || "*",
-    methods: ["GET", "POST"]
-  }
+    methods: ["GET", "POST"],
+  },
 });
 setSocketIO(io);
 
@@ -47,7 +46,7 @@ app.use("/api", apiRoutes);
 
 // ── SEO Routes (root-level for crawler discovery) ──────────────────────
 
-app.get("/robots.txt", (req, res) => {
+app.get("/robots.txt", (req: Request, res: Response) => {
   const baseUrl = process.env.APP_URL || "https://yuvahub.xyz";
   const robotsTxt = [
     "User-agent: *",
@@ -82,7 +81,7 @@ app.get("/robots.txt", (req, res) => {
   res.send(robotsTxt);
 });
 
-app.get("/sitemap.xml", async (req, res) => {
+app.get("/sitemap.xml", async (req: Request, res: Response) => {
   try {
     const baseUrl = process.env.APP_URL || "https://yuvahub.xyz";
     const staticPaths = [
@@ -115,7 +114,7 @@ app.get("/sitemap.xml", async (req, res) => {
           .project({ _id: 1, title: 1, created_at: 1 })
           .toArray();
 
-        const oppUrls = items.map((item: any) => {
+        const oppUrls = items.map((item: Record<string, any>) => {
           const id = item._id ? item._id.toString() : item.id;
           const title = item.title || "opportunity";
           const cleanTitle = title
@@ -157,16 +156,16 @@ app.get("/sitemap.xml", async (req, res) => {
 const frontendPath = path.join(process.cwd(), "dist");
 app.use(express.static(frontendPath));
 
-// For any route that isn't an API route, serve the React index.html
-app.get(/.*/, (req, res, next) => {
-  if (req.path.startsWith("/api/")) {
-    return next(); // Let the 404 handler catch missing API routes
+// SPA Fallback: Safely catch non-API GET requests without triggering path-to-regexp errors
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if (req.method === "GET" && !req.path.startsWith("/api/")) {
+    return res.sendFile(path.join(frontendPath, "index.html"));
   }
-  res.sendFile(path.join(frontendPath, "index.html"));
+  next();
 });
 
 // Fallback Route for API endpoints
-app.use((req, res) => {
+app.use((req: Request, res: Response) => {
   res.status(404).json({ success: false, error: "Endpoint not found" });
 });
 
@@ -183,20 +182,23 @@ async function startServer() {
     setupSocketEvents();
 
     // 3. Initialize MongoDB Database Connections asynchronously
-    initializeDatabase().catch((err) => {
-      console.warn('[Core] Database initialization fallback mode:', (err as Error).message);
+    initializeDatabase().catch((err: Error) => {
+      console.warn("[Core] Database initialization fallback mode:", err.message);
     });
 
     // 4. Wire Event Bus Consumers (RabbitMQ) asynchronously
-    eventBus.connect().then(async () => {
-      const notifHandler = await createNotificationConsumer(dbCommand);
-      const scrapedHandler = await createOpportunityScrapedConsumer(dbCommand);
-      await eventBus.subscribe('notifications', 'opportunity.scraped', notifHandler);
-      await eventBus.subscribe('opportunity-scraped', 'opportunity.scraped', scrapedHandler);
-      console.log('[Core] Event Bus consumers wired successfully');
-    }).catch((err) => {
-      console.warn('[Core] Event Bus unavailable:', (err as Error).message);
-    });
+    eventBus
+      .connect()
+      .then(async () => {
+        const notifHandler = await createNotificationConsumer(dbCommand);
+        const scrapedHandler = await createOpportunityScrapedConsumer(dbCommand);
+        await eventBus.subscribe("notifications", "opportunity.scraped", notifHandler);
+        await eventBus.subscribe("opportunity-scraped", "opportunity.scraped", scrapedHandler);
+        console.log("[Core] Event Bus consumers wired successfully");
+      })
+      .catch((err: Error) => {
+        console.warn("[Core] Event Bus unavailable:", err.message);
+      });
 
     // 5. Start Background Services
     if (process.env.NODE_ENV !== "test") {
@@ -209,32 +211,40 @@ async function startServer() {
   }
 }
 
-startServer();
+// Only auto-start the server when not running in test mode
+if (process.env.NODE_ENV !== "test") {
+  startServer();
+}
 
 // Graceful Shutdown Handling
 const gracefulShutdown = (signal: string) => {
   console.log(`\n[Core] Received ${signal}. Starting graceful shutdown...`);
-  
-  analyticsBuffer.drainAndStop().then(() => {
-    console.log("[Core] Analytics buffer drained.");
-    if (server) {
-      server.close(() => {
-        console.log("[Core] HTTP server closed.");
+
+  analyticsBuffer
+    .drainAndStop()
+    .then(() => {
+      console.log("[Core] Analytics buffer drained.");
+      if (server) {
+        server.close(() => {
+          console.log("[Core] HTTP server closed.");
+          process.exit(0);
+        });
+      } else {
         process.exit(0);
-      });
-    } else {
-      process.exit(0);
-    }
-  }).catch(err => {
-    console.error("[Core] Error during analytics shutdown:", err);
-    process.exit(1);
-  });
+      }
+    })
+    .catch((err: Error) => {
+      console.error("[Core] Error during analytics shutdown:", err);
+      process.exit(1);
+    });
 };
 
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-process.on("message", (msg) => {
+process.on("message", (msg: string) => {
   if (msg === "shutdown") {
     gracefulShutdown("IPC shutdown");
   }
 });
+
+export { app, server, startServer };
