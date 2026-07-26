@@ -48,7 +48,7 @@ export default function Teams() {
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [manageError, setManageError] = useState<string | null>(null);
 
-  const loadTeams = async () => {
+const loadTeams = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -84,13 +84,13 @@ export default function Teams() {
         .map(r => r.trim())
         .filter(Boolean);
 
-      createTeam({
-        name: formData.name,
-        opportunityTitle: formData.opportunityTitle,
-        description: formData.description,
-        requiredRoles: formData.requiredRoles,
-        skills: formData.skills || [], // <-- Add this line
-        maxMembers: formData.maxMembers,
+      await createTeam({
+        name: createForm.name,
+        opportunityTitle: createForm.opportunityTitle,
+        description: createForm.description,
+        requiredRoles: rolesArray,
+        skills: rolesArray,
+        maxMembers: createForm.maxMembers,
       });
 
       setIsCreateOpen(false);
