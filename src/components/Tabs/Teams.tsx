@@ -92,46 +92,37 @@ export default function Teams() {
 
   const handleCreateTeam = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      !createForm.name ||
-      !createForm.description ||
-      !createForm.requiredRoles
-    ) {
-      const requiredRoles = createForm.requiredRoles
-        .split(",")
-        .map((role) => role.trim())
-        .filter(Boolean);
 
-      if (requiredRoles.length === 0) {
-        setError("Please enter at least one required role.");
-        return;
-      }
+    const requiredRoles = createForm.requiredRoles
+      .split(",")
+      .map((role) => role.trim())
+      .filter(Boolean);
 
-      await createTeam({
-        name: createForm.name,
-        opportunityTitle: createForm.opportunityTitle,
-        description: createForm.description,
-        requiredRoles,
-        skills: requiredRoles,
-        maxMembers: Number(createForm.maxMembers) || 4,
-      });
+    if (!createForm.name.trim()) {
+      setCreateError("Team name is required.");
+      return;
+    }
+
+    if (!createForm.description.trim()) {
+      setCreateError("Team description is required.");
+      return;
+    }
+
+    if (requiredRoles.length === 0) {
+      setCreateError("Please enter at least one required role or skill.");
       return;
     }
 
     try {
       setCreating(true);
       setCreateError(null);
-      const rolesArray = createForm.requiredRoles
-        .split(",")
-        .map((r) => r.trim())
-        .filter(Boolean);
 
       await createTeam({
-        name: createForm.name,
-        opportunityTitle: createForm.opportunityTitle,
-        description: createForm.description,
-        requiredRoles: createForm.requiredRoles,
-        skills: createForm.requiredRoles,
+        name: createForm.name.trim(),
+        opportunityTitle: createForm.opportunityTitle.trim(),
+        description: createForm.description.trim(),
+        requiredRoles,
+        skills: requiredRoles,
         maxMembers: Number(createForm.maxMembers) || 4,
       });
 
@@ -143,6 +134,7 @@ export default function Teams() {
         requiredRoles: "",
         maxMembers: 4,
       });
+
       await loadTeams();
     } catch (err: any) {
       setCreateError(err.message || "Failed to create team");
