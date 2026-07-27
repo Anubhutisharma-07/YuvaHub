@@ -162,35 +162,59 @@ export const authSync = async (req: Request, res: Response) => {
       delete updatedProfile._id;
     }
 
-    const jwtSecret = process.env.JWT_SECRET || "default_secret_for_development_only";
-    const refreshSecret = process.env.JWT_REFRESH_SECRET || "default_refresh_secret_for_development_only";
-    
+    const jwtSecret = process.env.JWT_SECRET;
+    const refreshSecret = process.env.JWT_REFRESH_SECRET;
+
+    if (process.env.NODE_ENV === 'production' && (!jwtSecret || !refreshSecret)) {
+      throw new Error('JWT secrets must be configured in production');
+    }
+
+    if (!jwtSecret || !refreshSecret) {
+      // Generate secure random secrets for development only
+      const { randomBytes } = await import('crypto');
+      const generatedSecret = randomBytes(64).toString('hex');
+      const generatedRefreshSecret = randomBytes(64).toString('hex');
+      console.warn('[Security] Using auto-generated JWT secrets for development only');
+      // Use generated secrets
+      const accessToken = jwt.sign(
+        { uid: updatedProfile.uid, email: updatedProfile.email, role: updatedProfile.role },
+        generatedSecret,
+        { expiresIn: '15m' }
+      );
+      const refreshToken = jwt.sign(
+        { uid: updatedProfile.uid },
+        generatedRefreshSecret,
+        { expiresIn: '7d' }
+      );
+      return { accessToken, refreshToken };
+    }
+
     // Generate custom JWTs
     const accessToken = jwt.sign(
       { uid: updatedProfile.uid, role: updatedProfile.role, email: updatedProfile.email },
       jwtSecret,
       { expiresIn: "15m" }
     );
-    
+
     const refreshToken = jwt.sign(
       { uid: updatedProfile.uid },
       refreshSecret,
       { expiresIn: "7d" }
     );
-    
+
     // Hash refresh token for secure storage
     const hashedRefreshToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
-    
+
     // Store hashed refresh token in users collection (up to 5 active sessions)
     if (dbCommand) {
       const usersCollectionCmd = dbCommand.collection("users");
       await usersCollectionCmd.updateOne(
         { uid: updatedProfile.uid },
-        { 
-          $push: { 
+        {
+          $push: {
             hashedRefreshTokens: {
               $each: [hashedRefreshToken],
-              $slice: -5 
+              $slice: -5
             }
           }
         }
@@ -217,8 +241,20 @@ export const refreshTokens = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Refresh token is required" });
     }
 
-    const refreshSecret = process.env.JWT_REFRESH_SECRET || "default_refresh_secret_for_development_only";
-    const jwtSecret = process.env.JWT_SECRET || "default_secret_for_development_only";
+    const refreshSecret = process.env.JWT_REFRESH_SECRET;
+    const jwtSecret = process.env.JWT_SECRET;
+
+    if (process.env.NODE_ENV === 'production' && (!refreshSecret || !jwtSecret)) {
+      return res.status(503).json({
+        error: 'Authentication service unavailable. JWT secrets must be configured in production.',
+      });
+    }
+
+    if (!refreshSecret || !jwtSecret) {
+      return res.status(503).json({
+        error: 'Authentication service unavailable. JWT secrets not configured.',
+      });
+    }
 
     let decoded: any;
     try {
@@ -277,8 +313,8 @@ export const refreshTokens = async (req: Request, res: Response) => {
     );
     await usersCollection.updateOne(
       { uid: decoded.uid },
-      { 
-        $push: { 
+      {
+        $push: {
           hashedRefreshTokens: {
             $each: [hashedNewRefreshToken],
             $slice: -5
@@ -304,20 +340,30 @@ export const logout = async (req: Request, res: Response) => {
     if (!refreshToken) {
       return res.status(400).json({ error: "Refresh token is required" });
     }
-    
-    const refreshSecret = process.env.JWT_REFRESH_SECRET || "default_refresh_secret_for_development_only";
-    
+
+    const refreshSecret = process.env.JWT_REFRESH_SECRET;
+
+    if (process.env.NODE_ENV === 'production' && !refreshSecret) {
+      return res.status(503).json({
+        error: 'Authentication service unavailable. JWT_REFRESH_SECRET must be configured in production.',
+      });
+    }
+
     let decoded: any;
-    try {
-      decoded = jwt.verify(refreshToken, refreshSecret);
-    } catch (e) {
-      return res.json({ status: "success", message: "Logged out" });
+    if (!refreshSecret) {
+      console.warn('[Auth] JWT_REFRESH_SECRET not configured, skipping token verification for logout');
+    } else {
+      try {
+        decoded = jwt.verify(refreshToken, refreshSecret);
+      } catch (e) {
+        return res.json({ status: "success", message: "Logged out" });
+      }
     }
 
     if (dbCommand && decoded && decoded.uid) {
       const hashedIncomingToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
       const usersCollection = dbCommand.collection("users");
-      
+
       await usersCollection.updateOne(
         { uid: decoded.uid },
         { $pull: { hashedRefreshTokens: hashedIncomingToken } }

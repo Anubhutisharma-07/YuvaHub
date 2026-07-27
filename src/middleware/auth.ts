@@ -76,12 +76,23 @@ export const authenticateUser = (db?: any) => {
       let isCustomToken = false;
 
       // 1. Try Custom JWT first
-      const jwtSecret = process.env.JWT_SECRET || "default_secret_for_development_only";
-      try {
-        decodedToken = jwt.verify(token, jwtSecret);
-        isCustomToken = true;
-      } catch (err) {
-        // Fallback to Firebase
+      const jwtSecret = process.env.JWT_SECRET;
+
+      if (process.env.NODE_ENV === 'production' && !jwtSecret) {
+        return res.status(503).json({
+          error: 'Authentication service unavailable. JWT_SECRET must be configured in production.',
+        });
+      }
+
+      if (!jwtSecret) {
+        console.warn('[Auth] JWT_SECRET not configured, skipping custom JWT verification');
+      } else {
+        try {
+          decodedToken = jwt.verify(token, jwtSecret);
+          isCustomToken = true;
+        } catch (err) {
+          // Fallback to Firebase
+        }
       }
 
       // 2. If not a custom token, verify with Firebase
