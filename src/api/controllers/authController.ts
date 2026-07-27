@@ -341,13 +341,23 @@ export const logout = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Refresh token is required" });
     }
 
-    const refreshSecret = process.env.JWT_REFRESH_SECRET || "default_refresh_secret_for_development_only";
+    const refreshSecret = process.env.JWT_REFRESH_SECRET;
+
+    if (process.env.NODE_ENV === 'production' && !refreshSecret) {
+      return res.status(503).json({
+        error: 'Authentication service unavailable. JWT_REFRESH_SECRET must be configured in production.',
+      });
+    }
 
     let decoded: any;
-    try {
-      decoded = jwt.verify(refreshToken, refreshSecret);
-    } catch (e) {
-      return res.json({ status: "success", message: "Logged out" });
+    if (!refreshSecret) {
+      console.warn('[Auth] JWT_REFRESH_SECRET not configured, skipping token verification for logout');
+    } else {
+      try {
+        decoded = jwt.verify(refreshToken, refreshSecret);
+      } catch (e) {
+        return res.json({ status: "success", message: "Logged out" });
+      }
     }
 
     if (dbCommand && decoded && decoded.uid) {
