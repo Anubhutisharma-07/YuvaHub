@@ -1,5 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Users, PlusCircle, Search, UserCheck, Clock, CheckCircle2, XCircle, AlertCircle, ShieldAlert, Sparkles, Filter } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import type { FormEvent } from 'react';
+import { 
+  Users, 
+  PlusCircle, 
+  Search, 
+  UserCheck, 
+  CheckCircle2, 
+  AlertCircle 
+} from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { Team, JoinRequest } from '../../models/teamSchema';
 import { createTeam, fetchTeams, requestToJoinTeam, fetchTeamRequests, respondToJoinRequest } from '../../services/teamService';
@@ -69,7 +77,7 @@ export default function Teams() {
     loadTeams();
   }, [searchQuery, selectedRole, filterStatus]);
 
-  const handleCreateTeam = async (e: React.FormEvent) => {
+  const handleCreateTeam = async (e: FormEvent) => {
     e.preventDefault();
     if (!createForm.name || !createForm.description || !createForm.requiredRoles) {
       setCreateError('Please fill in all required fields.');
@@ -86,10 +94,11 @@ export default function Teams() {
 
       await createTeam({
         name: createForm.name,
-        opportunityTitle: createForm.opportunityTitle || undefined,
+        opportunityTitle: createForm.opportunityTitle,
         description: createForm.description,
         requiredRoles: rolesArray,
-        maxMembers: Number(createForm.maxMembers) || 4,
+        skills: rolesArray,
+        maxMembers: createForm.maxMembers,
       });
 
       setIsCreateOpen(false);
@@ -108,7 +117,7 @@ export default function Teams() {
     }
   };
 
-  const handleJoinRequest = async (e: React.FormEvent) => {
+  const handleJoinRequest = async (e: FormEvent) => {
     e.preventDefault();
     if (!selectedTeamForJoin || !joinForm.role) return;
 
