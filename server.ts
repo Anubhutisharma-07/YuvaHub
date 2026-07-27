@@ -39,12 +39,13 @@ const io = new SocketIOServer(server, {
 setSocketIO(io);
 
 app.use(cors());
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json({ limit: "5mb" }));
+app.use(express.urlencoded({ limit: "5mb", extended: true }));
 
 // Setup API Routes
 app.use("/api", apiRoutes);
 
-// ── SEO Routes (root-level for crawler discovery) ──────────────────────
+// â”€â”€ SEO Routes (root-level for crawler discovery) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 app.get("/robots.txt", (req: Request, res: Response) => {
   const baseUrl = process.env.APP_URL || "https://yuvahub.xyz";

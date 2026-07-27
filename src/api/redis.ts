@@ -1,4 +1,4 @@
-import Redis from "ioredis";
+﻿import Redis from "ioredis";
 import rateLimit, { MemoryStore } from "express-rate-limit";
 import { RedisStore } from "rate-limit-redis";
 import dotenv from "dotenv";
@@ -89,3 +89,99 @@ export const createFailOpenStore = (prefix: string) => {
     },
   };
 };
+
+export const DEFAULT_CACHE_TTL = 300;
+
+export function normalizeCacheTtl(
+  ttl: unknown,
+  fallback: number = DEFAULT_CACHE_TTL,
+): number {
+  const safeFallback =
+    Number.isSafeInteger(fallback) && fallback > 0
+      ? fallback
+      : DEFAULT_CACHE_TTL;
+
+  if (
+    typeof ttl !== "number" ||
+    !Number.isFinite(ttl) ||
+    !Number.isSafeInteger(ttl) ||
+    ttl <= 0
+  ) {
+    return safeFallback;
+  }
+
+  return ttl;
+}
+
+export async function cacheSet(
+  key: string,
+  value: unknown,
+  ttl: number = DEFAULT_CACHE_TTL,
+): Promise<boolean> {
+  if (
+    !redisClient ||
+    redisClient.status !== "ready"
+  ) {
+    return false;
+  }
+
+  const safeTtl = normalizeCacheTtl(ttl);
+
+  await redisClient.set(
+    key,
+    JSON.stringify(value),
+    "EX",
+    safeTtl,
+  );
+
+  return true;
+}
+
+export async function cacheGet<T = unknown>(
+  key: string,
+): Promise<T | null> {
+  if (
+    !redisClient ||
+    redisClient.status !== "ready"
+  ) {
+    return null;
+  }
+
+  const cached = await redisClient.get(key);
+
+  if (cached === null) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(cached) as T;
+  } catch {
+    await redisClient.del(key);
+    return null;
+  }
+}
+
+export async function getOrSet<T>(
+  key: string,
+  factory: () => Promise<T>,
+  ttl: number = DEFAULT_CACHE_TTL,
+): Promise<T> {
+  const cached = await cacheGet<T>(key);
+
+  if (cached !== null) {
+    return cached;
+  }
+
+  const value = await factory();
+
+  try {
+    await cacheSet(key, value, ttl);
+  } catch (error) {
+    console.error(
+      `[Cache] Unable to cache key ${key}:`,
+      error,
+    );
+  }
+
+  return value;
+}

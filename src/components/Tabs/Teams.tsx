@@ -1,18 +1,28 @@
-import { useState, useEffect } from 'react';
-import type { FormEvent } from 'react';
-import { 
-  Users, 
-  PlusCircle, 
-  Search, 
-  UserCheck, 
-  CheckCircle2, 
-  AlertCircle 
-} from 'lucide-react';
-import { useAppContext } from '../../context/AppContext';
-import { Team, JoinRequest } from '../../models/teamSchema';
-import { createTeam, fetchTeams, requestToJoinTeam, fetchTeamRequests, respondToJoinRequest } from '../../services/teamService';
-import { Badge } from '../Badge';
-import { EmptyState, ErrorState, SkeletonCard } from '../ui/states';
+import React, { useState, useEffect } from "react";
+import {
+  Users,
+  PlusCircle,
+  Search,
+  UserCheck,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  ShieldAlert,
+  Sparkles,
+  Filter,
+} from "lucide-react";
+import { useAppContext } from "../../context/AppContext";
+import { Team, JoinRequest } from "../../models/teamSchema";
+import {
+  createTeam,
+  fetchTeams,
+  requestToJoinTeam,
+  fetchTeamRequests,
+  respondToJoinRequest,
+} from "../../services/teamService";
+import { Badge } from "../Badge";
+import { EmptyState, ErrorState, SkeletonCard } from "../ui/states";
 
 export default function Teams() {
   const { user } = useAppContext();
@@ -21,21 +31,24 @@ export default function Teams() {
   const [error, setError] = useState<string | null>(null);
 
   // Search & Filter state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRole, setSelectedRole] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('open');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedRole, setSelectedRole] = useState("");
+  const [filterStatus, setFilterStatus] = useState<string>("open");
 
   // Modal / Dialog states
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [selectedTeamForJoin, setSelectedTeamForJoin] = useState<Team | null>(null);
-  const [selectedTeamForManage, setSelectedTeamForManage] = useState<Team | null>(null);
+  const [selectedTeamForJoin, setSelectedTeamForJoin] = useState<Team | null>(
+    null,
+  );
+  const [selectedTeamForManage, setSelectedTeamForManage] =
+    useState<Team | null>(null);
 
   // Create Form state
   const [createForm, setCreateForm] = useState({
-    name: '',
-    opportunityTitle: '',
-    description: '',
-    requiredRoles: '',
+    name: "",
+    opportunityTitle: "",
+    description: "",
+    requiredRoles: "",
     maxMembers: 4,
   });
   const [creating, setCreating] = useState(false);
@@ -43,8 +56,8 @@ export default function Teams() {
 
   // Join Form state
   const [joinForm, setJoinForm] = useState({
-    role: '',
-    message: '',
+    role: "",
+    message: "",
   });
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -63,11 +76,11 @@ export default function Teams() {
       const res = await fetchTeams({
         q: searchQuery,
         role: selectedRole,
-        status: filterStatus
+        status: filterStatus,
       });
       setTeams(res.teams || []);
     } catch (err: any) {
-      setError(err.message || 'Failed to load teams');
+      setError(err.message || "Failed to load teams");
     } finally {
       setLoading(false);
     }
@@ -79,39 +92,52 @@ export default function Teams() {
 
   const handleCreateTeam = async (e: FormEvent) => {
     e.preventDefault();
-    if (!createForm.name || !createForm.description || !createForm.requiredRoles) {
-      setCreateError('Please fill in all required fields.');
+
+    const requiredRoles = createForm.requiredRoles
+      .split(",")
+      .map((role) => role.trim())
+      .filter(Boolean);
+
+    if (!createForm.name.trim()) {
+      setCreateError("Team name is required.");
+      return;
+    }
+
+    if (!createForm.description.trim()) {
+      setCreateError("Team description is required.");
+      return;
+    }
+
+    if (requiredRoles.length === 0) {
+      setCreateError("Please enter at least one required role or skill.");
       return;
     }
 
     try {
       setCreating(true);
       setCreateError(null);
-      const rolesArray = createForm.requiredRoles
-        .split(',')
-        .map(r => r.trim())
-        .filter(Boolean);
 
       await createTeam({
-        name: createForm.name,
-        opportunityTitle: createForm.opportunityTitle,
-        description: createForm.description,
-        requiredRoles: rolesArray,
-        skills: rolesArray,
-        maxMembers: createForm.maxMembers,
+        name: createForm.name.trim(),
+        opportunityTitle: createForm.opportunityTitle.trim(),
+        description: createForm.description.trim(),
+        requiredRoles,
+        skills: requiredRoles,
+        maxMembers: Number(createForm.maxMembers) || 4,
       });
 
       setIsCreateOpen(false);
       setCreateForm({
-        name: '',
-        opportunityTitle: '',
-        description: '',
-        requiredRoles: '',
+        name: "",
+        opportunityTitle: "",
+        description: "",
+        requiredRoles: "",
         maxMembers: 4,
       });
+
       await loadTeams();
     } catch (err: any) {
-      setCreateError(err.message || 'Failed to create team');
+      setCreateError(err.message || "Failed to create team");
     } finally {
       setCreating(false);
     }
@@ -132,14 +158,14 @@ export default function Teams() {
         message: joinForm.message,
       });
 
-      setJoinSuccess('Join request submitted successfully!');
+      setJoinSuccess("Join request submitted successfully!");
       setTimeout(() => {
         setSelectedTeamForJoin(null);
         setJoinSuccess(null);
-        setJoinForm({ role: '', message: '' });
+        setJoinForm({ role: "", message: "" });
       }, 1500);
     } catch (err: any) {
-      setJoinError(err.message || 'Failed to submit join request');
+      setJoinError(err.message || "Failed to submit join request");
     } finally {
       setJoining(false);
     }
@@ -156,26 +182,33 @@ export default function Teams() {
       const res = await fetchTeamRequests(teamId);
       setRequests(res.requests || []);
     } catch (err: any) {
-      setManageError(err.message || 'Failed to load requests');
+      setManageError(err.message || "Failed to load requests");
     } finally {
       setLoadingRequests(false);
     }
   };
 
-  const handleRespondRequest = async (requestId: string, action: 'accept' | 'reject') => {
+  const handleRespondRequest = async (
+    requestId: string,
+    action: "accept" | "reject",
+  ) => {
     try {
       setRespondingId(requestId);
       setManageError(null);
       await respondToJoinRequest(requestId, { action });
 
-      setRequests(prev =>
-        prev.map(r => ((r.id || r._id) === requestId ? { ...r, status: action === 'accept' ? 'accepted' : 'rejected' } : r))
+      setRequests((prev) =>
+        prev.map((r) =>
+          (r.id || r._id) === requestId
+            ? { ...r, status: action === "accept" ? "accepted" : "rejected" }
+            : r,
+        ),
       );
 
       // Refresh teams list to update member counts
       await loadTeams();
     } catch (err: any) {
-      setManageError(err.message || 'Failed to update request status');
+      setManageError(err.message || "Failed to update request status");
     } finally {
       setRespondingId(null);
     }
@@ -191,13 +224,14 @@ export default function Teams() {
             Team Builder & Teammate Matcher
           </h1>
           <p className="text-gray-500 mt-1 font-medium">
-            Find teammates for upcoming hackathons, research projects, or build your dream squad.
+            Find teammates for upcoming hackathons, research projects, or build
+            your dream squad.
           </p>
         </div>
         <button
           onClick={() => {
             if (!user) {
-              alert('Please sign in to create a team.');
+              alert("Please sign in to create a team.");
               return;
             }
             setIsCreateOpen(true);
@@ -217,7 +251,7 @@ export default function Teams() {
             type="text"
             placeholder="Search teams by name, hackathon, or project description..."
             value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white"
           />
         </div>
@@ -227,13 +261,13 @@ export default function Teams() {
             type="text"
             placeholder="Filter by role/skill (e.g. React)..."
             value={selectedRole}
-            onChange={e => setSelectedRole(e.target.value)}
+            onChange={(e) => setSelectedRole(e.target.value)}
             className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-48"
           />
 
           <select
             value={filterStatus}
-            onChange={e => setFilterStatus(e.target.value)}
+            onChange={(e) => setFilterStatus(e.target.value)}
             className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="open">Open Teams</option>
@@ -267,11 +301,13 @@ export default function Teams() {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {teams.map(team => {
-            const teamId = team.id || team._id || '';
+          {teams.map((team) => {
+            const teamId = team.id || team._id || "";
             const isLeader = user && team.leaderUid === user.uid;
-            const isMember = user && team.members?.some(m => m.uid === user.uid);
-            const isFull = (team.members?.length || 0) >= (team.maxMembers || 4);
+            const isMember =
+              user && team.members?.some((m) => m.uid === user.uid);
+            const isFull =
+              (team.members?.length || 0) >= (team.maxMembers || 4);
 
             return (
               <div
@@ -283,12 +319,16 @@ export default function Teams() {
                   <div className="flex justify-between items-start gap-2">
                     <div>
                       <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
-                        {team.opportunityTitle || 'Hackathon Team'}
+                        {team.opportunityTitle || "Hackathon Team"}
                       </span>
-                      <h3 className="text-xl font-bold text-gray-900 mt-2">{team.name}</h3>
+                      <h3 className="text-xl font-bold text-gray-900 mt-2">
+                        {team.name}
+                      </h3>
                     </div>
-                    <Badge variant={team.status === 'open' ? 'status' : 'neutral'}>
-                      {team.status === 'open' ? 'Recruiting' : 'Full'}
+                    <Badge
+                      variant={team.status === "open" ? "status" : "neutral"}
+                    >
+                      {team.status === "open" ? "Recruiting" : "Full"}
                     </Badge>
                   </div>
 
@@ -316,10 +356,14 @@ export default function Teams() {
                   {/* Members list preview */}
                   <div className="border-t border-gray-100 pt-3 flex items-center justify-between text-xs text-gray-500">
                     <span className="font-medium text-gray-700">
-                      Leader: <span className="text-indigo-600 font-semibold">{team.leaderName}</span>
+                      Leader:{" "}
+                      <span className="text-indigo-600 font-semibold">
+                        {team.leaderName}
+                      </span>
                     </span>
                     <span className="bg-gray-50 px-2 py-1 rounded-md border border-gray-100 font-semibold">
-                      {team.members?.length || 0} / {team.maxMembers || 4} Members
+                      {team.members?.length || 0} / {team.maxMembers || 4}{" "}
+                      Members
                     </span>
                   </div>
                 </div>
@@ -340,22 +384,25 @@ export default function Teams() {
                     </span>
                   ) : (
                     <button
-                      disabled={isFull || team.status === 'closed'}
+                      disabled={isFull || team.status === "closed"}
                       onClick={() => {
                         if (!user) {
-                          alert('Please sign in to submit a join request.');
+                          alert("Please sign in to submit a join request.");
                           return;
                         }
                         setSelectedTeamForJoin(team);
-                        setJoinForm({ role: team.requiredRoles[0] || '', message: '' });
+                        setJoinForm({
+                          role: team.requiredRoles[0] || "",
+                          message: "",
+                        });
                       }}
                       className={`w-full py-2 font-semibold rounded-lg text-sm transition-colors flex items-center justify-center gap-2 ${
-                        isFull || team.status === 'closed'
-                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm'
+                        isFull || team.status === "closed"
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                          : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
                       }`}
                     >
-                      {isFull ? 'Team Full' : 'Request to Join'}
+                      {isFull ? "Team Full" : "Request to Join"}
                     </button>
                   )}
                 </div>
@@ -369,7 +416,9 @@ export default function Teams() {
       {isCreateOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl space-y-4">
-            <h2 className="text-xl font-bold text-gray-900">Create a New Team</h2>
+            <h2 className="text-xl font-bold text-gray-900">
+              Create a New Team
+            </h2>
 
             {createError && (
               <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex items-center gap-2">
@@ -380,62 +429,94 @@ export default function Teams() {
 
             <form onSubmit={handleCreateTeam} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Team Name *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Team Name *
+                </label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Code Ninjas"
                   value={createForm.name}
-                  onChange={e => setCreateForm({ ...createForm, name: e.target.value })}
+                  onChange={(e) =>
+                    setCreateForm({ ...createForm, name: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Associated Hackathon / Opportunity</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Associated Hackathon / Opportunity
+                </label>
                 <input
                   type="text"
                   placeholder="e.g. Smart India Hackathon 2026"
                   value={createForm.opportunityTitle}
-                  onChange={e => setCreateForm({ ...createForm, opportunityTitle: e.target.value })}
+                  onChange={(e) =>
+                    setCreateForm({
+                      ...createForm,
+                      opportunityTitle: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Required Roles/Skills (Comma separated) *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Required Roles/Skills (Comma separated) *
+                </label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Frontend Developer, UI/UX Designer, ML Engineer"
                   value={createForm.requiredRoles}
-                  onChange={e => setCreateForm({ ...createForm, requiredRoles: e.target.value })}
+                  onChange={(e) =>
+                    setCreateForm({
+                      ...createForm,
+                      requiredRoles: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Max Team Size *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Max Team Size *
+                  </label>
                   <input
                     type="number"
                     min={2}
                     max={20}
                     value={createForm.maxMembers}
-                    onChange={e => setCreateForm({ ...createForm, maxMembers: Number(e.target.value) })}
+                    onChange={(e) =>
+                      setCreateForm({
+                        ...createForm,
+                        maxMembers: Number(e.target.value),
+                      })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Team Description *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Team Description *
+                </label>
                 <textarea
                   required
                   rows={3}
                   placeholder="Describe your project idea, goals, or expectations for teammates..."
                   value={createForm.description}
-                  onChange={e => setCreateForm({ ...createForm, description: e.target.value })}
+                  onChange={(e) =>
+                    setCreateForm({
+                      ...createForm,
+                      description: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
               </div>
@@ -453,7 +534,7 @@ export default function Teams() {
                   disabled={creating}
                   className="px-5 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 disabled:opacity-50"
                 >
-                  {creating ? 'Creating...' : 'Publish Team'}
+                  {creating ? "Creating..." : "Publish Team"}
                 </button>
               </div>
             </form>
@@ -466,7 +547,10 @@ export default function Teams() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl space-y-4">
             <h2 className="text-xl font-bold text-gray-900">
-              Apply to join <span className="text-indigo-600">{selectedTeamForJoin.name}</span>
+              Apply to join{" "}
+              <span className="text-indigo-600">
+                {selectedTeamForJoin.name}
+              </span>
             </h2>
 
             {joinError && (
@@ -485,10 +569,14 @@ export default function Teams() {
 
             <form onSubmit={handleJoinRequest} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Select Role You Excel At *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Select Role You Excel At *
+                </label>
                 <select
                   value={joinForm.role}
-                  onChange={e => setJoinForm({ ...joinForm, role: e.target.value })}
+                  onChange={(e) =>
+                    setJoinForm({ ...joinForm, role: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 >
                   {selectedTeamForJoin.requiredRoles.map((r, i) => (
@@ -500,12 +588,16 @@ export default function Teams() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Introductory Pitch / Note</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Introductory Pitch / Note
+                </label>
                 <textarea
                   rows={3}
                   placeholder="Share a link to your GitHub/Portfolio or explain your experience..."
                   value={joinForm.message}
-                  onChange={e => setJoinForm({ ...joinForm, message: e.target.value })}
+                  onChange={(e) =>
+                    setJoinForm({ ...joinForm, message: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
               </div>
@@ -523,7 +615,7 @@ export default function Teams() {
                   disabled={joining}
                   className="px-5 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 disabled:opacity-50"
                 >
-                  {joining ? 'Sending...' : 'Send Request'}
+                  {joining ? "Sending..." : "Send Request"}
                 </button>
               </div>
             </form>
@@ -559,13 +651,17 @@ export default function Teams() {
             )}
 
             {loadingRequests ? (
-              <div className="text-center py-8 text-gray-500">Loading requests...</div>
+              <div className="text-center py-8 text-gray-500">
+                Loading requests...
+              </div>
             ) : requests.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">No join requests received yet.</div>
+              <div className="text-center py-8 text-gray-500">
+                No join requests received yet.
+              </div>
             ) : (
               <div className="space-y-3">
-                {requests.map(req => {
-                  const reqId = req.id || req._id || '';
+                {requests.map((req) => {
+                  const reqId = req.id || req._id || "";
                   return (
                     <div
                       key={reqId}
@@ -573,7 +669,9 @@ export default function Teams() {
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-gray-900 text-sm">{req.applicantName}</span>
+                          <span className="font-bold text-gray-900 text-sm">
+                            {req.applicantName}
+                          </span>
                           <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-semibold">
                             Role: {req.role}
                           </span>
@@ -583,29 +681,40 @@ export default function Teams() {
                             "{req.message}"
                           </p>
                         )}
-                        <p className="text-[11px] text-gray-400">Applied on {new Date(req.createdAt).toLocaleDateString()}</p>
+                        <p className="text-[11px] text-gray-400">
+                          Applied on{" "}
+                          {new Date(req.createdAt).toLocaleDateString()}
+                        </p>
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
-                        {req.status === 'pending' ? (
+                        {req.status === "pending" ? (
                           <>
                             <button
                               disabled={respondingId === reqId}
-                              onClick={() => handleRespondRequest(reqId, 'accept')}
+                              onClick={() =>
+                                handleRespondRequest(reqId, "accept")
+                              }
                               className="px-3 py-1.5 bg-green-600 text-white rounded text-xs font-semibold hover:bg-green-700 transition-colors disabled:opacity-50"
                             >
                               Accept
                             </button>
                             <button
                               disabled={respondingId === reqId}
-                              onClick={() => handleRespondRequest(reqId, 'reject')}
+                              onClick={() =>
+                                handleRespondRequest(reqId, "reject")
+                              }
                               className="px-3 py-1.5 bg-red-600 text-white rounded text-xs font-semibold hover:bg-red-700 transition-colors disabled:opacity-50"
                             >
                               Reject
                             </button>
                           </>
                         ) : (
-                          <Badge variant={req.status === 'accepted' ? 'status' : 'neutral'}>
+                          <Badge
+                            variant={
+                              req.status === "accepted" ? "status" : "neutral"
+                            }
+                          >
                             {req.status.toUpperCase()}
                           </Badge>
                         )}

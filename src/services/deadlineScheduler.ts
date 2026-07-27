@@ -2,7 +2,10 @@ import { ObjectId } from "mongodb";
 import { enqueueEmail } from "../queues/emailQueue";
 import { enqueuePushNotification } from "../queues/pushQueue";
 import { getSocketIO } from "../api/socketInstance.js";
-import { generateDeadlineReminderHtml, generateWeeklyDigestHtml } from "../workers/emailTemplates";
+import {
+  generateDeadlineReminderHtml,
+  generateWeeklyDigestHtml,
+} from "../workers/emailTemplates";
 
 export async function runDeadlineChecks(db: any): Promise<void> {
   if (!db) {
@@ -18,15 +21,19 @@ export async function runDeadlineChecks(db: any): Promise<void> {
     const notifCollection = db.collection("notifications");
 
     // Fetch all users who have bookmarks
-    const users = await usersCollection.find({
-      bookmarks: { $exists: true, $not: { $size: 0 } }
-    }).toArray();
+    const users = await usersCollection
+      .find({
+        bookmarks: { $exists: true, $not: { $size: 0 } },
+      })
+      .toArray();
 
     const now = new Date();
 
     // Filter users who have deadline reminders enabled
-    const activeUsers = users.filter((user: any) => {
-      const prefs = user.notificationPreferences || { deadlineRemindersEnabled: true };
+    const activeUsers = users.filter((user) => {
+      const prefs = user.notificationPreferences || {
+        deadlineRemindersEnabled: true,
+      };
       return prefs.deadlineRemindersEnabled !== false;
     });
 
@@ -69,9 +76,11 @@ export async function runDeadlineChecks(db: any): Promise<void> {
         queryConditions.push({ _id: { $in: objectIds } });
       }
 
-      const opportunities = await oppsCollection.find({
-        $or: queryConditions
-      }).toArray();
+      const opportunities = await oppsCollection
+        .find({
+          $or: queryConditions,
+        })
+        .toArray();
 
       for (const opp of opportunities) {
         if (opp._id) {
@@ -86,10 +95,12 @@ export async function runDeadlineChecks(db: any): Promise<void> {
     // Batch step 3: Bulk fetch existing deadline_reminder notifications for active users in 1 MongoDB query
     const notifiedSet = new Set<string>();
     if (activeUserUids.length > 0) {
-      const existingNotifs = await notifCollection.find({
-        userId: { $in: activeUserUids },
-        type: "deadline_reminder"
-      }).toArray();
+      const existingNotifs = await notifCollection
+        .find({
+          userId: { $in: activeUserUids },
+          type: "deadline_reminder",
+        })
+        .toArray();
 
       for (const notif of existingNotifs) {
         const key = `${notif.userId}:${notif.targetId}:${notif.title}`;
@@ -107,7 +118,7 @@ export async function runDeadlineChecks(db: any): Promise<void> {
         skillAlertsEnabled: true,
         scholarshipAlertsEnabled: true,
         hackathonAlertsEnabled: true,
-        opportunityAlertsEnabled: true
+        opportunityAlertsEnabled: true,
       };
 
       const bookmarks = user.bookmarks || [];
@@ -121,7 +132,11 @@ export async function runDeadlineChecks(db: any): Promise<void> {
         }
 
         const deadlineStr = opportunity.deadline;
-        if (!deadlineStr || deadlineStr.toLowerCase() === "tbd" || deadlineStr.toLowerCase() === "rolling") {
+        if (
+          !deadlineStr ||
+          deadlineStr.toLowerCase() === "tbd" ||
+          deadlineStr.toLowerCase() === "rolling"
+        ) {
           continue;
         }
 
@@ -168,12 +183,14 @@ export async function runDeadlineChecks(db: any): Promise<void> {
           targetId: oppIdStr,
           read: false,
           createdAt: new Date(),
-          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
         };
 
         await notifCollection.insertOne(notificationDoc);
         notifiedSet.add(notifKey);
-        console.log(`[DeadlineScheduler] Reminded user ${userId} of deadline for opportunity ${oppId} (${diffDays} days left)`);
+        console.log(
+          `[DeadlineScheduler] Reminded user ${user.uid} of deadline for opportunity ${oppId} (${diffDays} days left)`,
+        );
 
         // Real-Time Socket.io push (foreground handling)
         const io = getSocketIO();
@@ -181,7 +198,7 @@ export async function runDeadlineChecks(db: any): Promise<void> {
           io.emit(`NOTIFICATION_RECEIVED_${userId}`, {
             id: oppId + "_" + diffDays,
             ...notificationDoc,
-            time: "Just now"
+            time: "Just now",
           });
         }
 
@@ -189,30 +206,35 @@ export async function runDeadlineChecks(db: any): Promise<void> {
         if (prefs.emailEnabled && user.email) {
           const html = generateDeadlineReminderHtml(
             opportunity.title,
-            opportunity.company || opportunity.organization || 'YuvaHub Partner',
+            opportunity.company ||
+              opportunity.organization ||
+              "YuvaHub Partner",
             deadline.toLocaleDateString(),
-            diffDays
+            diffDays,
           );
 
           await enqueueEmail({
             to: user.email,
             subject: `[YuvaHub] ${title}: ${opportunity.title}`,
             body: message,
-            html
+            html,
           });
         }
 
         // Enqueue background push job
         if (prefs.pushEnabled && user.fcmToken) {
           await enqueuePushNotification({
-            userId: userId,
-            message: `[YuvaHub] ${title}: ${opportunity.title}`
+            userId: user.uid,
+            message: `[YuvaHub] ${title}: ${opportunity.title}`,
           });
         }
       }
     }
   } catch (err) {
-    console.error("[DeadlineScheduler] Error running deadline reminders check:", err);
+    console.error(
+      "[DeadlineScheduler] Error running deadline reminders check:",
+      err,
+    );
   }
 }
 
@@ -228,14 +250,16 @@ export async function runWeeklyDigest(db: any): Promise<void> {
     const usersCollection = db.collection("users");
     const oppsCollection = db.collection("opportunities");
 
-    const users = await usersCollection.find({
-      bookmarks: { $exists: true, $not: { $size: 0 } }
-    }).toArray();
+    const users = await usersCollection
+      .find({
+        bookmarks: { $exists: true, $not: { $size: 0 } },
+      })
+      .toArray();
 
     const now = new Date();
     const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-    const activeUsers = users.filter((user: any) => {
+    const activeUsers = users.filter((user) => {
       if (!user.email) return false;
       const prefs = user.notificationPreferences || { emailEnabled: true };
       return prefs.emailEnabled !== false;
@@ -274,9 +298,11 @@ export async function runWeeklyDigest(db: any): Promise<void> {
         queryConditions.push({ _id: { $in: objectIds } });
       }
 
-      const opportunities = await oppsCollection.find({
-        $or: queryConditions
-      }).toArray();
+      const opportunities = await oppsCollection
+        .find({
+          $or: queryConditions,
+        })
+        .toArray();
 
       for (const opp of opportunities) {
         if (opp._id) {
@@ -290,7 +316,11 @@ export async function runWeeklyDigest(db: any): Promise<void> {
 
     for (const user of activeUsers) {
       const bookmarks = user.bookmarks || [];
-      const expiringOpps: Array<{ title: string; org: string; deadline: string }> = [];
+      const expiringOpps: Array<{
+        title: string;
+        org: string;
+        deadline: string;
+      }> = [];
 
       for (const oppId of bookmarks) {
         const opp = oppMap.get(String(oppId));
@@ -302,21 +332,26 @@ export async function runWeeklyDigest(db: any): Promise<void> {
         if (deadline >= now && deadline <= nextWeek) {
           expiringOpps.push({
             title: opp.title,
-            org: opp.company || opp.organization || '',
-            deadline: deadline.toLocaleDateString()
+            org: opp.company || opp.organization || "",
+            deadline: deadline.toLocaleDateString(),
           });
         }
       }
 
       if (expiringOpps.length > 0) {
-        const html = generateWeeklyDigestHtml(user.name || 'Student', expiringOpps);
+        const html = generateWeeklyDigestHtml(
+          user.name || "Student",
+          expiringOpps,
+        );
         await enqueueEmail({
           to: user.email,
           subject: `[YuvaHub] Your Weekly Bookmarks Summary Digest (${expiringOpps.length} Deadlines Closing Soon)`,
-          body: `Hello ${user.name || 'Student'}, you have ${expiringOpps.length} bookmarked opportunities with deadlines this week.`,
-          html
+          body: `Hello ${user.name || "Student"}, you have ${expiringOpps.length} bookmarked opportunities with deadlines this week.`,
+          html,
         });
-        console.log(`[DeadlineScheduler] Sent weekly digest to ${user.email} with ${expiringOpps.length} opportunities.`);
+        console.log(
+          `[DeadlineScheduler] Sent weekly digest to ${user.email} with ${expiringOpps.length} opportunities.`,
+        );
       }
     }
   } catch (err) {
