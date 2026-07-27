@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { dbCommand, dbQuery } from "../db.js";
-import { safeObjectId } from "../../lib/utils.js";
+import { safeObjectId, normalizeParam } from "../../lib/utils.js";
 import { z } from "zod";
 import { getGenAI } from "../genai.js";
 import { ScholarshipSchema, AIEvaluationResponseSchema } from "../../models/scholarshipSchema.js";
@@ -10,7 +10,7 @@ export const createScholarship = async (req: Request, res: Response, next: NextF
   try {
     if (!dbCommand || !dbQuery) return res.status(503).json({ success: false, error: "Database not available" });
     const parsedData = req.body;
-    const collection = dbQuery.collection("scholarships");
+    const collection = dbCommand.collection("scholarships");
     const result = await collection.insertOne(parsedData);
     res.status(201).json({ success: true, id: result.insertedId, ...parsedData });
   } catch (err: any) {
@@ -45,11 +45,17 @@ export const getScholarships = async (req: Request, res: Response) => {
 
 export const getScholarshipById = async (req: Request, res: Response) => {
   try {
+    // Issue #285: normalize `string | string[]` param BEFORE the DB
+    // availability check so an invalid/missing id is rejected with 400
+    // even when the database is offline.
+    const idStr = normalizeParam(req.params.id);
+    if (!idStr) {
+      return res.status(400).json({ error: "Missing or invalid id" });
+    }
     if (!dbCommand || !dbQuery) return res.status(503).json({ error: "Database not available" });
-    const id = req.params.id;
     const collection = dbQuery.collection("scholarships");
-    const oid = safeObjectId(id);
-    const queryId = oid || id;
+    const oid = safeObjectId(idStr);
+    const queryId = oid || idStr;
     const item = await collection.findOne({ _id: queryId });
     if (!item) return res.status(404).json({ error: "Scholarship not found" });
     res.json(item);
@@ -60,13 +66,17 @@ export const getScholarshipById = async (req: Request, res: Response) => {
 
 export const updateScholarship = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // Issue #285: normalize `string | string[]` param BEFORE the DB
+    // availability check.
+    const idStr = normalizeParam(req.params.id);
+    if (!idStr) {
+      return res.status(400).json({ success: false, error: "Missing or invalid id" });
+    }
     if (!dbCommand || !dbQuery) return res.status(503).json({ success: false, error: "Database not available" });
-    const rawId = req.params.id;
-    const id = Array.isArray(rawId) ? rawId[0] : rawId;
     const parsedData = { ...req.body, updated_at: new Date() };
-    const collection = dbQuery.collection("scholarships");
-    const oid = safeObjectId(id);
-    const queryId = oid || id;
+    const collection = dbCommand.collection("scholarships");
+    const oid = safeObjectId(idStr);
+    const queryId = oid || idStr;
 
     await collection.updateOne({ _id: queryId }, { $set: parsedData });
     res.json({ success: true, updated: true });
@@ -77,12 +87,16 @@ export const updateScholarship = async (req: Request, res: Response, next: NextF
 
 export const deleteScholarship = async (req: Request, res: Response) => {
   try {
+    // Issue #285: normalize `string | string[]` param BEFORE the DB
+    // availability check.
+    const idStr = normalizeParam(req.params.id);
+    if (!idStr) {
+      return res.status(400).json({ error: "Missing or invalid id" });
+    }
     if (!dbCommand || !dbQuery) return res.status(503).json({ error: "Database not available" });
-    const rawId = req.params.id;
-    const id = Array.isArray(rawId) ? rawId[0] : rawId;
-    const collection = dbQuery.collection("scholarships");
-    const oid = safeObjectId(id);
-    const queryId = oid || id;
+    const collection = dbCommand.collection("scholarships");
+    const oid = safeObjectId(idStr);
+    const queryId = oid || idStr;
     let deleted = true;
     if (collection.deleteOne) {
       const result = await collection.deleteOne({ _id: queryId });
@@ -117,10 +131,10 @@ You are an expert AI Eligibility Validator for a scholarship platform.
 Determine if the following user is eligible for the scholarship based on the criteria.
 
 Scholarship Criteria:
-${JSON.stringify(scholarship, null, 2)}
+ ${JSON.stringify(scholarship, null, 2)}
 
 User Profile:
-${JSON.stringify(userProfile, null, 2)}
+ ${JSON.stringify(userProfile, null, 2)}
 `;
 
     const response = await ai.models.generateContent({

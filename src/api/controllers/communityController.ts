@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
 import { ObjectId } from "mongodb";
-import { safeObjectId } from "../../lib/utils.js";
+import { safeObjectId, normalizeParam } from "../../lib/utils.js";
+import escapeHtml from "escape-html";
 
 const containsProfanity = (text: string): boolean => {
   const profanityRegex = /\b(badword|abuse|hate|spam|scam|idiot|stupid|bastard)\b/i;
@@ -49,9 +50,9 @@ export const createPost = async (req: Request, res: Response) => {
     }
 
     const post = {
-      title: title || "Community Discussion",
-      content,
-      author: author || req.user?.name || req.user?.email || "Anonymous",
+      title: escapeHtml(title || "Community Discussion"),
+      content: escapeHtml(content),
+      author: escapeHtml(author || req.user?.name || req.user?.email || "Anonymous"),
       authorUid: userUid,
       type: type || "Update",
       tags: Array.isArray(tags) ? tags : ["General"],
@@ -76,8 +77,12 @@ export const createPost = async (req: Request, res: Response) => {
 
 export const deletePost = async (req: Request, res: Response) => {
   try {
-    const { postId } = req.params;
-    const idStr = Array.isArray(postId) ? postId[0] : postId;
+    // Issue #285: route params can be `string | string[]` at runtime.
+    // Normalize before any string operation or ObjectId construction.
+    const idStr = normalizeParam(req.params.postId);
+    if (!idStr) {
+      return res.status(400).json({ error: "Missing or invalid postId" });
+    }
     if (dbCommand) {
       const oid = safeObjectId(idStr);
       const queryId = oid || idStr;
@@ -92,11 +97,15 @@ export const deletePost = async (req: Request, res: Response) => {
 
 export const getPostById = async (req: Request, res: Response) => {
   try {
-    const { postId } = req.params;
+    // Issue #285: normalize `string | string[]` param before use.
+    const idStr = normalizeParam(req.params.postId);
+    if (!idStr) {
+      return res.status(400).json({ error: "Missing or invalid postId" });
+    }
     if (!dbCommand || !dbQuery) return res.status(503).json({ error: "Database not available" });
 
-    const oid = safeObjectId(postId);
-    const queryId = oid || postId;
+    const oid = safeObjectId(idStr);
+    const queryId = oid || idStr;
 
     const post = await dbQuery.collection("posts").findOne({ _id: queryId });
     if (!post) {
@@ -111,7 +120,11 @@ export const getPostById = async (req: Request, res: Response) => {
 
 export const createComment = async (req: Request, res: Response) => {
   try {
-    const { postId } = req.params;
+    // Issue #285: normalize `string | string[]` param before use.
+    const postIdStr = normalizeParam(req.params.postId);
+    if (!postIdStr) {
+      return res.status(400).json({ error: "Missing or invalid postId" });
+    }
     const { content, author, parentId } = req.body;
 
     if (!content || !author) {
@@ -131,15 +144,15 @@ export const createComment = async (req: Request, res: Response) => {
       }
       path = parentComment.path + commentId.toString() + ",";
     } else {
-      path = `,${postId},${commentId.toString()},`;
+      path = `,${postIdStr},${commentId.toString()},`;
     }
 
     const comment = {
       _id: commentId,
-      postId,
+      postId: postIdStr,
       parentId: parentId || null,
-      content,
-      author,
+      content: escapeHtml(content),
+      author: escapeHtml(author),
       path,
       upvotes: 0,
       upvoted_by: [] as string[],
@@ -157,7 +170,12 @@ export const createComment = async (req: Request, res: Response) => {
 
 export const editComment = async (req: Request, res: Response) => {
   try {
-    const { postId, commentId } = req.params;
+    // Issue #285: normalize both `:postId` and `:commentId` params.
+    const postIdStr = normalizeParam(req.params.postId);
+    const commentIdStr = normalizeParam(req.params.commentId);
+    if (!postIdStr || !commentIdStr) {
+      return res.status(400).json({ error: "Missing or invalid postId/commentId" });
+    }
     const { content } = req.body;
 
     if (!content) {
@@ -165,11 +183,11 @@ export const editComment = async (req: Request, res: Response) => {
     }
     if (!dbCommand || !dbQuery) return res.status(503).json({ error: "Database not available" });
 
-    const oid = typeof commentId === 'string' ? safeObjectId(commentId) : null;
-    const queryId = oid || commentId;
+    const oid = safeObjectId(commentIdStr);
+    const queryId = oid || commentIdStr;
 
     const result = await dbCommand.collection("comments").findOneAndUpdate(
-      { _id: queryId, postId },
+      { _id: queryId, postId: postIdStr },
       { $set: { content, updatedAt: new Date() } },
       { returnDocument: "after" }
     );
@@ -187,10 +205,17 @@ export const editComment = async (req: Request, res: Response) => {
 
 export const getComments = async (req: Request, res: Response) => {
   try {
-    const { postId } = req.params;
+    // Issue #285: normalize `string | string[]` param BEFORE calling
+    // `.replace()` on it — the old code would crash with
+    // `postId.replace is not a function` if Express delivered an array.
+    const postIdStr = normalizeParam(req.params.postId);
+    if (!postIdStr) {
+      return res.status(400).json({ error: "Missing or invalid postId" });
+    }
     if (dbQuery) {
+      const escapedPostId = postIdStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const comments = await dbQuery.collection("comments")
-        .find({ $or: [{ postId }, { path: new RegExp('^,' + postId + ',') }] })
+        .find({ $or: [{ postId: postIdStr }, { path: new RegExp('^,' + escapedPostId + ',') }] })
         .sort({ createdAt: -1 })
         .toArray();
 
@@ -200,8 +225,8 @@ export const getComments = async (req: Request, res: Response) => {
     }
 
     res.json([
-      { _id: "c_101", postId, author: "Neha Sharma", content: "Great resource! Thanks for sharing the roadmap repo.", createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString() },
-      { _id: "c_102", postId, author: "Vikas Kumar", content: "Super helpful! Added to my study bookmarks.", createdAt: new Date(Date.now() - 10 * 60 * 1000).toISOString() }
+      { _id: "c_101", postId: postIdStr, author: "Neha Sharma", content: "Great resource! Thanks for sharing the roadmap repo.", createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString() },
+      { _id: "c_102", postId: postIdStr, author: "Vikas Kumar", content: "Super helpful! Added to my study bookmarks.", createdAt: new Date(Date.now() - 10 * 60 * 1000).toISOString() }
     ]);
   } catch (err) {
     console.error("Fetch Comments Error:", err);
@@ -211,8 +236,11 @@ export const getComments = async (req: Request, res: Response) => {
 
 export const upvotePost = async (req: Request, res: Response) => {
   try {
-    const { postId } = req.params;
-    const idStr = Array.isArray(postId) ? postId[0] : postId;
+    // Issue #285: normalize `string | string[]` param before use.
+    const idStr = normalizeParam(req.params.postId);
+    if (!idStr) {
+      return res.status(400).json({ error: "Missing or invalid postId" });
+    }
     const userId = req.user?.uid;
 
     if (!userId) {
