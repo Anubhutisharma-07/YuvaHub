@@ -90,7 +90,7 @@ export default function Teams() {
     loadTeams();
   }, [searchQuery, selectedRole, filterStatus]);
 
-  const handleCreateTeam = async (e: React.FormEvent) => {
+  const handleCreateTeam = async (e: FormEvent) => {
     e.preventDefault();
 
     const requiredRoles = createForm.requiredRoles
@@ -143,7 +143,7 @@ export default function Teams() {
     }
   };
 
-  const handleJoinRequest = async (e: React.FormEvent) => {
+  const handleJoinRequest = async (e: FormEvent) => {
     e.preventDefault();
     if (!selectedTeamForJoin || !joinForm.role) return;
 

@@ -1,7 +1,6 @@
 import { ObjectId } from "mongodb";
 import { enqueueEmail } from "../queues/emailQueue";
 import { enqueuePushNotification } from "../queues/pushQueue";
-import { Notification } from "../models/notificationSchema";
 import { getSocketIO } from "../api/socketInstance.js";
 import {
   generateDeadlineReminderHtml,
@@ -47,7 +46,8 @@ export async function runDeadlineChecks(db: any): Promise<void> {
     const activeUserUids: string[] = [];
 
     for (const user of activeUsers) {
-      if (user.uid) activeUserUids.push(user.uid);
+      const uid = user.uid || user._id?.toString() || user.id;
+      if (uid) activeUserUids.push(uid);
       const bookmarks = user.bookmarks || [];
       for (const oppId of bookmarks) {
         if (oppId) uniqueOppIds.add(String(oppId));
@@ -110,6 +110,7 @@ export async function runDeadlineChecks(db: any): Promise<void> {
 
     // Process each user and bookmark using O(1) in-memory Map & Set lookups
     for (const user of activeUsers) {
+      const userId = user.uid || user._id?.toString() || user.id;
       const prefs = user.notificationPreferences || {
         emailEnabled: true,
         pushEnabled: true,
@@ -168,18 +169,18 @@ export async function runDeadlineChecks(db: any): Promise<void> {
         }
 
         // Check if user was already notified for this exact deadline condition
-        const notifKey = `${user.uid}:${oppId}:${title}`;
+        const notifKey = `${userId}:${oppId}:${title}`;
         if (notifiedSet.has(notifKey)) {
           continue;
         }
 
         // Create the notification document
-        const notificationDoc: Notification = {
-          userId: user.uid,
+        const notificationDoc = {
+          userId,
           type: "deadline_reminder",
           title,
           message,
-          targetId: oppId,
+          targetId: oppIdStr,
           read: false,
           createdAt: new Date(),
           expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
@@ -194,7 +195,7 @@ export async function runDeadlineChecks(db: any): Promise<void> {
         // Real-Time Socket.io push (foreground handling)
         const io = getSocketIO();
         if (io) {
-          io.emit(`NOTIFICATION_RECEIVED_${user.uid}`, {
+          io.emit(`NOTIFICATION_RECEIVED_${userId}`, {
             id: oppId + "_" + diffDays,
             ...notificationDoc,
             time: "Just now",

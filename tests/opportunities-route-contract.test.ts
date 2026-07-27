@@ -24,7 +24,9 @@ async function startTestServer() {
   app.use("/api", apiRoutes);
 
   // This mirrors the production SPA fallback. API routes must resolve first.
-  app.get("*", (_req, res) => {
+  // Express 5 / path-to-regexp v8 requires a named wildcard — bare "*"
+  // throws "Missing parameter name at index 1". Use "*splat" instead.
+  app.get("*splat", (_req, res) => {
     res.status(404).json({
       error: "SPA fallback reached",
     });

@@ -105,7 +105,7 @@ export async function matchOpportunityAndNotify(
 
         // Create the notification document
         const message = `A new ${category} "${title}" matches your preferences. Check it out!`;
-        const notificationDoc: Notification = {
+        const notificationDoc = {
           userId: user.uid,
           type:
             category === "scholarship"

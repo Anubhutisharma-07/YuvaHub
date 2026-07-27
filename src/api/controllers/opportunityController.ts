@@ -270,18 +270,47 @@ export async function getRankedOpportunities(database: any, profile: any, page: 
 
 export const getOpportunities = async (req: Request, res: Response) => {
   try {
-    let page = parseInt((req.query.page as string) || "1", 10);
+    // ── Parse + validate pagination ────────────────────────────────────────
+    // The contract test (tests/opportunities-route-contract.test.ts) requires:
+    //   - non-numeric `page`  → 400
+    //   - `limit` > 100       → 400
+    //   - `cursor` (when present) overrides `page`
+    //   - response envelope: { success, data, items, pagination: {page,limit,totalItems,totalPages} }
+    const rawPage = (req.query.page as string) || "1";
+    const rawLimit = (req.query.limit as string) || "20";
+
+    const parsedPage = parseInt(rawPage, 10);
+    const parsedLimit = parseInt(rawLimit, 10);
+
+    if (isNaN(parsedPage) || parsedPage < 1) {
+      return sendBadRequest(res, `Invalid 'page' parameter: expected a positive integer, got ${JSON.stringify(rawPage)}`);
+    }
+    if (isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 100) {
+      return sendBadRequest(res, `Invalid 'limit' parameter: expected an integer between 1 and 100, got ${JSON.stringify(rawLimit)}`);
+    }
+
+    let page = parsedPage;
     if (req.query.cursor) {
       const cInt = parseInt(req.query.cursor as string, 10);
       if (!isNaN(cInt) && cInt > 0) page = cInt;
     }
-    const limit = parseInt((req.query.limit as string) || "10", 10);
+    const limit = parsedLimit;
 
+    // ── DB unavailable → return an empty (but well-formed) envelope ───────
+    // Previously this returned a single-item placeholder with a totally
+    // different shape (`num_results`/`items`). The contract test expects the
+    // same envelope whether or not the DB is connected, so we normalise here.
     if (!dbCommand || !dbQuery) {
+      const totalItems = 0;
+      const totalPages = 0;
       return res.json({
-        num_results: 1, next_page: null, next_cursor: null, items: [{
-          id: "sys_nodeDbMissing", title: "Awaiting Live Ingestion...", organization: "Yuvahub System", type: "status", tags: ["system"], apply_link: "#"
-        }]
+        success: true,
+        data: [],
+        items: [],
+        num_results: 0,
+        next_page: null,
+        next_cursor: null,
+        pagination: { page, limit, totalItems, totalPages },
       });
     }
 
@@ -293,11 +322,23 @@ export const getOpportunities = async (req: Request, res: Response) => {
 
     const result = await getRankedOpportunities(dbQuery, profile, page, limit);
 
+    // `getRankedOpportunities` returns `{ items, next_page }`. There is no
+    // cheap total-count call against the mock / Mongo cursor, so we estimate
+    // `totalItems` from the current page: if there's a next_page, the current
+    // page is full and there are more; otherwise the current page IS the tail.
+    const items = result.items || [];
+    const hasMore = Boolean(result.next_page);
+    const totalItems = hasMore ? page * limit + items.length : (page - 1) * limit + items.length;
+    const totalPages = hasMore ? page + 1 : page;
+
     res.json({
-      num_results: result.items.length,
+      success: true,
+      data: items,
+      items,
+      num_results: items.length,
       next_page: result.next_page,
       next_cursor: result.next_page ? String(result.next_page) : null,
-      items: result.items
+      pagination: { page, limit, totalItems, totalPages },
     });
   } catch (err) {
     console.error("/api/v1/opportunities error:", err);
