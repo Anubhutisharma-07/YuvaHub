@@ -140,18 +140,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // ─── Backend health check ─────────────────────────────────────────────────────
 
   useEffect(() => {
+    const abortController = new AbortController();
+    let mounted = true;
+
     const verifyFeedEndpoint = async () => {
       try {
-        const response = await fetch("/api/v1/opportunities");
-        const text = await response.text();
-        try { JSON.parse(text); } catch {}
+        await fetch("/api/v1/opportunities", { signal: abortController.signal });
       } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
         console.error('[Verify Feed] Error:', err);
       }
     };
     verifyFeedEndpoint();
 
     const checkBackend = async () => {
+      if (!mounted) return;
       if (typeof navigator !== 'undefined' && !navigator.onLine) {
         setBackendReady(false);
         return;
@@ -161,20 +164,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
 
       const stats = await fetchSystemStats();
+      if (!mounted) return;
       if (stats) {
         lastConnectedRef.current = Date.now();
-        setBackendReady(prev => {
-          if (!prev) return true;
-          return prev;
-        });
+        setBackendReady(true);
         setLastSyncedTime(new Date().toLocaleTimeString());
       } else {
         const timeSinceLastConnect = Date.now() - lastConnectedRef.current;
         if (timeSinceLastConnect >= 2000) {
-          setBackendReady(prev => {
-            if (prev) return false;
-            return prev;
-          });
+          setBackendReady(false);
         }
       }
     };
@@ -188,18 +186,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (newStatus) {
         lastConnectedRef.current = timestamp;
-        setBackendReady(prev => {
-          if (!prev) return true;
-          return prev;
-        });
+        setBackendReady(true);
         setLastSyncedTime(new Date().toLocaleTimeString());
       } else {
         const timeSinceLastConnect = Date.now() - lastConnectedRef.current;
         if (timeSinceLastConnect >= 2000) {
-          setBackendReady(prev => {
-            if (prev) return false;
-            return prev;
-          });
+          setBackendReady(false);
         }
       }
     };
@@ -227,6 +219,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     return () => {
+      mounted = false;
+      abortController.abort();
       clearInterval(interval);
       window.removeEventListener('backend-status', handleBackendStatus);
       window.removeEventListener('online', handleOnline);
@@ -288,12 +282,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [activeTab, selectedOppId]);
 
   useEffect(() => {
+    const abortController = new AbortController();
+    let mounted = true;
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (!mounted) return;
       setUser(currentUser);
       if (currentUser) {
         try {
           const token = await currentUser.getIdToken(true);
           const response = await fetch('/api/v1/auth/sync', {
+            signal: abortController.signal,
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -301,13 +300,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             },
           });
 
+          if (!mounted) return;
           if (response.ok) {
             const data = await response.json();
             if (data.profile) {
               setProfile(data.profile as UserProfile);
-              // Seed the bookmarks slice from the synced profile
               setBookmarkedIds(data.profile.bookmarks ?? []);
-              // Fetch karma
               refreshKarma();
             } else {
               throw new Error('No profile returned from sync endpoint');
@@ -316,12 +314,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             throw new Error('Backend sync failed with status ' + response.status);
           }
         } catch (error) {
+          if (!mounted) return;
+          if (error instanceof DOMException && error.name === 'AbortError') return;
           console.warn('MongoDB auth sync failed, falling back to Firestore:', error);
           try {
             const docRef = doc(db, 'users', currentUser.uid);
             const getDocPromise = getDoc(docRef);
             const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Firestore getDoc timeout')), 2000));
             const docSnap = await Promise.race([getDocPromise, timeoutPromise]);
+            if (!mounted) return;
             if (docSnap.exists()) {
               const data = docSnap.data() as UserProfile;
               setProfile(data);
@@ -337,6 +338,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               setBookmarkedIds([]);
             }
           } catch (fsError) {
+            if (!mounted) return;
             console.error('Firestore fallback sync failed or timed out:', fsError);
             setProfile({
               uid: currentUser.uid,
@@ -351,9 +353,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setProfile(null);
         setBookmarkedIds([]);
       }
-      setLoading(false);
+      if (mounted) setLoading(false);
     });
-    return () => unsubscribe();
+
+    return () => {
+      mounted = false;
+      abortController.abort();
+      unsubscribe();
+    };
   }, []);
 
   // ─── Bookmark actions ─────────────────────────────────────────────────────────
