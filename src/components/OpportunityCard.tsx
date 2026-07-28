@@ -262,8 +262,9 @@ export function OpportunityCard({
                             <button
                                 onClick={() => setShowAuditModal(false)}
                                 className="text-gray-400 hover:text-gray-700 p-1"
+                                aria-label="Close audit trail modal"
                             >
-                                <X className="w-4 h-4" />
+                                <X className="w-4 h-4" aria-hidden="true" />
                             </button>
                         </div>
 
@@ -308,9 +309,10 @@ export function OpportunityCard({
                                         href={auditInfo.auditSourceUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
+                                        aria-label="Inspect audit source page in new tab"
                                         className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
                                     >
-                                        Inspect Audit Source Page <ExternalLink className="w-3.5 h-3.5" />
+                                        Inspect Audit Source Page <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
                                     </a>
                                 </div>
                             )}

@@ -340,24 +340,45 @@ function App() {
             YuvaHub
           </h1>
         </div>
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto no-scrollbar">
-          {TABS.map(tab => {
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto no-scrollbar" role="tablist" aria-label="Main navigation">
+          {TABS.map((tab, index) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id && !selectedOppId;
             return (
               <button
                 key={tab.id}
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={`${tab.id}-panel`}
+                tabIndex={isActive ? 0 : -1}
                 onClick={() => {
                   setActiveTab(tab.id);
-                  // Clear getting-started step when navigating away from help
                   if (tab.id !== 'help') setGettingStartedStep(null);
                   clearSelectedOpportunity();
                   scrollContentToTop();
                 }}
+                onKeyDown={(e) => {
+                  const tabs = TABS;
+                  const currentIndex = tabs.findIndex(t => t.id === activeTab);
+                  if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    const nextIndex = (currentIndex + 1) % tabs.length;
+                    setActiveTab(tabs[nextIndex].id);
+                    const nextBtn = document.getElementById(`tab-${tabs[nextIndex].id}`);
+                    nextBtn?.focus();
+                  } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    const prevIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+                    setActiveTab(tabs[prevIndex].id);
+                    const prevBtn = document.getElementById(`tab-${tabs[prevIndex].id}`);
+                    prevBtn?.focus();
+                  }
+                }}
+                id={`tab-${tab.id}`}
                 className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-all rounded-lg ${isActive ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 border-l-4 border-blue-600' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white border-l-4 border-transparent'}`}
                 style={{ borderLeftWidth: isActive ? '4px' : '0px', paddingLeft: isActive ? '12px' : '16px' }}
               >
-                <Icon className={`w-5 h-5 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
+                <Icon className={`w-5 h-5 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} aria-hidden="true" />
                 {tab.label}
               </button>
             )
@@ -398,25 +419,27 @@ function App() {
         </div>
         <div className="flex items-center gap-4">
           <NotificationDropdown profile={profile} />
-          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-            {isMobileMenuOpen ? <X /> : <Menu />}
+          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}>
+            {isMobileMenuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
           </button>
         </div>
       </div>
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 top-16 bg-white dark:bg-gray-900 z-40 p-4 border-b border-gray-200 dark:border-gray-700 overflow-y-auto">
-          <nav className="space-y-2">
+        <div className="lg:hidden fixed inset-0 top-16 bg-white dark:bg-gray-900 z-40 p-4 border-b border-gray-200 dark:border-gray-700 overflow-y-auto" role="dialog" aria-label="Navigation menu">
+          <nav className="space-y-2" role="tablist" aria-label="Main navigation">
             {TABS.map(tab => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id && !selectedOppId;
               return (
                 <button
                   key={tab.id}
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-controls={`${tab.id}-panel`}
                   onClick={() => {
                     setActiveTab(tab.id);
-                    // Clear getting-started step when navigating away from help
                     if (tab.id !== 'help') setGettingStartedStep(null);
                     clearSelectedOpportunity();
                     setIsMobileMenuOpen(false);
@@ -424,7 +447,7 @@ function App() {
                   }}
                   className={`w-full flex items-center gap-3 px-4 py-4 text-sm font-medium transition-all rounded-lg ${isActive ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 border-l-4 border-blue-600' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border-l-4 border-transparent'}`}
                 >
-                  <Icon className="w-5 h-5" />
+                  <Icon className="w-5 h-5" aria-hidden="true" />
                   {tab.label}
                 </button>
               )
@@ -459,7 +482,7 @@ function App() {
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                     </div>
-                    <input type="text" placeholder="Search standard competitions..." className="w-full bg-[#F8FAFC] dark:bg-gray-700 border border-gray-200 dark:border-gray-600 outline-none rounded-lg pl-10 pr-4 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" value={appSearchQuery} onChange={(e) => setAppSearchQuery(e.target.value)} />
+                    <input type="text" placeholder="Search standard competitions..." aria-label="Search opportunities" className="w-full bg-[#F8FAFC] dark:bg-gray-700 border border-gray-200 dark:border-gray-600 outline-none rounded-lg pl-10 pr-4 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" value={appSearchQuery} onChange={(e) => setAppSearchQuery(e.target.value)} />
                  </div>
               ) : (
                  <p className="text-sm text-[#64748B] dark:text-gray-400 font-medium">
