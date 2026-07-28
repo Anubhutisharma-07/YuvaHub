@@ -5,6 +5,7 @@ import http from "http";
 import path from "path";
 import * as Sentry from "@sentry/node";
 import { Server as SocketIOServer } from "socket.io";
+import swaggerUi from "swagger-ui-express";
 
 import { initializeDatabase, dbCommand, dbQuery } from "./src/api/db.js";
 import { setSocketIO } from "./src/api/socketInstance.js";
@@ -18,6 +19,7 @@ import apiRoutes from "./src/api/routes/index.js";
 import { eventBus } from "./src/events/eventBus.js";
 import { createNotificationConsumer } from "./src/consumers/notificationConsumer.js";
 import { createOpportunityScrapedConsumer } from "./src/consumers/opportunityScrapedConsumer.js";
+import swaggerSpec from "./src/config/swagger.js";
 
 dotenv.config();
 
@@ -37,6 +39,12 @@ const io = new SocketIOServer(server, {
   },
 });
 setSocketIO(io);
+
+// Swagger API Documentation
+app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: ".swagger-ui .topbar { display: none }",
+  customSiteTitle: "YuvaHub API Docs",
+}));
 
 app.use(cors());
 app.use(express.json({ limit: "5mb" }));
