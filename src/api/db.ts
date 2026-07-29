@@ -128,8 +128,55 @@ export class MemoryCollection {
           });
         });
       } else {
-        // Generic key-value match
-        result = result.filter(r => r[key] === query[key]);
+        // Generic key-value match with MongoDB operator support
+        result = result.filter(r => {
+          const condition = query[key];
+          const itemValue = r[key];
+
+          // Handle operator objects like { $in: [...], $gte: ..., etc. }
+          if (condition && typeof condition === 'object' && !Array.isArray(condition)) {
+            // All specified operators must match (AND logic)
+            if ('$in' in condition) {
+              if (!Array.isArray(condition.$in)) return false;
+              if (!condition.$in.some((v: any) =>
+                itemValue === v || itemValue?.toString() === v?.toString()
+              )) return false;
+            }
+            if ('$nin' in condition) {
+              if (!Array.isArray(condition.$nin)) return false;
+              if (condition.$nin.some((v: any) =>
+                itemValue === v || itemValue?.toString() === v?.toString()
+              )) return false;
+            }
+            if ('$gte' in condition) {
+              if (!(itemValue >= condition.$gte)) return false;
+            }
+            if ('$lte' in condition) {
+              if (!(itemValue <= condition.$lte)) return false;
+            }
+            if ('$gt' in condition) {
+              if (!(itemValue > condition.$gt)) return false;
+            }
+            if ('$lt' in condition) {
+              if (!(itemValue < condition.$lt)) return false;
+            }
+            if ('$ne' in condition) {
+              if (itemValue === condition.$ne || itemValue?.toString() === condition.$ne?.toString()) return false;
+            }
+            if ('$regex' in condition) {
+              try {
+                const regex = new RegExp(condition.$regex, condition.$options || '');
+                if (!regex.test(String(itemValue))) return false;
+              } catch {
+                return false;
+              }
+            }
+            return true;
+          }
+
+          // Simple equality fallback
+          return itemValue === condition;
+        });
       }
     }
     return result;
