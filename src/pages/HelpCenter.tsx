@@ -392,66 +392,63 @@ export default function HelpCenterPage() {
             Collapsed cards keep their compact height. No blank white boxes.
           */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 items-start">
-            {TROUBLESHOOTING_GUIDES.map((guide, index) => {
+            {TROUBLESHOOTING_GUIDES.map((guide) => {
               const Icon = guide.icon;
-              // FIX: each card checks activeTroubleshootId === guide.id independently
               const isExpanded = activeTroubleshootId === guide.id;
               return (
                 <article
                   key={guide.id}
-                  className={`bg-white dark:bg-gray-800 border rounded-2xl overflow-hidden transition-all duration-300 ease-out group ${
+                  className={`bg-white border rounded-2xl overflow-hidden transition-all duration-300 group ${
                     isExpanded
-                      ? 'border-blue-400 dark:border-blue-500 shadow-lg shadow-blue-500/10 -translate-y-[2px]'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 hover:-translate-y-1 hover:shadow-md hover:shadow-blue-500/5'
+                      ? 'border-[#b56b37] shadow-xs'
+                      : 'border-[#e8ded1] hover:border-[#b56b37]'
                   }`}
-                  style={{ animationDelay: `${index * 80}ms` }}
                 >
                   <button
                     type="button"
                     onClick={() => handleToggleTroubleshoot(guide.id)}
                     aria-expanded={isExpanded}
                     aria-controls={`ts-panel-${guide.id}`}
-                    className="w-full p-5 flex items-center gap-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 transition-colors duration-200 hover:bg-gray-50/50 dark:hover:bg-gray-900/20"
+                    className="w-full p-5 flex items-center gap-3 text-left focus:outline-none transition-colors hover:bg-[#fcf9f2] cursor-pointer"
                   >
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 ${
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all ${
                       isExpanded
-                        ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400 scale-110'
-                        : 'bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 group-hover:scale-110'
+                        ? 'bg-[#603620] text-[#f3e4bd]'
+                        : 'bg-[#f6efe2] text-[#b56b37]'
                     }`}>
                       <Icon className="w-4 h-4" aria-hidden="true" />
                     </div>
-                    <h3 className={`text-sm font-bold flex-1 transition-colors duration-200 ${
-                      isExpanded ? 'text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400'
+                    <h3 className={`text-xs font-serif font-bold flex-1 transition-colors ${
+                      isExpanded ? 'text-[#b56b37]' : 'text-[#231f20] group-hover:text-[#b56b37]'
                     }`}>{guide.title}</h3>
-                    <ChevronDown className={`w-4 h-4 transition-all duration-300 ease-out shrink-0 ${
-                      isExpanded ? 'rotate-180 text-blue-500' : 'text-gray-400'
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 shrink-0 ${
+                      isExpanded ? 'rotate-180 text-[#b56b37]' : 'text-[#8c7569]'
                     }`} />
                   </button>
 
-                  {/* Expandable content — grid-rows animation, only for THIS card */}
                   <div
                     id={`ts-panel-${guide.id}`}
                     role="region"
-                    className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                    className={`grid transition-[grid-template-rows] duration-300 ${
                       isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
                     }`}
                   >
                     <div className="overflow-hidden min-h-0">
-                      <div className={`px-5 pb-5 pt-0 border-t transition-all duration-300 ${
-                        isExpanded ? 'opacity-100 border-blue-100 dark:border-blue-900/30' : 'opacity-0 border-gray-100 dark:border-gray-700'
+                      <div className={`px-5 pb-5 pt-0 border-t transition-all ${
+                        isExpanded ? 'opacity-100 border-[#e8ded1]' : 'opacity-0 border-transparent'
                       }`}>
                         <dl className="space-y-3 text-xs leading-relaxed mt-4">
                           <div>
-                            <dt className="font-bold uppercase tracking-wider text-[10px] text-gray-500 dark:text-gray-400 mb-1">Problem</dt>
-                            <dd className="text-gray-700 dark:text-gray-300 m-0">{guide.problem}</dd>
+                            <dt className="font-extrabold uppercase tracking-wider text-[10px] text-[#603620] mb-1">Problem</dt>
+                            <dd className="text-[#231f20] m-0">{guide.problem}</dd>
                           </div>
                           <div>
-                            <dt className="font-bold uppercase tracking-wider text-[10px] text-gray-500 dark:text-gray-400 mb-1">Cause</dt>
-                            <dd className="text-gray-700 dark:text-gray-300 m-0">{guide.cause}</dd>
+                            <dt className="font-extrabold uppercase tracking-wider text-[10px] text-[#603620] mb-1">Cause</dt>
+                            <dd className="text-[#231f20] m-0">{guide.cause}</dd>
                           </div>
                           <div>
-                            <dt className="font-bold uppercase tracking-wider text-[10px] text-gray-500 dark:text-gray-400 mb-1">Solution</dt>
-                            <dd className="text-gray-700 dark:text-gray-300 m-0 font-medium text-blue-600 dark:text-blue-400">{guide.solution}</dd>
+                            <dt className="font-extrabold uppercase tracking-wider text-[10px] text-[#603620] mb-1">Solution</dt>
+                            <dd className="text-[#b56b37] m-0 font-bold">{guide.solution}</dd>
                           </div>
                         </dl>
                       </div>

@@ -252,24 +252,24 @@ export default function ResumeVersionManager() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-3 border-b border-gray-100">
+    <div className="space-y-6 font-sans">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-3 border-b border-[#e8ded1]">
         <div>
-          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-blue-600" /> Resume Version History
+          <h3 className="text-base md:text-lg font-serif font-bold text-[#231f20] flex items-center gap-2">
+            <FileText className="w-5 h-5 text-[#b56b37]" /> Resume Version History
           </h3>
-          <p className="text-xs text-gray-500 mt-0.5">Manage multiple resumes and assign your primary default resume.</p>
+          <p className="text-xs text-[#603620] mt-0.5">Manage multiple resumes and assign your primary default resume.</p>
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
           <input
             type="text"
             placeholder="Custom Name (Optional)"
-            className="clean-input text-xs p-2.5 w-44 hidden md:block"
+            className="w-44 bg-[#fcf9f2] border border-[#e8ded1] rounded-xl text-xs text-[#231f20] p-2.5 outline-none focus:border-[#b56b37] hidden md:block"
             value={customUploadName}
             onChange={(e) => setCustomUploadName(e.target.value)}
           />
-          <label className="cursor-pointer text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap flex-1 sm:flex-none">
+          <label className="cursor-pointer text-xs font-extrabold uppercase tracking-wider bg-[#b56b37] hover:bg-[#603620] text-white px-4 py-2.5 rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap flex-1 sm:flex-none">
             <Upload className="w-4 h-4" />
             {uploading ? "Uploading..." : "Upload New Resume"}
             <input
@@ -284,38 +284,38 @@ export default function ResumeVersionManager() {
       </div>
 
       {errorMsg && (
-        <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg flex items-center gap-2">
+        <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-xl flex items-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
 
       {successMsg && (
-        <div className="p-3 bg-green-50 border border-green-200 text-green-700 text-xs rounded-lg flex items-center gap-2">
+        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-xl flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
 
       {loading ? (
-        <div className="text-center py-8 text-xs text-gray-500 animate-pulse">
+        <div className="text-center py-8 text-xs font-bold text-[#b56b37] animate-pulse">
           Loading resume versions...
         </div>
       ) : resumes.length === 0 ? (
-        <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200 p-6">
-          <FileText className="w-10 h-10 text-gray-400 mx-auto mb-2" />
-          <p className="text-sm font-semibold text-gray-700">No resumes uploaded yet</p>
-          <p className="text-xs text-gray-500 mt-1">Upload your first resume version to set your default profile resume.</p>
+        <div className="text-center py-10 bg-[#fcf9f2] rounded-2xl border border-dashed border-[#e8ded1] p-6">
+          <FileText className="w-10 h-10 text-[#8c7569] mx-auto mb-2" />
+          <p className="text-sm font-serif font-bold text-[#231f20]">No resumes uploaded yet</p>
+          <p className="text-xs text-[#603620] mt-1">Upload your first resume version to set your default profile resume.</p>
         </div>
       ) : (
         <div className="space-y-3">
           {resumes.map((resume) => (
             <div
               key={resume.id}
-              className={`p-4 rounded-xl border transition-all flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${
+              className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${
                 resume.isDefault
-                  ? 'bg-blue-50/40 border-blue-200 shadow-xs'
-                  : 'bg-white border-gray-200 hover:border-gray-300'
+                  ? 'bg-[#f6efe2] border-[#e8ded1] shadow-xs'
+                  : 'bg-white border-[#e8ded1] hover:border-[#b56b37]'
               }`}
             >
               <div className="space-y-1 flex-1 min-w-0">
@@ -324,30 +324,30 @@ export default function ResumeVersionManager() {
                     <div className="flex items-center gap-2">
                       <input
                         type="text"
-                        className="clean-input text-xs p-1.5 w-48 font-semibold"
+                        className="bg-white border border-[#e8ded1] rounded-xl text-xs p-1.5 w-48 font-bold text-[#231f20] outline-none focus:border-[#b56b37]"
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
                         autoFocus
                       />
                       <button
                         onClick={() => handleRename(resume.id)}
-                        className="text-xs font-semibold bg-blue-600 text-white px-2.5 py-1 rounded-md"
+                        className="text-xs font-extrabold uppercase tracking-wider bg-[#b56b37] text-white px-3 py-1 rounded-lg cursor-pointer"
                       >
                         Save
                       </button>
                       <button
                         onClick={() => { setEditingId(null); setEditName(''); }}
-                        className="text-xs text-gray-500 hover:text-gray-700"
+                        className="text-xs text-[#8c7569] hover:text-[#231f20] cursor-pointer"
                       >
                         Cancel
                       </button>
                     </div>
                   ) : (
-                    <h4 className="text-sm font-bold text-gray-900 truncate flex items-center gap-2">
+                    <h4 className="text-xs md:text-sm font-serif font-bold text-[#231f20] truncate flex items-center gap-2">
                       {resume.displayName}
                       <button
                         onClick={() => { setEditingId(resume.id); setEditName(resume.displayName); }}
-                        className="text-gray-400 hover:text-blue-600 transition-colors"
+                        className="text-[#8c7569] hover:text-[#b56b37] transition-colors cursor-pointer"
                         title="Rename resume"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
@@ -356,19 +356,19 @@ export default function ResumeVersionManager() {
                   )}
 
                   {resume.isDefault && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full border border-blue-200">
-                      <Star className="w-3 h-3 fill-blue-700 text-blue-700" /> Default
+                    <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase bg-[#603620] text-[#f3e4bd] px-2.5 py-0.5 rounded-full border border-[#603620]">
+                      <Star className="w-3 h-3 fill-[#f3e4bd] text-[#f3e4bd]" /> Default
                     </span>
                   )}
                 </div>
 
-                <div className="flex items-center gap-3 text-xs text-gray-500 flex-wrap">
+                <div className="flex items-center gap-3 text-xs text-[#603620] flex-wrap">
                   <span className="truncate max-w-[200px]" title={resume.originalFileName}>
                     File: {resume.originalFileName}
                   </span>
                   <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-gray-400" /> Uploaded: {formatDate(resume.uploadedAt)}
+                  <span className="flex items-center gap-1 text-[11px] text-[#8c7569]">
+                    <Clock className="w-3 h-3 text-[#8c7569]" /> Uploaded: {formatDate(resume.uploadedAt)}
                   </span>
                 </div>
               </div>
@@ -378,7 +378,7 @@ export default function ResumeVersionManager() {
                   href={resume.fileUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg border border-gray-200 transition-colors flex items-center gap-1"
+                  className="text-xs font-bold bg-[#f6efe2] hover:bg-[#b56b37] hover:text-white text-[#603620] px-3.5 py-1.5 rounded-xl border border-[#e8ded1] transition-all flex items-center gap-1 cursor-pointer"
                 >
                   Preview <ExternalLink className="w-3 h-3" />
                 </a>
@@ -386,15 +386,15 @@ export default function ResumeVersionManager() {
                 {!resume.isDefault && (
                   <button
                     onClick={() => handleSetDefault(resume)}
-                    className="text-xs font-semibold bg-white hover:bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg border border-blue-300 transition-colors flex items-center gap-1"
+                    className="text-xs font-extrabold uppercase tracking-wider bg-white hover:bg-[#f6efe2] text-[#b56b37] px-3.5 py-1.5 rounded-xl border border-[#e8ded1] transition-all flex items-center gap-1 cursor-pointer"
                   >
-                    <Star className="w-3 h-3 text-blue-600" /> Make Default
+                    <Star className="w-3 h-3 text-[#b56b37]" /> Make Default
                   </button>
                 )}
 
                 <button
                   onClick={() => handleDelete(resume)}
-                  className="text-xs font-semibold text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
+                  className="text-xs font-bold text-red-700 hover:bg-red-50 p-1.5 rounded-xl transition-colors cursor-pointer"
                   title="Delete resume"
                 >
                   <Trash2 className="w-4 h-4" />
