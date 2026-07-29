@@ -92,13 +92,6 @@ export default function LandingNavbar({ onLoginClick, onNavClick }: LandingNavba
 
         {/* Actions */}
         <div className="flex items-center gap-3">
-          <button 
-            onClick={toggleTheme} 
-            className="p-2.5 rounded-xl text-[#603620] hover:bg-[#f3e4bd]/50 transition-all"
-            aria-label="Toggle Mode"
-          >
-            {theme === 'dark' ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-[#603620]" />}
-          </button>
 
           <button
             onClick={onLoginClick}
