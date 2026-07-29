@@ -46,7 +46,7 @@ export const scraperWorker = new Worker(
       opportunityType: type,
       deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
       location: "Online",
-      dedupeHash,
+      dedupe_hash: dedupeHash,
       createdAt: new Date().toISOString(),
       embedding: null as number[] | null,
     };
@@ -57,7 +57,7 @@ export const scraperWorker = new Worker(
     // Upsert into MongoDB for idempotency
     const db = mongoClient.db(dbName);
     const result = await db.collection("opportunities").updateOne(
-      { dedupeHash: opportunity.dedupeHash },
+      { dedupe_hash: opportunity.dedupe_hash },
       { $set: opportunity },
       { upsert: true }
     );
@@ -68,7 +68,7 @@ export const scraperWorker = new Worker(
       console.log(`[ScraperWorker] Updated existing opportunity: ${title}`);
     }
 
-    return { status: "success", dedupeHash: opportunity.dedupeHash };
+    return { status: "success", dedupe_hash: opportunity.dedupe_hash };
   },
   {
     connection: connection as any,
