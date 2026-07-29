@@ -90,6 +90,22 @@ app.get("/robots.txt", (req: Request, res: Response) => {
   res.send(robotsTxt);
 });
 
+// ---------------------------------------------------------------------------
+// XML escaping helper for safe sitemap generation
+// ---------------------------------------------------------------------------
+function escapeXml(unsafe: string): string {
+  return unsafe.replace(/[<>&'"]/g, (c) => {
+    switch (c) {
+      case "<": return "&lt;";
+      case ">": return "&gt;";
+      case "&": return "&amp;";
+      case "'": return "&apos;";
+      case '"': return "&quot;";
+      default: return c;
+    }
+  });
+}
+
 app.get("/sitemap.xml", async (req: Request, res: Response) => {
   try {
     const baseUrl = process.env.APP_URL || "https://yuvahub.xyz";
@@ -106,9 +122,10 @@ app.get("/sitemap.xml", async (req: Request, res: Response) => {
       "/legal",
     ];
 
+    const escapedBaseUrl = escapeXml(baseUrl);
     let urls = staticPaths.map((p) => {
       return `  <url>
-    <loc>${baseUrl}${p}</loc>
+    <loc>${escapedBaseUrl}${p}</loc>
     <changefreq>daily</changefreq>
     <priority>${p === "" ? "1.0" : "0.8"}</priority>
   </url>`;
@@ -124,17 +141,17 @@ app.get("/sitemap.xml", async (req: Request, res: Response) => {
           .toArray();
 
         const oppUrls = items.map((item: Record<string, any>) => {
-          const id = item._id ? item._id.toString() : item.id;
+          const id = escapeXml(item._id ? item._id.toString() : item.id);
           const title = item.title || "opportunity";
           const cleanTitle = title
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/^-+|-+$/g, "");
-          const lastmod = item.created_at
+          const lastmod = escapeXml(item.created_at
             ? new Date(item.created_at).toISOString().split("T")[0]
-            : new Date().toISOString().split("T")[0];
+            : new Date().toISOString().split("T")[0]);
           return `  <url>
-    <loc>${baseUrl}/opportunity/${id}/${cleanTitle}</loc>
+    <loc>${escapedBaseUrl}/opportunity/${id}/${cleanTitle}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
