@@ -19,7 +19,9 @@ export const setupSocketEvents = () => {
     });
 
     socket.on("disconnect", () => {
-      console.log(`[Socket] User disconnected: ${socket.id}`);
+      socket.removeAllListeners();
+      socket.leaveAll();
+      console.log(`[Socket] Cleaned up listeners for socket ${socket.id}`);
     });
   });
 };
