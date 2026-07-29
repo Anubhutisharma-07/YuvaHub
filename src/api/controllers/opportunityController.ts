@@ -485,7 +485,9 @@ export const updateOpportunity = async (req: Request, res: Response) => {
     const id = Array.isArray(rawId) ? rawId[0] : rawId;
 
     const oid = safeObjectId(id);
-    const queryId = oid || id;
+    const query = oid
+      ? { _id: oid }
+      : { $or: [{ dedupe_hash: id }, { id: id }] };
 
     const updateData = { ...req.body, updated_at: new Date() };
     delete updateData._id;
@@ -498,7 +500,7 @@ export const updateOpportunity = async (req: Request, res: Response) => {
     if (updateData.tags) updateData.tags = sanitizeArray(updateData.tags);
 
     const result = await dbCommand.collection("opportunities").updateOne(
-      { _id: queryId },
+      query,
       { $set: updateData }
     );
 
