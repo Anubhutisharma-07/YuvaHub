@@ -93,7 +93,11 @@ export async function initializeSearchSync(db: Db) {
        console.error('[SearchSync] Change stream error (Replica Set required):', err);
     });
 
-  } catch (err) {
-    console.error('[SearchSync] Failed to initialize search sync:', err);
+  } catch (err: any) {
+    if (err?.code === 'ECONNREFUSED' || err?.message?.includes('fetch failed') || err?.cause?.code === 'ECONNREFUSED') {
+      console.log('ℹ️ [SearchSync] Local Meilisearch instance not detected at http://localhost:7700. Using MongoDB queries for search & recommendations.');
+    } else {
+      console.error('[SearchSync] Failed to initialize search sync:', err);
+    }
   }
 }

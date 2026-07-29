@@ -44,6 +44,38 @@ export interface UserProfile {
   education?: Education[];
   workExperience?: WorkExperience[];
   canonicalSkills?: string[];
+  interests?: string[];
+  recommendationPreferences?: RecommendationPreferences;
+  profileCompleteness?: number;
+}
+
+export interface RecommendationPreferences {
+  targetRole: string;
+  preferredLocations: string[];
+  remoteOnly: boolean;
+  minStipend: number;
+  preferredTypes: string[];
+  minMatchScore: number;
+}
+
+export interface MatchDetails {
+  matchScore: number;
+  matchingSkills: string[];
+  missingSkills: string[];
+  aiExplanation?: string;
+  typeMatch?: boolean;
+  locationMatch?: boolean;
+  completenessBonus?: number;
+}
+
+export interface RecommendationInteraction {
+  id?: string;
+  userId: string;
+  opportunityId: string;
+  interactionType: 'view' | 'save' | 'apply' | 'dismiss';
+  tags: string[];
+  opportunityType: string;
+  timestamp: Date | string | number;
 }
 
 export interface ResumeItem {

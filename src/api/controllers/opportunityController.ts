@@ -1,4 +1,4 @@
-﻿import { Request, Response } from "express";
+import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
 import { safeObjectId, parsePagination, buildPaginationMetadata } from "../../lib/utils.js";
 import escapeHtml from "escape-html";
@@ -61,207 +61,216 @@ const sanitizeArray = (arr: any): string[] => {
   return arr.map((item) => (typeof item === "string" ? escapeHtml(item.trim()) : ""));
 };
 
+// Helper to query and rank opportunities via MongoDB directly
+async function getMongoRankedOpportunities(database: any, profile: any, page: number, limit: number) {
+  const skip = (page - 1) * limit;
+  const currentDate = new Date();
+  const cursor = database.collection("opportunities").find({
+    $or: [
+      { endDate: { $gte: currentDate } },
+      { startDate: { $gte: currentDate } },
+      { deadlineDate: { $gte: currentDate } },
+      { deadline: { $regex: "days left|weeks left|rolling|active|open", $options: "i" } },
+      { deadline: { $not: /closed|expired/i } },
+      { endDate: { $exists: false }, startDate: { $exists: false }, deadlineDate: { $exists: false }, deadline: { $exists: false } }
+    ]
+  }).sort({ created_at: -1 }).limit(150);
+  const opportunities = await cursor.toArray();
+
+  if (opportunities.length === 0) {
+    return { items: [], next_page: null };
+  }
+
+  const oIds = opportunities.map((o: any) => o._id ? o._id.toString() : o.id);
+  const interactions = database ? await database.collection("interactions").find({
+    opportunity_id: { $in: oIds }
+  }).toArray() : [];
+
+  const intMap: Record<string, { total: number, recent: number }> = {};
+  const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
+
+  interactions.forEach((i: any) => {
+    const oId = i.opportunity_id;
+    if (!intMap[oId]) {
+      intMap[oId] = { total: 0, recent: 0 };
+    }
+    intMap[oId].total += 1;
+    const iTime = i.timestamp ? new Date(i.timestamp) : new Date();
+    if (iTime >= fortyEightHoursAgo) {
+      intMap[oId].recent += 1;
+    }
+  });
+
+  const now = Date.now();
+  const profileSkills = profile.skills ? profile.skills.toLowerCase().split(',') : [];
+  const profileCountry = profile.country ? profile.country.toLowerCase().trim() : "";
+  const profileField = profile.field ? profile.field.toLowerCase().trim() : "";
+
+  const scoredItems = opportunities.map((opp: any) => {
+    const idStr = opp._id ? opp._id.toString() : opp.id;
+    const stats = intMap[idStr] || { total: 0, recent: 0 };
+
+    const engagementScore = stats.total * 15;
+    const trendingScore = stats.recent * 30;
+    const sourceQualityScore = opp.source_quality_score || 70;
+
+    const createdTime = opp.created_at ? new Date(opp.created_at).getTime() : now;
+    const hoursSinceCreation = Math.max(0, (now - createdTime) / (1000 * 60 * 60));
+    const freshnessScore = (100 / (1 + (hoursSinceCreation * 0.15))) * 2.0;
+
+    let profileRelevanceScore = 0;
+    if (profileSkills.length > 0 && opp.tags) {
+      const oppTagsLower = opp.tags.map((t: string) => t.toLowerCase());
+      profileSkills.forEach((skill: string) => {
+        const trimmed = skill.trim();
+        if (trimmed && oppTagsLower.some((tag: string) => tag.includes(trimmed) || trimmed.includes(tag))) {
+          profileRelevanceScore += 50;
+        }
+      });
+    }
+
+    if (profileField && opp.description) {
+      if (opp.description.toLowerCase().includes(profileField) || opp.title.toLowerCase().includes(profileField)) {
+        profileRelevanceScore += 40;
+      }
+    }
+
+    if (profileCountry && opp.location) {
+      const locLower = opp.location.toLowerCase();
+      if (locLower.includes(profileCountry) || profileCountry.includes(locLower) || locLower.includes("online") || locLower.includes("remote")) {
+        profileRelevanceScore += 35;
+      }
+    }
+
+    const totalScore = engagementScore + trendingScore + sourceQualityScore + freshnessScore + profileRelevanceScore;
+
+    return {
+      ...opp,
+      id: idStr,
+      is_stale: hoursSinceCreation > 72,
+      metrics: {
+        totalScore: Math.round(totalScore),
+        relevance: profileRelevanceScore,
+        freshness: Math.round(freshnessScore),
+        interactionRatio: stats.total
+      }
+    };
+  });
+
+  scoredItems.sort((a: any, b: any) => b.metrics.totalScore - a.metrics.totalScore);
+
+  const paginatedItems = scoredItems.slice(skip, skip + limit);
+
+  const mapped = paginatedItems.map((opp: any) => {
+    const copy = { ...opp };
+    delete copy._id;
+    return copy;
+  });
+
+  return {
+    items: mapped,
+    next_page: skip + limit < scoredItems.length ? page + 1 : null
+  };
+}
+
 // Composite Feed Ranking Engine based on relevance, freshness, quality, and engagement clicks
 export async function getRankedOpportunities(database: any, profile: any, page: number, limit: number) {
   try {
-    const skip = (page - 1) * limit;
-
-    // Retain mock DB logic as a fallback for offline development
     if (database.isMock) {
-      const currentDate = new Date();
-      const cursor = database.collection("opportunities").find({
-        $or: [
-          { endDate: { $gte: currentDate } },
-          { startDate: { $gte: currentDate } },
-          { deadlineDate: { $gte: currentDate } },
-          { deadline: { $regex: "days left|weeks left|rolling|active|open", $options: "i" } },
-          { deadline: { $not: /closed|expired/i } },
-          { endDate: { $exists: false }, startDate: { $exists: false }, deadlineDate: { $exists: false }, deadline: { $exists: false } }
-        ]
-      }).sort({ created_at: -1 }).limit(150);
-      const opportunities = await cursor.toArray();
+      return await getMongoRankedOpportunities(database, profile, page, limit);
+    }
 
-      if (opportunities.length === 0) {
-        return { items: [], next_page: null };
-      }
-
-      const oIds = opportunities.map((o: any) => o._id ? o._id.toString() : o.id);
-      const interactions = database ? await database.collection("interactions").find({
-        opportunity_id: { $in: oIds }
-      }).toArray() : [];
-
-      const intMap: Record<string, { total: number, recent: number }> = {};
-      const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
-
-      interactions.forEach((i: any) => {
-        const oId = i.opportunity_id;
-        if (!intMap[oId]) {
-          intMap[oId] = { total: 0, recent: 0 };
-        }
-        intMap[oId].total += 1;
-        const iTime = i.timestamp ? new Date(i.timestamp) : new Date();
-        if (iTime >= fortyEightHoursAgo) {
-          intMap[oId].recent += 1;
-        }
-      });
-
-      const now = Date.now();
-      const profileSkills = profile.skills ? profile.skills.toLowerCase().split(',') : [];
+    // Try Meilisearch Query if available
+    try {
+      const skip = (page - 1) * limit;
+      const profileSkills = profile.skills ? profile.skills.toLowerCase().replace(/,/g, ' ') : "";
       const profileCountry = profile.country ? profile.country.toLowerCase().trim() : "";
       const profileField = profile.field ? profile.field.toLowerCase().trim() : "";
+      const searchQuery = `${profileSkills} ${profileField} ${profileCountry}`.trim();
 
-      const scoredItems = opportunities.map((opp: any) => {
-        const idStr = opp._id ? opp._id.toString() : opp.id;
-        const stats = intMap[idStr] || { total: 0, recent: 0 };
+      const searchLimit = limit * 3;
+      const searchRes = await meiliClient.index('opportunities').search(searchQuery, {
+        offset: skip,
+        limit: searchLimit
+      });
+      let items = searchRes.hits;
 
-        const engagementScore = stats.total * 15;
-        const trendingScore = stats.recent * 30;
-        const sourceQualityScore = opp.source_quality_score || 70;
+      const nowTime = new Date().getTime();
+      items = items.filter((item: any) => {
+        if (item.endDate && new Date(item.endDate).getTime() < nowTime) return false;
+        if (item.startDate && new Date(item.startDate).getTime() > nowTime) return false;
+        if (item.deadlineDate && new Date(item.deadlineDate).getTime() < nowTime) return false;
+        if (item.deadline && typeof item.deadline === 'string') {
+          const dStr = item.deadline.toLowerCase();
+          if (dStr.includes('closed') || dStr.includes('expired')) return false;
+          const d = new Date(item.deadline);
+          if (!isNaN(d.getTime()) && d.getTime() < nowTime) return false;
+        }
+        return true;
+      });
 
-        const createdTime = opp.created_at ? new Date(opp.created_at).getTime() : now;
-        const hoursSinceCreation = Math.max(0, (now - createdTime) / (1000 * 60 * 60));
-        const freshnessScore = (100 / (1 + (hoursSinceCreation * 0.15))) * 2.0;
+      if (items.length > 0) {
+        const oIds = items.map((o: any) => o.id);
+        const interactions = await database.collection("interactions").find({
+          opportunity_id: { $in: oIds }
+        }).toArray();
 
-        let profileRelevanceScore = 0;
-        if (profileSkills.length > 0 && opp.tags) {
-          const oppTagsLower = opp.tags.map((t: string) => t.toLowerCase());
-          profileSkills.forEach((skill: string) => {
-            const trimmed = skill.trim();
-            if (trimmed && oppTagsLower.some((tag: string) => tag.includes(trimmed) || trimmed.includes(tag))) {
-              profileRelevanceScore += 50;
+        const intMap: Record<string, { total: number, recent: number }> = {};
+        const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
+
+        interactions.forEach((i: any) => {
+          const oId = i.opportunity_id;
+          if (!intMap[oId]) {
+            intMap[oId] = { total: 0, recent: 0 };
+          }
+          intMap[oId].total += 1;
+          const iTime = i.timestamp ? new Date(i.timestamp) : new Date();
+          if (iTime >= fortyEightHoursAgo) {
+            intMap[oId].recent += 1;
+          }
+        });
+
+        const now = Date.now();
+        const scoredItems = items.map((opp: any) => {
+          const stats = intMap[opp.id] || { total: 0, recent: 0 };
+
+          const engagementScore = stats.total * 15;
+          const trendingScore = stats.recent * 30;
+          const sourceQualityScore = opp.source_quality_score || 70;
+
+          const createdTime = opp.created_at ? new Date(opp.created_at).getTime() : now;
+          const hoursSinceCreation = Math.max(0, (now - createdTime) / (1000 * 60 * 60));
+          const freshnessScore = (100 / (1 + (hoursSinceCreation * 0.15))) * 2.0;
+
+          const totalScore = engagementScore + trendingScore + sourceQualityScore + freshnessScore;
+
+          return {
+            ...opp,
+            is_stale: hoursSinceCreation > 72,
+            metrics: {
+              totalScore: Math.round(totalScore),
+              relevance: opp.metrics?.relevance || 0,
+              freshness: Math.round(freshnessScore),
+              interactionRatio: stats.total
             }
-          });
-        }
+          };
+        });
 
-        if (profileField && opp.description) {
-          if (opp.description.toLowerCase().includes(profileField) || opp.title.toLowerCase().includes(profileField)) {
-            profileRelevanceScore += 40;
-          }
-        }
+        scoredItems.sort((a: any, b: any) => b.metrics.totalScore - a.metrics.totalScore);
 
-        if (profileCountry && opp.location) {
-          const locLower = opp.location.toLowerCase();
-          if (locLower.includes(profileCountry) || profileCountry.includes(locLower) || locLower.includes("online") || locLower.includes("remote")) {
-            profileRelevanceScore += 35;
-          }
-        }
-
-        const totalScore = engagementScore + trendingScore + sourceQualityScore + freshnessScore + profileRelevanceScore;
+        const paginatedItems = scoredItems.slice(0, limit);
 
         return {
-          ...opp,
-          id: idStr,
-          is_stale: hoursSinceCreation > 72,
-          metrics: {
-            totalScore: Math.round(totalScore),
-            relevance: profileRelevanceScore,
-            freshness: Math.round(freshnessScore),
-            interactionRatio: stats.total
-          }
+          items: paginatedItems,
+          next_page: searchRes.estimatedTotalHits && (skip + searchLimit < searchRes.estimatedTotalHits) ? page + 1 : null
         };
-      });
-
-      scoredItems.sort((a: any, b: any) => b.metrics.totalScore - a.metrics.totalScore);
-
-      const paginatedItems = scoredItems.slice(skip, skip + limit);
-
-      const mapped = paginatedItems.map((opp: any) => {
-        const copy = { ...opp };
-        delete copy._id;
-        return copy;
-      });
-
-      return {
-        items: mapped,
-        next_page: skip + limit < scoredItems.length ? page + 1 : null
-      };
+      }
+    } catch (_meiliErr) {
+      // Meilisearch server is offline or not installed locally, fallback to MongoDB
     }
 
-    // Native Meilisearch Query
-    const profileSkills = profile.skills ? profile.skills.toLowerCase().replace(/,/g, ' ') : "";
-    const profileCountry = profile.country ? profile.country.toLowerCase().trim() : "";
-    const profileField = profile.field ? profile.field.toLowerCase().trim() : "";
-    const searchQuery = `${profileSkills} ${profileField} ${profileCountry}`.trim();
-
-    const searchLimit = limit * 3;
-    const searchRes = await meiliClient.index('opportunities').search(searchQuery, {
-      offset: skip,
-      limit: searchLimit
-    });
-    let items = searchRes.hits;
-
-    const nowTime = new Date().getTime();
-    items = items.filter((item: any) => {
-      if (item.endDate && new Date(item.endDate).getTime() < nowTime) return false;
-      if (item.startDate && new Date(item.startDate).getTime() > nowTime) return false;
-      if (item.deadlineDate && new Date(item.deadlineDate).getTime() < nowTime) return false;
-      if (item.deadline && typeof item.deadline === 'string') {
-        const dStr = item.deadline.toLowerCase();
-        if (dStr.includes('closed') || dStr.includes('expired')) return false;
-        const d = new Date(item.deadline);
-        if (!isNaN(d.getTime()) && d.getTime() < nowTime) return false;
-      }
-      return true;
-    });
-
-    if (items.length === 0) {
-      return { items: [], next_page: null };
-    }
-
-    const oIds = items.map((o: any) => o.id);
-    const interactions = await database.collection("interactions").find({
-      opportunity_id: { $in: oIds }
-    }).toArray();
-
-    const intMap: Record<string, { total: number, recent: number }> = {};
-    const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
-
-    interactions.forEach((i: any) => {
-      const oId = i.opportunity_id;
-      if (!intMap[oId]) {
-        intMap[oId] = { total: 0, recent: 0 };
-      }
-      intMap[oId].total += 1;
-      const iTime = i.timestamp ? new Date(i.timestamp) : new Date();
-      if (iTime >= fortyEightHoursAgo) {
-        intMap[oId].recent += 1;
-      }
-    });
-
-    const now = Date.now();
-    const scoredItems = items.map((opp: any) => {
-      const stats = intMap[opp.id] || { total: 0, recent: 0 };
-
-      const engagementScore = stats.total * 15;
-      const trendingScore = stats.recent * 30;
-      const sourceQualityScore = opp.source_quality_score || 70;
-
-      const createdTime = opp.created_at ? new Date(opp.created_at).getTime() : now;
-      const hoursSinceCreation = Math.max(0, (now - createdTime) / (1000 * 60 * 60));
-      const freshnessScore = (100 / (1 + (hoursSinceCreation * 0.15))) * 2.0;
-
-      const totalScore = engagementScore + trendingScore + sourceQualityScore + freshnessScore;
-
-      return {
-        ...opp,
-        is_stale: hoursSinceCreation > 72,
-        metrics: {
-          totalScore: Math.round(totalScore),
-          relevance: opp.metrics?.relevance || 0,
-          freshness: Math.round(freshnessScore),
-          interactionRatio: stats.total
-        }
-      };
-    });
-
-    scoredItems.sort((a: any, b: any) => b.metrics.totalScore - a.metrics.totalScore);
-
-    const paginatedItems = scoredItems.slice(0, limit);
-
-    return {
-      items: paginatedItems,
-      next_page: searchRes.estimatedTotalHits && (skip + searchLimit < searchRes.estimatedTotalHits) ? page + 1 : null
-    };
+    // Fallback to direct MongoDB query & scoring
+    return await getMongoRankedOpportunities(database, profile, page, limit);
   } catch (scoreErr) {
     console.error("Scoring failure:", scoreErr);
     return { items: [], next_page: null };

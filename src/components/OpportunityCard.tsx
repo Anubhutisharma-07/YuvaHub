@@ -119,6 +119,12 @@ export function OpportunityCard({
                         <div className="flex max-w-[78%] flex-wrap items-center gap-1.5">
                             <TypeBadge type={opp.type} />
                             
+                            {typeof (opp as any).matchScore === 'number' && (
+                                <Badge variant="neutral" className="bg-blue-600 text-white font-extrabold shadow-xs">
+                                    {(opp as any).matchScore}% Match
+                                </Badge>
+                            )}
+
                             {/* Verified Audit Badge */}
                             {isVerified && (
                                 <button

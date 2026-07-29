@@ -89,14 +89,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [lastSyncedTime, setLastSyncedTime] = useState(new Date().toLocaleTimeString());
   const [appSearchQuery, setAppSearchQuery] = useState('');
   const lastConnectedRef = useRef(typeof navigator !== 'undefined' && navigator.onLine ? Date.now() : 0);
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    const saved = localStorage.getItem('yuvahub-theme');
-    if (saved) return saved === 'dark' ? 'dark' : 'light';
-    if (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
-    }
-    return 'light';
-  });
+  const [theme, setTheme] = useState<'light'>('light');
   
   const [gettingStartedStep, setGettingStartedStep] = useState<string | null>(null);
 
@@ -129,13 +122,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     const root = window.document.documentElement;
-    root.classList.toggle('dark', theme === 'dark');
-    localStorage.setItem('yuvahub-theme', theme);
-  }, [theme]);
-
-  const toggleTheme = useCallback(() => {
-    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+    root.classList.remove('dark');
+    localStorage.setItem('yuvahub-theme', 'light');
   }, []);
+
+  const toggleTheme = useCallback(() => {}, []);
 
   // ─── Backend health check ─────────────────────────────────────────────────────
 
@@ -282,23 +273,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [activeTab, selectedOppId]);
 
   useEffect(() => {
-    const abortController = new AbortController();
     let mounted = true;
 
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (!mounted) return;
       setUser(currentUser);
+
       if (currentUser) {
         try {
-          const token = await currentUser.getIdToken(true);
+          // Timeout protection so app never hangs on loading screen if backend/Firebase is slow/offline
+          const tokenPromise = currentUser.getIdToken();
+          const tokenTimeout = new Promise<string>((_, reject) => 
+            setTimeout(() => reject(new Error('getIdToken timeout')), 2500)
+          );
+          const token = await Promise.race([tokenPromise, tokenTimeout]);
+
+          const syncController = new AbortController();
+          const fetchTimeout = setTimeout(() => syncController.abort(), 3000);
+
           const response = await fetch('/api/v1/auth/sync', {
-            signal: abortController.signal,
+            signal: syncController.signal,
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`,
             },
           });
+          clearTimeout(fetchTimeout);
 
           if (!mounted) return;
           if (response.ok) {
@@ -315,53 +316,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
         } catch (error) {
           if (!mounted) return;
-          if (error instanceof DOMException && error.name === 'AbortError') return;
-          console.warn('MongoDB auth sync failed, falling back to Firestore:', error);
-          try {
-            const docRef = doc(db, 'users', currentUser.uid);
-            const getDocPromise = getDoc(docRef);
-            const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Firestore getDoc timeout')), 2000));
-            const docSnap = await Promise.race([getDocPromise, timeoutPromise]);
-            if (!mounted) return;
-            if (docSnap.exists()) {
-              const data = docSnap.data() as UserProfile;
-              setProfile(data);
-              setBookmarkedIds(data.bookmarks ?? []);
-            } else {
-              const fallback: UserProfile = {
-                uid: currentUser.uid,
-                name: currentUser.displayName || '',
-                email: currentUser.email || '',
-                avatarUrl: currentUser.photoURL || '',
-              };
-              setProfile(fallback);
-              setBookmarkedIds([]);
-            }
-          } catch (fsError) {
-            if (!mounted) return;
-            console.error('Firestore fallback sync failed or timed out:', fsError);
-            setProfile({
-              uid: currentUser.uid,
-              name: currentUser.displayName || '',
-              email: currentUser.email || '',
-              avatarUrl: currentUser.photoURL || '',
-            });
-            setBookmarkedIds([]);
-          }
+          console.warn('Auth sync falling back to local user profile:', error);
+          setProfile({
+            uid: currentUser.uid,
+            name: currentUser.displayName || currentUser.email?.split('@')[0] || 'User',
+            email: currentUser.email || '',
+            avatarUrl: currentUser.photoURL || '',
+          });
+          setBookmarkedIds([]);
         }
       } else {
         setProfile(null);
         setBookmarkedIds([]);
       }
-      if (mounted) setLoading(false);
+      
+      if (mounted) {
+        setLoading(false);
+      }
     });
+
+    // Hard fallback timeout: ensure loading spinner disappears after at most 4s regardless of Firebase auth state
+    const hardLoadingTimeout = setTimeout(() => {
+      if (mounted) {
+        setLoading(false);
+      }
+    }, 4000);
 
     return () => {
       mounted = false;
-      abortController.abort();
+      clearTimeout(hardLoadingTimeout);
       unsubscribe();
     };
-  }, []);
+  }, [refreshKarma]);
 
   // ─── Bookmark actions ─────────────────────────────────────────────────────────
 
