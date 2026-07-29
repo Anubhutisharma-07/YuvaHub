@@ -38,20 +38,20 @@ export default function HelpCategory({
     <section className="space-y-4" aria-labelledby={`category-${title.replace(/\s+/g, '-').toLowerCase()}`}>
       <div className="flex items-center gap-2">
         {Icon && (
-          <Icon className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0" aria-hidden="true" />
+          <Icon className="w-5 h-5 text-[#b56b37] shrink-0" aria-hidden="true" />
         )}
         <div>
           <h3
             id={`category-${title.replace(/\s+/g, '-').toLowerCase()}`}
-            className="text-lg font-bold text-gray-900 dark:text-white"
+            className="text-lg font-serif font-bold text-[#231f20]"
           >
             {title}
           </h3>
           {description && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{description}</p>
+            <p className="text-xs text-[#603620] mt-0.5">{description}</p>
           )}
         </div>
-        <span className="ml-auto text-xs font-medium text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-lg">
+        <span className="ml-auto text-xs font-extrabold text-[#603620] bg-[#f6efe2] border border-[#e8ded1] px-2.5 py-1 rounded-lg">
           {items.length} {items.length === 1 ? 'topic' : 'topics'}
         </span>
       </div>

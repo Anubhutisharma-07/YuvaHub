@@ -174,10 +174,10 @@ const AdminDashboard = () => {
 
   if (!isAdmin) {
     return (
-      <div className="max-w-4xl mx-auto my-12 p-8 bg-white rounded-2xl border border-red-200 text-center space-y-4 shadow-sm">
-        <ShieldAlert className="w-12 h-12 text-red-500 mx-auto" />
-        <h2 className="text-xl font-bold text-gray-900">Admin Panel Access Restricted</h2>
-        <p className="text-sm text-gray-600 max-w-md mx-auto">
+      <div className="max-w-4xl mx-auto my-12 p-8 bg-white rounded-2xl border border-red-200 text-center space-y-4 shadow-xs">
+        <ShieldAlert className="w-12 h-12 text-red-600 mx-auto" />
+        <h2 className="text-xl font-serif font-bold text-[#231f20]">Admin Panel Access Restricted</h2>
+        <p className="text-xs text-[#603620] max-w-md mx-auto">
           You must be logged in as an authorized administrator to view the central scraper telemetry dashboard.
         </p>
       </div>
@@ -185,47 +185,47 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-8 bg-gray-50/50 min-h-screen animate-fade-in">
+    <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6 font-sans pb-16">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-[#e8ded1] shadow-xs">
         <div>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-[#603620] text-[#f3e4bd] flex items-center justify-center font-bold">
               <Activity className="w-5 h-5 animate-pulse" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Central Scraper Health Dashboard</h1>
-              <p className="text-xs text-gray-500 font-medium">Real-time scraper telemetry, execution logs & data ingestion monitoring.</p>
+              <h1 className="text-xl md:text-2xl font-serif font-bold text-[#231f20]">Central Scraper Telemetry</h1>
+              <p className="text-xs text-[#603620]">Real-time scraper telemetry, execution logs & data ingestion monitoring.</p>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center gap-4 shrink-0">
-          <div className="flex bg-gray-100 p-1 rounded-xl text-sm font-semibold">
+        <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0">
+          <div className="flex bg-[#fcf9f2] border border-[#e8ded1] p-1 rounded-xl text-xs font-bold">
             <button 
               onClick={() => setActiveTab('telemetry')}
-              className={`px-4 py-2 rounded-lg transition-all ${activeTab === 'telemetry' ? 'bg-white shadow-2xs text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}
+              className={`px-4 py-2 rounded-lg uppercase tracking-wider transition-all cursor-pointer ${activeTab === 'telemetry' ? 'bg-[#b56b37] text-white shadow-xs font-extrabold' : 'text-[#603620] hover:text-[#231f20]'}`}
             >
               Telemetry
             </button>
             <button 
               onClick={() => setActiveTab('moderation')}
-              className={`px-4 py-2 rounded-lg transition-all ${activeTab === 'moderation' ? 'bg-white shadow-2xs text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}
+              className={`px-4 py-2 rounded-lg uppercase tracking-wider transition-all cursor-pointer ${activeTab === 'moderation' ? 'bg-[#b56b37] text-white shadow-xs font-extrabold' : 'text-[#603620] hover:text-[#231f20]'}`}
             >
               Moderation Queue
-              {moderationOpps.length > 0 && <span className="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{moderationOpps.length}</span>}
+              {moderationOpps.length > 0 && <span className="ml-2 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full">{moderationOpps.length}</span>}
             </button>
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-700">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              System Live
+              Live
             </div>
             <button
               onClick={fetchDashboardData}
               disabled={refreshing}
-              className="px-3.5 py-2 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl text-xs font-semibold text-gray-700 flex items-center gap-1.5 transition-colors shadow-2xs disabled:opacity-50"
+              className="px-3.5 py-2 bg-white border border-[#e8ded1] hover:bg-[#f6efe2] rounded-xl text-xs font-extrabold uppercase tracking-wider text-[#603620] flex items-center gap-1.5 transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
               Refresh
@@ -238,82 +238,82 @@ const AdminDashboard = () => {
         <>
           {/* Top Telemetry Vitals Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-sm hover:shadow-md transition-all">
-              <div className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1 flex items-center justify-between">
-                Active Scrapers <Server className="w-4 h-4 text-blue-500" />
+            <div className="bg-white p-5 rounded-2xl border border-[#e8ded1] shadow-xs">
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-[#603620] mb-1 flex items-center justify-between">
+                Active Scrapers <Server className="w-4 h-4 text-[#b56b37]" />
               </div>
-              <div className="text-2xl font-black text-gray-900 flex items-baseline gap-2">
+              <div className="text-2xl font-serif font-bold text-[#231f20] flex items-baseline gap-2 mt-1">
                 {scrapers.filter(s => s.status !== 'failing').length} / {scrapers.length}
-                <span className="text-xs font-bold text-emerald-600">Active</span>
+                <span className="text-xs font-bold text-emerald-700">Active</span>
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-sm hover:shadow-md transition-all">
-              <div className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1 flex items-center justify-between">
-                Data Ingested (24h) <Database className="w-4 h-4 text-emerald-500" />
+            <div className="bg-white p-5 rounded-2xl border border-[#e8ded1] shadow-xs">
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-[#603620] mb-1 flex items-center justify-between">
+                Data Ingested (24h) <Database className="w-4 h-4 text-emerald-600" />
               </div>
-              <div className="text-2xl font-black text-emerald-600">
-                +{stats.opportunitiesAdded || 128} <span className="text-xs text-gray-400 font-normal">items</span>
+              <div className="text-2xl font-serif font-bold text-emerald-700 mt-1">
+                +{stats.opportunitiesAdded || 128} <span className="text-xs text-[#8c7569] font-sans font-normal">items</span>
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-sm hover:shadow-md transition-all">
-              <div className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1 flex items-center justify-between">
-                Active Users <BarChart3 className="w-4 h-4 text-indigo-500" />
+            <div className="bg-white p-5 rounded-2xl border border-[#e8ded1] shadow-xs">
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-[#603620] mb-1 flex items-center justify-between">
+                Active Users <BarChart3 className="w-4 h-4 text-[#b56b37]" />
               </div>
-              <div className="text-2xl font-black text-indigo-600">
+              <div className="text-2xl font-serif font-bold text-[#b56b37] mt-1">
                 {stats.activeUsers || 1540}
               </div>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-sm hover:shadow-md transition-all">
-              <div className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1 flex items-center justify-between">
-                Total Cron Executions <Clock className="w-4 h-4 text-gray-400" />
+            <div className="bg-white p-5 rounded-2xl border border-[#e8ded1] shadow-xs">
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-[#603620] mb-1 flex items-center justify-between">
+                Total Cron Executions <Clock className="w-4 h-4 text-[#8c7569]" />
               </div>
-              <div className="text-2xl font-black text-gray-900">
+              <div className="text-2xl font-serif font-bold text-[#231f20] mt-1">
                 {stats.totalExecutions || 342}
               </div>
             </div>
           </div>
 
           {/* Recharts Analytics */}
-          <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm">
-            <h3 className="text-lg font-bold text-gray-900 mb-6">Platform Analytics (Past 7 Days)</h3>
-            <div className="h-[300px] w-full">
+          <div className="bg-white p-6 rounded-2xl border border-[#e8ded1] shadow-xs">
+            <h3 className="text-base font-serif font-bold text-[#231f20] mb-6">Platform Analytics (Past 7 Days)</h3>
+            <div className="h-[280px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.1}/>
-                      <stop offset="95%" stopColor="#4F46E5" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#b56b37" stopOpacity={0.15}/>
+                      <stop offset="95%" stopColor="#b56b37" stopOpacity={0}/>
                     </linearGradient>
                     <linearGradient id="colorOpps" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.1}/>
-                      <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#059669" stopOpacity={0.15}/>
+                      <stop offset="95%" stopColor="#059669" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} dy={10} />
-                  <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} />
-                  <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e8ded1" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#603620', fontSize: 11}} dy={10} />
+                  <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{fill: '#603620', fontSize: 11}} />
+                  <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{fill: '#603620', fontSize: 11}} />
                   <Tooltip 
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    contentStyle={{ borderRadius: '12px', border: '1px solid #e8ded1', backgroundColor: '#ffffff', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
                   />
-                  <Area yAxisId="left" type="monotone" dataKey="activeUsers" stroke="#4F46E5" strokeWidth={3} fillOpacity={1} fill="url(#colorUsers)" name="Active Users" />
-                  <Area yAxisId="right" type="monotone" dataKey="oppsAdded" stroke="#10B981" strokeWidth={3} fillOpacity={1} fill="url(#colorOpps)" name="Opportunities Added" />
+                  <Area yAxisId="left" type="monotone" dataKey="activeUsers" stroke="#b56b37" strokeWidth={2.5} fillOpacity={1} fill="url(#colorUsers)" name="Active Users" />
+                  <Area yAxisId="right" type="monotone" dataKey="oppsAdded" stroke="#059669" strokeWidth={2.5} fillOpacity={1} fill="url(#colorOpps)" name="Opportunities Added" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </div>
 
           {/* Scraper Fleet Status Grid */}
-          <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden space-y-4 p-6">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+          <div className="bg-white rounded-2xl border border-[#e8ded1] shadow-xs space-y-4 p-6">
+            <div className="flex items-center justify-between border-b border-[#e8ded1] pb-4">
               <div>
-                <h3 className="text-lg font-bold text-gray-900">Scraper Fleet & Queues</h3>
-                <p className="text-xs text-gray-500 font-medium">Monitor active web scrapers and trigger manual execution runs via BullMQ.</p>
+                <h3 className="text-base font-serif font-bold text-[#231f20]">Scraper Fleet & Queues</h3>
+                <p className="text-xs text-[#603620]">Monitor active web scrapers and trigger manual execution runs.</p>
               </div>
-              <span className="text-xs font-bold px-3 py-1 bg-blue-50 text-blue-700 rounded-full">
+              <span className="text-[10px] font-extrabold px-3 py-1 bg-[#f6efe2] text-[#b56b37] border border-[#e8ded1] rounded-full uppercase">
                 {scrapers.length} Monitored Sources
               </span>
             </div>
@@ -327,54 +327,54 @@ const AdminDashboard = () => {
                 return (
                   <div
                     key={s.name}
-                    className="bg-gray-50/70 border border-gray-200/80 rounded-xl p-4 flex flex-col justify-between space-y-3 hover:border-blue-200 hover:shadow-sm transition-all"
+                    className="bg-[#fcf9f2] border border-[#e8ded1] rounded-xl p-4 flex flex-col justify-between space-y-3 hover:border-[#b56b37] transition-all"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2.5">
                         {isFailing ? (
-                          <XCircle className="w-5 h-5 text-red-500 shrink-0" />
+                          <XCircle className="w-5 h-5 text-red-600 shrink-0" />
                         ) : isDegraded ? (
-                          <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
+                          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
                         ) : (
-                          <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
+                          <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
                         )}
                         <div>
-                          <h4 className="font-bold text-sm text-gray-900">{s.name}</h4>
-                          <p className="text-xs text-gray-500">Last Scrape: {s.lastRun || 'Recently'}</p>
+                          <h4 className="font-serif font-bold text-xs text-[#231f20]">{s.name}</h4>
+                          <p className="text-[10px] text-[#8c7569]">Last Scrape: {s.lastRun || 'Recently'}</p>
                         </div>
                       </div>
 
                       <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                        className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md uppercase border ${
                           isFailing
-                            ? 'bg-red-100 text-red-700'
+                            ? 'bg-red-50 text-red-700 border-red-200'
                             : isDegraded
-                            ? 'bg-amber-100 text-amber-700'
-                            : 'bg-emerald-100 text-emerald-700'
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                         }`}
                       >
                         {s.status}
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-gray-200/60 text-xs">
-                      <div className="text-gray-600 font-medium">
-                        Active/Waiting: <span className="font-bold text-gray-900">{s.items || 0} items</span>
+                    <div className="flex items-center justify-between pt-2 border-t border-[#e8ded1] text-xs">
+                      <div className="text-[#603620] text-xs">
+                        Queue: <span className="font-bold text-[#231f20]">{s.items || 0} items</span>
                       </div>
 
                       <button
                         onClick={() => handleRunScraper(s.name)}
                         disabled={isTriggering}
-                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg flex items-center gap-1.5 transition-colors shadow-2xs disabled:opacity-50 text-xs cursor-pointer"
+                        className="px-3 py-1.5 bg-[#b56b37] hover:bg-[#603620] text-white font-extrabold uppercase text-[10px] tracking-wider rounded-lg flex items-center gap-1.5 transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
                       >
                         {isTriggering ? (
                           <>
-                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            <RefreshCw className="w-3 h-3 animate-spin" />
                             Running...
                           </>
                         ) : (
                           <>
-                            <Play className="w-3.5 h-3.5" />
+                            <Play className="w-3 h-3" />
                             Run Job
                           </>
                         )}
@@ -388,16 +388,16 @@ const AdminDashboard = () => {
         </>
       ) : (
         /* Moderation Queue Tab */
-        <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden p-6 space-y-6">
+        <div className="bg-white rounded-2xl border border-[#e8ded1] shadow-xs p-6 space-y-6">
           <div>
-            <h3 className="text-lg font-bold text-gray-900">Content Moderation Queue</h3>
-            <p className="text-xs text-gray-500 font-medium">Review opportunities flagged by users or automatically marked as low quality.</p>
+            <h3 className="text-base font-serif font-bold text-[#231f20]">Content Moderation Queue</h3>
+            <p className="text-xs text-[#603620]">Review opportunities flagged by users or automatically marked as low quality.</p>
           </div>
           
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50/50 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                <tr className="border-b border-[#e8ded1] bg-[#fcf9f2] text-[10px] font-extrabold text-[#603620] uppercase tracking-wider">
                   <th className="py-3 px-4">Title</th>
                   <th className="py-3 px-4">Organization</th>
                   <th className="py-3 px-4">Score</th>
@@ -405,43 +405,43 @@ const AdminDashboard = () => {
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 text-xs font-medium">
+              <tbody className="divide-y divide-[#e8ded1] text-xs font-medium">
                 {moderationOpps.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-12 text-center text-gray-400 font-medium">
-                      <CheckCircle className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
+                    <td colSpan={5} className="py-12 text-center text-[#8c7569] font-medium">
+                      <CheckCircle className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
                       Queue is completely clear.
                     </td>
                   </tr>
                 ) : (
                   moderationOpps.map((opp) => (
-                    <tr key={opp._id || opp.id} className="hover:bg-gray-50/80 transition-colors">
-                      <td className="py-3.5 px-4 font-bold text-gray-900">
+                    <tr key={opp._id || opp.id} className="hover:bg-[#fcf9f2] transition-colors">
+                      <td className="py-3.5 px-4 font-serif font-bold text-[#231f20]">
                         {opp.title}
                       </td>
-                      <td className="py-3.5 px-4 text-gray-600">
+                      <td className="py-3.5 px-4 text-[#603620]">
                         {opp.org || opp.organization || 'Unknown'}
                       </td>
                       <td className="py-3.5 px-4">
-                        <span className={`px-2 py-1 rounded font-bold ${(opp.source_quality_score || 0) < 50 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                        <span className={`px-2 py-1 rounded text-[10px] font-extrabold uppercase border ${(opp.source_quality_score || 0) < 50 ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
                           {opp.source_quality_score || 0}/100
                         </span>
                       </td>
                       <td className="py-3.5 px-4">
-                        {opp.flagged ? <span className="text-red-600 font-bold">User Flagged</span> : <span className="text-gray-400">System</span>}
+                        {opp.flagged ? <span className="text-red-700 font-extrabold">User Flagged</span> : <span className="text-[#8c7569]">System</span>}
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex justify-end gap-2">
                           <button 
                             onClick={() => handleModerate(opp._id || opp.id, 'approve')}
-                            className="p-1.5 bg-emerald-50 text-emerald-600 rounded hover:bg-emerald-100 transition-colors cursor-pointer"
+                            className="p-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors cursor-pointer"
                             title="Approve"
                           >
                             <Check className="w-4 h-4" />
                           </button>
                           <button 
                             onClick={() => handleModerate(opp._id || opp.id, 'reject')}
-                            className="p-1.5 bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors cursor-pointer"
+                            className="p-1.5 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition-colors cursor-pointer"
                             title="Reject & Delete"
                           >
                             <X className="w-4 h-4" />
