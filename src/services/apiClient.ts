@@ -603,3 +603,107 @@ export async function submitOpportunity(payload: any) {
     throw error;
   }
 }
+
+// ─── AI Recommendation Engine API Client Methods ────────────────────────────
+
+export async function fetchPersonalizedRecommendations(params?: { minScore?: number; type?: string; limit?: number; offset?: number }) {
+  try {
+    const query = new URLSearchParams();
+    if (params?.minScore) query.append("minScore", params.minScore.toString());
+    if (params?.type && params.type !== "All") query.append("type", params.type);
+    if (params?.limit) query.append("limit", params.limit.toString());
+    if (params?.offset) query.append("offset", params.offset.toString());
+
+    const url = `${API_BASE_URL}/recommendations?${query.toString()}`;
+    const response = await fetchWithRetry(url, { method: "GET" });
+    if (!response.ok) throw new Error("Failed to fetch recommendations");
+    return await response.json();
+  } catch (error) {
+    console.warn("fetchPersonalizedRecommendations fallback:", error);
+    return null;
+  }
+}
+
+export async function fetchMatchExplanation(opportunityId: string) {
+  try {
+    const url = `${API_BASE_URL}/recommendations/explanation/${opportunityId}`;
+    const response = await fetchWithRetry(url, { method: "GET" });
+    if (!response.ok) throw new Error("Failed to fetch explanation");
+    return await response.json();
+  } catch (error) {
+    console.warn("fetchMatchExplanation fallback:", error);
+    return null;
+  }
+}
+
+export async function parseProfileSkillsAndInterests(resumeText: string, bioText?: string) {
+  try {
+    const url = `${API_BASE_URL}/recommendations/parse-profile`;
+    const response = await fetchWithRetry(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ resumeText, bioText })
+    });
+    if (!response.ok) throw new Error("Failed to parse skills");
+    return await response.json();
+  } catch (error) {
+    console.warn("parseProfileSkillsAndInterests fallback:", error);
+    return null;
+  }
+}
+
+export async function fetchRecommendationPreferences() {
+  try {
+    const url = `${API_BASE_URL}/recommendations/preferences`;
+    const response = await fetchWithRetry(url, { method: "GET" });
+    if (!response.ok) throw new Error("Failed to fetch preferences");
+    return await response.json();
+  } catch (error) {
+    console.warn("fetchRecommendationPreferences fallback:", error);
+    return null;
+  }
+}
+
+export async function updateRecommendationPreferences(preferences: any) {
+  try {
+    const url = `${API_BASE_URL}/recommendations/preferences`;
+    const response = await fetchWithRetry(url, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(preferences)
+    });
+    if (!response.ok) throw new Error("Failed to update preferences");
+    return await response.json();
+  } catch (error) {
+    console.warn("updateRecommendationPreferences fallback:", error);
+    return null;
+  }
+}
+
+export async function recordRecommendationInteraction(opportunityId: string, interactionType: 'view' | 'save' | 'apply' | 'dismiss', tags: string[] = [], opportunityType: string = "") {
+  try {
+    const url = `${API_BASE_URL}/recommendations/interaction`;
+    const response = await fetchWithRetry(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ opportunityId, interactionType, tags, opportunityType })
+    });
+    return response.ok;
+  } catch (error) {
+    console.warn("recordRecommendationInteraction fallback:", error);
+    return false;
+  }
+}
+
+export async function fetchProfileCompletenessScore() {
+  try {
+    const url = `${API_BASE_URL}/recommendations/completeness`;
+    const response = await fetchWithRetry(url, { method: "GET" });
+    if (!response.ok) throw new Error("Failed to fetch completeness");
+    return await response.json();
+  } catch (error) {
+    console.warn("fetchProfileCompletenessScore fallback:", error);
+    return null;
+  }
+}
+
