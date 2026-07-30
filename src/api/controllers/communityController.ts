@@ -164,15 +164,16 @@ export const deletePost = async (req: Request, res: Response) => {
 
 export const getPostById = async (req: Request, res: Response) => {
   try {
-    const { postId } = req.params;
-    if (!dbCommand || !dbQuery)
-      return res.status(503).json({ error: "Database not available" });
-    // Issue #285: normalize `string | string[]` param before use.
+    // Issue #285: normalize `string | string[]` param BEFORE checking DB
+    // availability — an invalid param is a client error (400) regardless of
+    // whether the database is connected.  This matches the order used by
+    // deletePost, getComments, createComment, editComment, and upvotePost.
     const idStr = normalizeParam(req.params.postId);
     if (!idStr) {
       return res.status(400).json({ error: "Missing or invalid postId" });
     }
-    if (!dbCommand || !dbQuery) return res.status(503).json({ error: "Database not available" });
+    if (!dbCommand || !dbQuery)
+      return res.status(503).json({ error: "Database not available" });
 
     const oid = safeObjectId(idStr);
     const queryId = oid || idStr;
