@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "start": "node dist/server.cjs",
     "start:worker": "tsx src/worker.ts",
@@ -17,7 +20,9 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "verify:client-secrets": "node scripts/verify-client-secrets.mjs",
-    "test:client-secrets": "vitest run tests/client-secret-boundary.test.ts"
+    "test:client-secrets": "vitest run tests/client-secret-boundary.test.ts",
+    "audit": "npm audit --omit=dev",
+    "audit:fix": "npm install --package-lock-only && npm audit"
   },
   "dependencies": {
     "@bull-board/api": "^8.1.2",
@@ -44,7 +49,6 @@
     "express-rate-limit": "^8.5.2",
     "firebase": "^12.16.0",
     "firebase-admin": "^14.2.0",
-    "google-gax": "^5.0.4",
     "gsap": "^3.15.0",
     "http-proxy-middleware": "^4.0.0",
     "ioredis": "^5.11.1",
@@ -99,6 +103,9 @@
     "vitest": "^4.1.10"
   },
   "overrides": {
-    "uuid": "^11.1.1"
+    "uuid": "^11.1.1",
+    "protobufjs": "^7.6.0",
+    "google-gax": "^5.0.4",
+    "jsonwebtoken": "^9.0.3"
   }
 }
