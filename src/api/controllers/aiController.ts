@@ -147,11 +147,18 @@ Return JSON strictly in this format:
       }
     }
 
-   let parsed = defaultFallback;
+  let parsed = defaultFallback;
     if (responseText) {
       try {
         const temp = JSON.parse(responseText);
-        if (temp && typeof temp.score === "number" && Array.isArray(temp.strengths) && Array.isArray(temp.weaknesses) && Array.isArray(temp.suggestions)) {
+        if (
+          temp &&
+          typeof temp.score === "number" &&
+          temp.score >= 1 && temp.score <= 100 &&
+          Array.isArray(temp.strengths) &&
+          Array.isArray(temp.weaknesses) &&
+          Array.isArray(temp.suggestions)
+        ) {
           parsed = temp;
         } else {
           console.warn("AI response failed shape validation. Using fallback.");
@@ -260,11 +267,23 @@ Return ONLY a JSON object strictly adhering to this schema:
       } catch (liteErr) { }
     }
 
-   let parsed = defaultFallback;
+let parsed = defaultFallback;
     if (responseText) {
       try {
         const temp = JSON.parse(responseText);
-        if (temp && typeof temp.title === "string" && Array.isArray(temp.milestones)) {
+        if (
+          temp &&
+          typeof temp.title === "string" &&
+          typeof temp.overview === "string" &&
+          typeof temp.estimatedTimeframe === "string" &&
+          typeof temp.targetRole === "string" &&
+          Array.isArray(temp.milestones) &&
+          temp.milestones.every((m: any) =>
+            typeof m.step === "number" &&
+            typeof m.title === "string" &&
+            Array.isArray(m.topics)
+          )
+        ) {
           parsed = temp;
         } else {
           console.warn("AI response failed shape validation. Using fallback.");
@@ -370,11 +389,19 @@ ${wrapUserInput(jobDescription)}
       }
     }
 
-    let parsed = defaultFallback;
+  let parsed = defaultFallback;
     if (responseText) {
       try {
         const temp = JSON.parse(responseText);
-        if (temp && typeof temp.score === "number" && Array.isArray(temp.missingKeywords) && Array.isArray(temp.strengths)) {
+        if (
+          temp &&
+          typeof temp.score === "number" &&
+          temp.score >= 0 && temp.score <= 100 &&
+          Array.isArray(temp.missingKeywords) &&
+          Array.isArray(temp.strengths) &&
+          Array.isArray(temp.weaknesses) &&
+          Array.isArray(temp.suggestions)
+        ) {
           parsed = temp;
         } else {
           console.warn("AI response failed shape validation. Using fallback.");
