@@ -147,20 +147,17 @@ Return JSON strictly in this format:
       }
     }
 
-    let parsed = defaultFallback;
+   let parsed = defaultFallback;
     if (responseText) {
       try {
-        parsed = JSON.parse(responseText);
-      } catch (e) {
-        try {
-          const firstBrace = responseText.indexOf('{');
-          const lastBrace = responseText.lastIndexOf('}');
-          if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-            parsed = JSON.parse(responseText.substring(firstBrace, lastBrace + 1));
-          }
-        } catch (e2) {
-            console.warn("Invalid AI JSON received. Using fallback.");
-         }
+        const temp = JSON.parse(responseText);
+        if (temp && typeof temp.score === "number" && Array.isArray(temp.strengths) && Array.isArray(temp.weaknesses) && Array.isArray(temp.suggestions)) {
+          parsed = temp;
+        } else {
+          console.warn("AI response failed shape validation. Using fallback.");
+        }
+      } catch {
+        console.warn("Invalid AI JSON received. Using fallback.");
       }
     }
 
@@ -263,20 +260,17 @@ Return ONLY a JSON object strictly adhering to this schema:
       } catch (liteErr) { }
     }
 
-    let parsed = defaultFallback;
+   let parsed = defaultFallback;
     if (responseText) {
       try {
-        parsed = JSON.parse(responseText);
-      } catch (e) {
-        try {
-          const firstBrace = responseText.indexOf('{');
-          const lastBrace = responseText.lastIndexOf('}');
-          if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-            parsed = JSON.parse(responseText.substring(firstBrace, lastBrace + 1));
-          }
-        } catch (e2) { 
-          console.warn("Invalid AI JSON received. Using fallback.");
+        const temp = JSON.parse(responseText);
+        if (temp && typeof temp.title === "string" && Array.isArray(temp.milestones)) {
+          parsed = temp;
+        } else {
+          console.warn("AI response failed shape validation. Using fallback.");
         }
+      } catch {
+        console.warn("Invalid AI JSON received. Using fallback.");
       }
     }
 
@@ -352,22 +346,24 @@ ${wrapUserInput(jobDescription)}
 
     let responseText = "";
     try {
-     const response = await generateWithTimeout(
+  const response = await generateWithTimeout(
   ai.models.generateContent({
-    model: "gemini-3.5-flash",
-    contents: prompt,
+    model: "gemini-2.5-flash",
+    contents: contents,
+    config: { responseMimeType: "application/json" }
   })
-);
+) as any;
       responseText = response.text || "";
     } catch (err: any) {
       console.error("Gemini API call failed:", err);
       try {
-        const response = await generateWithTimeout(
+   const response = await generateWithTimeout(
   ai.models.generateContent({
-    model: "gemini-3.5-flash",
-    contents: prompt,
+    model: "gemini-2.0-flash",
+    contents: contents,
+    config: { responseMimeType: "application/json" }
   })
-);
+) as any;
         responseText = response.text || "";
       } catch (liteErr) {
         console.error("Gemini Alternate model failed:", liteErr);
@@ -377,17 +373,14 @@ ${wrapUserInput(jobDescription)}
     let parsed = defaultFallback;
     if (responseText) {
       try {
-        parsed = JSON.parse(responseText);
-      } catch (e) {
-        try {
-          const firstBrace = responseText.indexOf('{');
-          const lastBrace = responseText.lastIndexOf('}');
-          if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-            parsed = JSON.parse(responseText.substring(firstBrace, lastBrace + 1));
-          }
-        } catch (e2) { 
-          console.warn("Invalid AI JSON received. Using fallback.");
+        const temp = JSON.parse(responseText);
+        if (temp && typeof temp.score === "number" && Array.isArray(temp.missingKeywords) && Array.isArray(temp.strengths)) {
+          parsed = temp;
+        } else {
+          console.warn("AI response failed shape validation. Using fallback.");
         }
+      } catch {
+        console.warn("Invalid AI JSON received. Using fallback.");
       }
     }
 
