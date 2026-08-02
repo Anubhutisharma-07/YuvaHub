@@ -146,3 +146,34 @@ export function buildPaginationMetadata(
       safePage > 1,
   };
 }
+
+// Additional pagination helpers for consistent { data, meta } envelope
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  next_page: number | null;
+  has_more: boolean;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: PaginationMeta;
+}
+
+/** Build the pagination metadata for a known total (simpler format). */
+export function buildPaginationMeta(page: number, limit: number, total: number): PaginationMeta {
+  const next_page = page * limit < total ? page + 1 : null;
+  return {
+    page,
+    limit,
+    total,
+    next_page,
+    has_more: next_page !== null,
+  };
+}
+
+/** Wrap items + meta into the standard paginated envelope. */
+export function paginate<T>(data: T[], page: number, limit: number, total: number): PaginatedResponse<T> {
+  return { data, meta: buildPaginationMeta(page, limit, total) };
+}

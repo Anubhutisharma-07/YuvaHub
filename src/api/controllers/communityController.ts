@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
 import { ObjectId } from "mongodb";
-import { safeObjectId, normalizeParam } from "../../lib/utils.js";
+import { safeObjectId, normalizeParam, parsePagination } from "../../lib/utils.js";
 import escapeHtml from "escape-html";
-import { AppError } from "../../lib/AppError.js";
+import { paginate } from "../../lib/pagination.js";
 
 const containsProfanity = (text: string): boolean => {
   const profanityRegex =
@@ -12,13 +12,23 @@ const containsProfanity = (text: string): boolean => {
 };
 
 export const getPosts = async (req: Request, res: Response) => {
-    const sort = req.query.sort === 'trending' ? 'trending' : 'latest';
-    const sortOption: any = sort === 'trending' ? { upvotes: -1, createdAt: -1 } : { createdAt: -1 };
+  try {
+    const { page, limit, skip } = parsePagination(req.query);
+    const sort = req.query.sort === "trending" ? "trending" : "latest";
+    const sortOption: any =
+      sort === "trending" ? { upvotes: -1, createdAt: -1 } : { createdAt: -1 };
 
     if (dbQuery) {
-      const posts = await dbQuery.collection("posts").find({}).sort(sortOption).limit(50).toArray();
+      const posts = await dbQuery
+        .collection("posts")
+        .find({})
+        .sort(sortOption)
+        .skip(skip)
+        .limit(limit)
+        .toArray();
       if (posts.length > 0) {
-        return res.json(posts);
+        const total = await dbQuery.collection("posts").countDocuments({});
+        return res.json(paginate(posts, page, limit, total));
       }
     }
 
@@ -73,7 +83,12 @@ export const getPosts = async (req: Request, res: Response) => {
     if (sort === "trending") {
       mockPosts.sort((a, b) => b.upvotes - a.upvotes);
     }
-    res.json(mockPosts);
+    const sliced = mockPosts.slice(skip, skip + limit);
+    res.json(paginate(sliced, page, limit, mockPosts.length));
+  } catch (err) {
+    console.error("Fetch Posts Error:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 };
 
 export const createPost = async (req: Request, res: Response) => {

@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
-import { safeObjectId } from "../../lib/utils.js";
-import { AppError } from "../../lib/AppError.js";
+import { safeObjectId, parsePagination } from "../../lib/utils.js";
+import { paginate } from "../../lib/pagination.js";
 
 export const getNotifications = async (req: Request, res: Response) => {
   try {
     const user = req.user;
+    const { page, limit, skip } = parsePagination(req.query);
     const DEFAULT_NOTIFICATIONS = [
       {
         id: "welcome",
@@ -18,21 +19,29 @@ export const getNotifications = async (req: Request, res: Response) => {
     ];
 
     if (!dbQuery) {
-      return res.json(DEFAULT_NOTIFICATIONS);
+      const sliced = DEFAULT_NOTIFICATIONS.slice(skip, skip + limit);
+      return res.json(paginate(sliced, page, limit, DEFAULT_NOTIFICATIONS.length));
     }
 
     const collection = dbQuery.collection("notifications");
     let items;
+    let total = 0;
 
     if ((dbQuery as any).isMock) {
       items = (collection as any).data ? (collection as any).data.filter((n: any) => n.userId === user.uid || n.userId === "global-subscribers") : [];
+      total = items.length;
+      items = items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(skip, skip + limit);
     } else {
-      items = await collection.find({
+      const filter = {
         $or: [
           { userId: user.uid },
           { userId: "global-subscribers" }
         ]
-      }).sort({ createdAt: -1 }).toArray();
+      };
+      [items, total] = await Promise.all([
+        collection.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).toArray(),
+        collection.countDocuments(filter)
+      ]);
     }
 
     const formatted = items.map((item: any) => {
@@ -52,19 +61,18 @@ export const getNotifications = async (req: Request, res: Response) => {
       return copy;
     });
 
-    res.json(formatted);
+    res.json(paginate(formatted, page, limit, total));
   } catch (err: any) {
     console.error("GET /api/v1/notifications error:", err);
-    res.json([
-      {
-        id: "welcome",
-        title: "Welcome to YuvaHub! ✨",
-        message: "Ready to find your next break? The real data pipeline is active.",
-        type: "welcome",
-        time: "Just now",
-        read: false
-      }
-    ]);
+    const welcome = [{
+      id: "welcome",
+      title: "Welcome to YuvaHub! ✨",
+      message: "Ready to find your next break? The real data pipeline is active.",
+      type: "welcome",
+      time: "Just now",
+      read: false
+    }];
+    res.json(paginate(welcome, 1, 20, welcome.length));
   }
 };
 

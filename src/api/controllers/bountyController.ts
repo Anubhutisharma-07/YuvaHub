@@ -1,12 +1,21 @@
 import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
-import { safeObjectId } from "../../lib/utils.js";
-import { AppError } from "../../lib/AppError.js";
+import { safeObjectId, parsePagination } from "../../lib/utils.js";
+import { paginate } from "../../lib/pagination.js";
 
-export const getBounties = async (req: Request, res: Response) => {
-  if (!dbQuery) throw AppError.serviceUnavailable("Database not available");
-  const bounties = await dbQuery.collection("bounties").find({ status: { $in: ['open', 'accepted'] } }).sort({ createdAt: -1 }).limit(100).toArray();
-  res.json({ items: bounties.map((b: any) => ({ ...b, id: b._id.toString() })) });
+export const getBounties = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!dbQuery) return res.status(503).json({ error: "Database not available" });
+    const { page, limit, skip } = parsePagination(req.query);
+    const filter = { status: { $in: ['open', 'accepted'] } };
+    const [bounties, total] = await Promise.all([
+      dbQuery.collection("bounties").find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).toArray(),
+      dbQuery.collection("bounties").countDocuments(filter)
+    ]);
+    res.json(paginate(bounties.map((b: any) => ({ ...b, id: b._id.toString() })), page, limit, total));
+  } catch (err: any) {
+    next(err);
+  }
 };
 
 export const createBounty = async (req: Request, res: Response) => {

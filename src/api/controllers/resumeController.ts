@@ -1,18 +1,28 @@
 import { Request, Response } from "express";
 import { jsPDF } from "jspdf";
 import { dbCommand, dbQuery } from "../db.js";
-import { safeObjectId } from "../../lib/utils.js";
-import { AppError } from "../../lib/AppError.js";
+import { safeObjectId, parsePagination } from "../../lib/utils.js";
+import { paginate } from "../../lib/pagination.js";
 
 export const handleListResumes = async (req: any, res: any) => {
-  const user = req.user;
-  if (!user || !user.uid) throw AppError.unauthorized("Unauthorized");
-  if (!dbQuery) throw AppError.serviceUnavailable("Database unavailable");
+  try {
+    const user = req.user;
+    if (!user || !user.uid) return res.status(401).json({ error: "Unauthorized" });
+    if (!dbQuery) return res.status(503).json({ error: "Database unavailable" });
 
-  const resumesCol = dbQuery.collection("resumes");
-  const list = await resumesCol.find({ userId: user.uid }).sort({ isDefault: -1, uploadedAt: -1 }).toArray();
-  const formatted = list.map((r: any) => ({ ...r, id: r._id.toString() }));
-  res.json({ status: "success", resumes: formatted });
+    const { page, limit, skip } = parsePagination(req.query);
+    const resumesCol = dbQuery.collection("resumes");
+    const filter = { userId: user.uid };
+    const [list, total] = await Promise.all([
+      resumesCol.find(filter).sort({ isDefault: -1, uploadedAt: -1 }).skip(skip).limit(limit).toArray(),
+      resumesCol.countDocuments(filter)
+    ]);
+    const formatted = list.map((r: any) => ({ ...r, id: r._id.toString() }));
+    res.json(paginate(formatted, page, limit, total));
+  } catch (err: any) {
+    console.error("[Resumes] List error:", err);
+    res.status(500).json({ error: err.message || "Failed to list resumes" });
+  }
 };
 
 export const handleCreateResume = async (req: any, res: any) => {

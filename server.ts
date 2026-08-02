@@ -7,11 +7,12 @@ import * as Sentry from "@sentry/node";
 import { Server as SocketIOServer } from "socket.io";
 import swaggerUi from "swagger-ui-express";
 
-import { initializeDatabase, dbCommand, dbQuery } from "./src/api/db.js";
+import { initializeDatabase, dbCommand, dbQuery, closeDatabaseConnections } from "./src/api/db.js";
 import { setSocketIO } from "./src/api/socketInstance.js";
 import { setupSocketEvents } from "./src/socket/index.js";
 import { runDeadlineChecks, runWeeklyDigest } from "./src/services/deadlineScheduler.js";
 import { analyticsBuffer } from "./src/api/analytics.js";
+import { stopSearchSync } from "./src/services/searchSync.js";
 
 // Import Main API Router
 import apiRoutes from "./src/api/routes/index.js";
@@ -72,8 +73,7 @@ app.use(express.urlencoded({ limit: "5mb", extended: true }));
 // Setup API Routes
 app.use("/api", apiRoutes);
 
-// â”€â”€ SEO Routes (root-level for crawler discovery) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
+// SEO Routes (root-level for crawler discovery)
 app.get("/robots.txt", (req: Request, res: Response) => {
   const baseUrl = process.env.APP_URL || "https://yuvahub.xyz";
   const robotsTxt = [
@@ -109,17 +109,15 @@ app.get("/robots.txt", (req: Request, res: Response) => {
   res.send(robotsTxt);
 });
 
-// ---------------------------------------------------------------------------
 // XML escaping helper for safe sitemap generation
-// ---------------------------------------------------------------------------
 function escapeXml(unsafe: string): string {
   return unsafe.replace(/[<>&'"]/g, (c) => {
     switch (c) {
-      case "<": return "&lt;";
-      case ">": return "&gt;";
-      case "&": return "&amp;";
+      case "<": return "<";
+      case ">": return ">";
+      case "&": return "&";
       case "'": return "&apos;";
-      case '"': return "&quot;";
+      case '"': return """;
       default: return c;
     }
   });
@@ -216,9 +214,95 @@ app.use((req: Request, res: Response) => {
 
 const PORT = process.env.PORT || 5000;
 
-async function startServer() {
+// ── Graceful Shutdown ─────────────────────────────────────────────────
+let isShuttingDown = false;
+const shutdownTimers: ReturnType<typeof setInterval>[] = [];
+
+/** Safety net: force-exit if graceful shutdown takes too long. */
+function setShutdownTimeout(ms = 10_000): void {
+  setTimeout(() => {
+    console.error("[Core] Graceful shutdown timed out. Forcing exit.");
+    process.exit(1);
+  }, ms).unref();
+}
+
+async function gracefulShutdown(signal: string) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  console.log(`[Core] Received ${signal}. Starting graceful shutdown...`);
+  setShutdownTimeout();
+
+  // 1. Stop accepting new HTTP connections
+  await new Promise<void>((resolve) => {
+    server.close(() => {
+      console.log("[Core] HTTP server closed.");
+      resolve();
+    });
+    // Socket.IO holds the server open; close its connections too.
+    try {
+      io.close(() => {
+        console.log("[Core] Socket.IO closed.");
+        resolve();
+      });
+    } catch (err) {
+      resolve();
+    }
+  });
+
+  // 2. Clear background scheduler intervals
+  shutdownTimers.forEach((t) => clearInterval(t));
+
+  // 3. Drain analytics buffer (safe — drainAndStop sets isShuttingDown flag,
+  //    rejects new pushes, flushes remaining, then stops the interval)
   try {
-    // 1. Start HTTP Server immediately so port 5000 opens instantly for Vite proxy
+    await analyticsBuffer.drainAndStop();
+    console.log("[Core] Analytics buffer drained successfully.");
+  } catch (err) {
+    console.error("[Core] Error draining analytics buffer:", err);
+  }
+
+  // 4. Close search change stream, MongoDB clients, and Redis
+  try {
+    await stopSearchSync();
+  } catch (err) {
+    console.error("[Core] Error stopping search sync:", err);
+  }
+  try {
+    await closeDatabaseConnections();
+  } catch (err) {
+    console.error("[Core] Error closing database connections:", err);
+  }
+  try {
+    const { redisClient } = await import("./src/api/redis.js");
+    if (redisClient?.status === "ready" || redisClient?.status === "connecting") {
+      redisClient.disconnect();
+      console.log("[Core] Redis disconnected.");
+    }
+  } catch (err) {
+    console.error("[Core] Error closing Redis:", err);
+  }
+
+  // 5. Exit
+  process.exit(0);
+}
+
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("uncaughtException", (err) => {
+  console.error("[Core] Uncaught exception:", err);
+  gracefulShutdown("uncaughtException");
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("[Core] Unhandled rejection:", reason);
+  gracefulShutdown("unhandledRejection");
+});
+
+async function bootstrap() {
+  try {
+    // 1. Initialize databases and caches
+    await initializeDatabase();
+    
+    // 2. Start the HTTP server
     server.listen(PORT, () => {
       console.log(`[Core] Express Server is listening on port ${PORT}`);
     });
@@ -247,8 +331,20 @@ async function startServer() {
 
     // 5. Start Background Services
     if (process.env.NODE_ENV !== "test") {
-      setInterval(() => runDeadlineChecks(dbCommand), 24 * 60 * 60 * 1000);
-      setInterval(() => runWeeklyDigest(dbCommand), 7 * 24 * 60 * 60 * 1000);
+      shutdownTimers.push(setInterval(() => runDeadlineChecks(dbCommand), 24 * 60 * 60 * 1000));
+      shutdownTimers.push(setInterval(() => runWeeklyDigest(dbCommand), 7 * 24 * 60 * 60 * 1000));
+      
+      // Node.js Central Ingestion
+      if (process.env.START_NODE_SCRAPER === "true") {
+        console.log("[Scraper] Central Ingestion daemon enabled");
+        import("child_process").then(({ spawn }) => {
+          spawn("npx", ["tsx", "scrape-cli.ts"], {
+            cwd: process.cwd(),
+            detached: true,
+            stdio: "ignore"
+          }).unref();
+        });
+      }
     }
   } catch (error) {
     console.error("[Core] Failed to start server:", error);
@@ -258,38 +354,18 @@ async function startServer() {
 
 // Only auto-start the server when not running in test mode
 if (process.env.NODE_ENV !== "test") {
-  startServer();
+  bootstrap();
 }
-
-// Graceful Shutdown Handling
-const gracefulShutdown = (signal: string) => {
-  console.log(`\n[Core] Received ${signal}. Starting graceful shutdown...`);
-
-  analyticsBuffer
-    .drainAndStop()
-    .then(() => {
-      console.log("[Core] Analytics buffer drained.");
-      if (server) {
-        server.close(() => {
-          console.log("[Core] HTTP server closed.");
-          process.exit(0);
-        });
-      } else {
-        process.exit(0);
-      }
-    })
-    .catch((err: Error) => {
-      console.error("[Core] Error during analytics shutdown:", err);
-      process.exit(1);
-    });
-};
 
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-process.on("message", (msg: string) => {
-  if (msg === "shutdown") {
-    gracefulShutdown("IPC shutdown");
-  }
+process.on("uncaughtException", (err) => {
+  console.error("[Core] Uncaught exception:", err);
+  gracefulShutdown("uncaughtException");
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("[Core] Unhandled rejection:", reason);
+  gracefulShutdown("unhandledRejection");
 });
 
-export { app, server, startServer };
+export { app, server, bootstrap };

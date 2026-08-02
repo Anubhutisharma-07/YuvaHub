@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
-import { safeObjectId } from "../../lib/utils.js";
-import { AppError } from "../../lib/AppError.js";
+import { safeObjectId, parsePagination } from "../../lib/utils.js";
+import { paginate } from "../../lib/pagination.js";
 
 export const createTeam = async (req: Request, res: Response) => {
   const { name, opportunityId, opportunityTitle, description, requiredRoles, maxMembers } = req.body;
@@ -26,24 +26,33 @@ export const createTeam = async (req: Request, res: Response) => {
 };
 
 export const listTeams = async (req: Request, res: Response) => {
-  const { opportunityId, q, role, status } = req.query;
-  const queryFilter: any = {};
+  try {
+    const { page, limit, skip } = parsePagination(req.query);
+    const { opportunityId, q, role, status } = req.query;
+    const queryFilter: any = {};
 
-  if (opportunityId) queryFilter.opportunityId = String(opportunityId);
-  if (status) queryFilter.status = String(status);
-  if (role) queryFilter.requiredRoles = { $in: [new RegExp(String(role), "i")] };
-  if (q) {
-    queryFilter.$or = [
-      { name: { $regex: String(q), $options: "i" } },
-      { description: { $regex: String(q), $options: "i" } },
-      { opportunityTitle: { $regex: String(q), $options: "i" } }
-    ];
+    if (opportunityId) queryFilter.opportunityId = String(opportunityId);
+    if (status) queryFilter.status = String(status);
+    if (role) queryFilter.requiredRoles = { $in: [new RegExp(String(role), "i")] };
+    if (q) {
+      queryFilter.$or = [
+        { name: { $regex: String(q), $options: "i" } },
+        { description: { $regex: String(q), $options: "i" } },
+        { opportunityTitle: { $regex: String(q), $options: "i" } }
+      ];
+    }
+
+    const [teams, total] = await Promise.all([
+      dbCommand.collection("teams").find(queryFilter).sort({ createdAt: -1 }).skip(skip).limit(limit).toArray(),
+      dbCommand.collection("teams").countDocuments(queryFilter)
+    ]);
+    const formatted = teams.map((t: any) => ({ id: t._id.toString(), _id: t._id.toString(), ...t }));
+
+    return res.json(paginate(formatted, page, limit, total));
+  } catch (err: any) {
+    console.error("[Team API] Error fetching teams:", err);
+    return res.status(500).json({ error: "Failed to fetch teams" });
   }
-
-  const teams = await dbCommand.collection("teams").find(queryFilter).sort({ createdAt: -1 }).toArray();
-  const formatted = teams.map((t: any) => ({ id: t._id.toString(), _id: t._id.toString(), ...t }));
-
-  return res.json({ teams: formatted, total: formatted.length });
 };
 
 export const getTeamById = async (req: Request, res: Response) => {
