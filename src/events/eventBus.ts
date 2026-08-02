@@ -26,6 +26,15 @@ class EventBus {
 
       console.log("[EventBus] Connected to RabbitMQ (ConfirmChannel + DLX enabled)");
     } catch (error) {
+      // Clean up on topology failure so reconnect is possible
+      if (this.channel) {
+        try { await this.channel.close(); } catch {}
+        this.channel = null;
+      }
+      if (this.connection) {
+        try { await this.connection.close(); } catch {}
+        this.connection = null;
+      }
       console.warn("[EventBus] Offline (RabbitMQ server not running locally):", (error as Error).message);
       throw error;
     }
@@ -72,22 +81,21 @@ class EventBus {
     });
     await this.channel.bindQueue(queueName, MAIN_EXCHANGE, routingKey);
 
-    // Retry queue – TTL expires and dead-letters back to main exchange
+    // Retry queue – per-message expiration handles backoff; no queue-level TTL
     await this.channel.assertQueue(retryQueue, {
       durable: true,
       arguments: {
-        "x-message-ttl": RETRY_DELAY_MS,
         "x-dead-letter-exchange": MAIN_EXCHANGE,
         "x-dead-letter-routing-key": routingKey,
       },
     });
     await this.channel.bindQueue(retryQueue, RETRY_EXCHANGE, routingKey);
 
-    // Dead-letter queue
+    // Dead-letter queue – receives messages that exhausted retries
     await this.channel.assertQueue(dlq, { durable: true });
     await this.channel.bindQueue(dlq, DLX_EXCHANGE, `${queueName}.failed`);
 
-    // Main consumer
+    // Main consumer only (DLQ is for manual inspection, not auto-consumed)
     await this.channel.consume(queueName, async (msg) => {
       if (!msg) return;
 
@@ -118,16 +126,6 @@ class EventBus {
           this.channel!.nack(msg, false, false);
         }
       }
-    });
-
-    // DLQ consumer – log and acknowledge
-    await this.channel.consume(dlq, (msg) => {
-      if (!msg) return;
-      console.error(
-        `[ALERT] Message reached DLQ for queue "${queueName}" after ${MAX_RETRIES} retries.`,
-      );
-      console.error(msg.content.toString());
-      this.channel!.ack(msg);
     });
 
     console.log(`[EventBus] Subscribed to ${routingKey} via queue ${queueName} (DLX: ${DLX_EXCHANGE})`);
