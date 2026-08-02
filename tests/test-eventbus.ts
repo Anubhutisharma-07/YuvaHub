@@ -23,10 +23,7 @@ const mockChannel = {
     return true;
   },
   consume: async (queue: string, handler: Function) => {
-    let exchange = "domain_events";
-    if (queue.endsWith('.retry')) exchange = "domain_events_retry";
-    if (queue.endsWith('.dlq')) exchange = "domain_events_dlx";
-    subscribedQueues.push({ queue, exchange, routingKey: "", handler });
+    subscribedQueues.push({ queue, exchange: "domain_events", routingKey: "", handler });
     return { consumerTag: "mock_tag" };
   },
   ack: (msg: any) => { ackedMessages++; },
@@ -90,13 +87,12 @@ describe('tests/test-eventbus.ts', () => {
       await eventBus.subscribe("test_queue", "test.routing.key", async (event) => {
         handledEvent = event;
       });
-      // subscribe creates main queue, retry queue, and dlq (3 consumes)
-      assert.strictEqual(subscribedQueues.length, 3);
-      const mainQueueEntry = subscribedQueues.find(q => q.queue === "test_queue");
-      assert.ok(mainQueueEntry);
+      // Only main queue gets a consumer (retry is TTL-routed, dlq is for inspection)
+      assert.strictEqual(subscribedQueues.length, 1);
+      assert.strictEqual(subscribedQueues[0].queue, "test_queue");
 
       const mockMsg = { content: Buffer.from(JSON.stringify(testEvent)), fields: { routingKey: 'test.routing.key' }, properties: { headers: {} } };
-      await mainQueueEntry.handler(mockMsg);
+      await subscribedQueues[0].handler(mockMsg);
       assert.deepStrictEqual(handledEvent, testEvent);
       assert.strictEqual(ackedMessages, 1);
 
@@ -105,17 +101,15 @@ describe('tests/test-eventbus.ts', () => {
       await eventBus.subscribe("fail_queue", "fail.routing.key", async (event) => {
         throw new Error("Simulated processing error");
       });
-      assert.strictEqual(subscribedQueues.length, prevCount + 3);
-
-      const failMainQueue = subscribedQueues.find(q => q.queue === "fail_queue");
-      assert.ok(failMainQueue);
+      assert.strictEqual(subscribedQueues.length, prevCount + 1);
+      assert.strictEqual(subscribedQueues[prevCount].queue, "fail_queue");
 
       const mockFailMsg = {
         content: Buffer.from(JSON.stringify(testEvent)),
         fields: { routingKey: 'fail.routing.key' },
         properties: { headers: { 'x-retry-count': 3 } }
       };
-      await failMainQueue.handler(mockFailMsg);
+      await subscribedQueues[prevCount].handler(mockFailMsg);
       assert.strictEqual(nackedMessages, 1);
 
       // 6. Verify retry publishes to retry exchange for a fresh message
@@ -125,11 +119,12 @@ describe('tests/test-eventbus.ts', () => {
         properties: { headers: {} }
       };
       const prevPublishCount = publishedMessages.length;
-      await failMainQueue.handler(retryMsg);
+      await subscribedQueues[prevCount].handler(retryMsg);
       assert.strictEqual(publishedMessages.length, prevPublishCount + 1);
       const retryPublish = publishedMessages[publishedMessages.length - 1];
       assert.strictEqual(retryPublish.exchange, "domain_events_retry");
       assert.strictEqual(retryPublish.options.headers['x-retry-count'], 1);
+      assert.strictEqual(retryPublish.options.expiration, '5000');
 
       // 7. Disconnect Cleans Resources
       await eventBus.disconnect();
