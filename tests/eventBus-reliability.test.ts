@@ -88,10 +88,10 @@ describe('EventBus — Issue #538: Publisher Confirms & DLQ', () => {
         'x-dead-letter-routing-key': 'my_queue.failed'
       }
     });
+    // Retry queue: no x-message-ttl; per-message expiration handles backoff
     expect(mocks.mockAssertQueue).toHaveBeenCalledWith('my_queue.retry', {
       durable: true,
       arguments: {
-        'x-message-ttl': 5000,
         'x-dead-letter-exchange': 'domain_events',
         'x-dead-letter-routing-key': 'my.routing.key'
       }
@@ -103,15 +103,16 @@ describe('EventBus — Issue #538: Publisher Confirms & DLQ', () => {
     expect(mocks.mockBindQueue).toHaveBeenCalledWith('my_queue.dlq', 'domain_events_dlx', 'my_queue.failed');
   });
 
-  it('should retry failed messages via RETRY_EXCHANGE up to MAX_RETRIES before routing to DLQ', async () => {
+  it('should retry failed messages via RETRY_EXCHANGE with exponential backoff', async () => {
     await eventBus.connect();
     const handler = vi.fn().mockRejectedValue(new Error('Processing failed'));
     await eventBus.subscribe('retry_queue', 'retry.key', handler);
 
-    expect(mocks.mockConsume).toHaveBeenCalledTimes(2); // main + dlq
+    // Only main queue gets a consumer
+    expect(mocks.mockConsume).toHaveBeenCalledTimes(1);
     const mainConsumeCallback = mocks.mockConsume.mock.calls[0][1];
 
-    // Attempt 1
+    // Attempt 1: expiration 5000ms
     const msg1 = {
       content: Buffer.from(JSON.stringify({ id: 1 })),
       fields: { routingKey: 'retry.key' },
@@ -129,7 +130,7 @@ describe('EventBus — Issue #538: Publisher Confirms & DLQ', () => {
       })
     );
 
-    // Attempt 2
+    // Attempt 2: expiration 10000ms
     mocks.mockAck.mockClear();
     const msg2 = {
       content: Buffer.from(JSON.stringify({ id: 1 })),
@@ -148,7 +149,7 @@ describe('EventBus — Issue #538: Publisher Confirms & DLQ', () => {
       })
     );
 
-    // Attempt 3
+    // Attempt 3: expiration 20000ms
     mocks.mockAck.mockClear();
     const msg3 = {
       content: Buffer.from(JSON.stringify({ id: 1 })),
@@ -167,8 +168,9 @@ describe('EventBus — Issue #538: Publisher Confirms & DLQ', () => {
       })
     );
 
-    // Attempt 4 → DLQ
+    // Attempt 4: max retries exceeded → nack to DLQ, no republish
     mocks.mockAck.mockClear();
+    const publishCallCountBefore = mocks.mockPublish.mock.calls.length;
     const msg4 = {
       content: Buffer.from(JSON.stringify({ id: 1 })),
       fields: { routingKey: 'retry.key' },
@@ -177,14 +179,7 @@ describe('EventBus — Issue #538: Publisher Confirms & DLQ', () => {
     await mainConsumeCallback(msg4);
     expect(handler).toHaveBeenCalledTimes(4);
     expect(mocks.mockNack).toHaveBeenCalledWith(msg4, false, false);
-    expect(mocks.mockPublish).toHaveBeenLastCalledWith(
-      'domain_events_retry', 'retry.key', msg3.content,
-      expect.objectContaining({
-        headers: { 'x-retry-count': 3 },
-        expiration: '20000',
-        persistent: true,
-      })
-    );
+    expect(mocks.mockPublish.mock.calls.length).toBe(publishCallCountBefore);
   });
 
   it('should ack successful messages immediately without retry', async () => {
