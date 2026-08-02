@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Copy, Check, Loader2, FileText, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import ReactMarkdown from 'react-markdown';
 
 interface ApplyAssistModalProps {
   isOpen: boolean;
@@ -84,8 +85,10 @@ export default function ApplyAssistModal({ isOpen, onClose, content, isLoading, 
                       )}
                     </button>
                   </div>
-                  <div className="bg-gray-50 p-6 rounded-xl border border-gray-100 text-sm text-gray-800 whitespace-pre-wrap leading-relaxed font-serif">
-                    {content}
+                  <div className="bg-gray-50 p-6 rounded-xl border border-gray-100 text-sm text-gray-800 leading-relaxed font-serif">
+                    <div className="prose prose-sm prose-blue max-w-none">
+                      <ReactMarkdown>{content}</ReactMarkdown>
+                    </div>
                   </div>
                   <div className="mt-6 flex items-start gap-3 p-4 bg-amber-50 rounded-lg border border-amber-100 italic text-xs text-amber-800">
                     <span className="font-bold shrink-0">Note:</span>
