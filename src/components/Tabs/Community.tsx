@@ -181,6 +181,7 @@ export default function Community() {
 
     if (!commentsMap[postId]) {
       setLoadingCommentsPostId(postId);
+    }
       try {
         const res = await fetch(`/api/v1/posts/${postId}/comments`);
         if (res.ok) {
@@ -192,7 +193,6 @@ export default function Community() {
       } finally {
         setLoadingCommentsPostId(null);
       }
-    }
   };
 
   const handleAddComment = async (postId: string) => {
