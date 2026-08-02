@@ -27,10 +27,11 @@ export const scraperWorker = new Worker(
     // MOCK extraction logic (In a real scenario, you'd use Axios/Puppeteer here)
     // Simulating delay for network request
     await new Promise((resolve) => setTimeout(resolve, 500));
-    
+
     // Simulate finding a new opportunity based on the job data
-    const title = `Mock Opportunity from ${domain} - ${Date.now()}`;
+    const title = `Mock Opportunity from ${domain}`;
     const organization = `Mock Org ${domain}`;
+    
     const dedupeHash = crypto
       .createHash("sha256")
       .update(`${domain}:${title}:${organization}`)
@@ -86,11 +87,11 @@ scraperWorker.on("completed", (job) => {
 
 scraperWorker.on("failed", (job, err) => {
   console.error(`[ScraperWorker] Job ${job?.id} failed with error: ${err.message}`);
-  
+
   // Alerting mechanism: Check if this was the final attempt
   if (job && job.opts.attempts && job.attemptsMade === job.opts.attempts) {
     console.error(`[ALERT] Scraper Job ${job.id} for domain ${job.data.domain} failed ${job.attemptsMade} times in a row! Maintenance required.`);
-    
+
     sendAdminAlert("ScraperWorker", job, err);
   }
 });
