@@ -1,140 +1,121 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
 import { safeObjectId, normalizeParam } from "../../lib/utils.js";
+import { AppError } from "../../lib/AppError.js";
 import { z } from "zod";
 import { getGenAI } from "../genai.js";
 import { ScholarshipSchema, AIEvaluationResponseSchema } from "../../models/scholarshipSchema.js";
 import { Type } from "@google/genai";
 
-export const createScholarship = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    if (!dbCommand || !dbQuery) return res.status(503).json({ success: false, error: "Database not available" });
-    const parsedData = req.body;
-    const collection = dbCommand.collection("scholarships");
-    const result = await collection.insertOne(parsedData);
-    res.status(201).json({ success: true, id: result.insertedId, ...parsedData });
-  } catch (err: any) {
-    next(err);
-  }
+export const createScholarship = async (req: Request, res: Response) => {
+  if (!dbCommand) throw AppError.serviceUnavailable("Database not available");
+  const parsedData = req.body;
+  const collection = dbCommand.collection("scholarships");
+  const result = await collection.insertOne(parsedData);
+  res.status(201).json({ success: true, id: result.insertedId, ...parsedData });
 };
 
 export const getScholarships = async (req: Request, res: Response) => {
-  try {
-    if (!dbCommand || !dbQuery) return res.status(503).json({ error: "Database not available" });
-    const page = parseInt((req.query.page as string) || "1", 10);
-    const limit = parseInt((req.query.limit as string) || "10", 10);
-    const skip = (page - 1) * limit;
+  if (!dbCommand || !dbQuery) throw AppError.serviceUnavailable("Database not available");
+  const page = parseInt((req.query.page as string) || "1", 10);
+  const limit = parseInt((req.query.limit as string) || "10", 10);
+  const skip = (page - 1) * limit;
 
-    const collection = dbQuery.collection("scholarships");
+  const collection = dbQuery.collection("scholarships");
 
-    let items, total;
-    if (collection.find({}).skip) {
-      items = await collection.find({}).sort({ created_at: -1 }).skip(skip).limit(limit).toArray();
-      total = await collection.countDocuments({});
-    } else {
-      const allItems = await collection.find({}).toArray();
-      total = allItems.length;
-      items = allItems.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(skip, skip + limit);
-    }
-
-    res.json({ items, total, page, next_page: skip + limit < total ? page + 1 : null });
-  } catch (err) {
-    res.status(500).json({ error: "Internal Server Error" });
+  let items, total;
+  if (collection.find({}).skip) {
+    items = await collection.find({}).sort({ created_at: -1 }).skip(skip).limit(limit).toArray();
+    total = await collection.countDocuments({});
+  } else {
+    const allItems = await collection.find({}).toArray();
+    total = allItems.length;
+    items = allItems.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(skip, skip + limit);
   }
+
+  res.json({ items, total, page, next_page: skip + limit < total ? page + 1 : null });
 };
 
 export const getScholarshipById = async (req: Request, res: Response) => {
-  try {
-    // Issue #285: normalize `string | string[]` param BEFORE the DB
-    // availability check so an invalid/missing id is rejected with 400
-    // even when the database is offline.
-    const idStr = normalizeParam(req.params.id);
-    if (!idStr) {
-      return res.status(400).json({ error: "Missing or invalid id" });
-    }
-    if (!dbCommand || !dbQuery) return res.status(503).json({ error: "Database not available" });
-    const collection = dbQuery.collection("scholarships");
-    const oid = safeObjectId(idStr);
-    const queryId = oid || idStr;
-    const item = await collection.findOne({ _id: queryId });
-    if (!item) return res.status(404).json({ error: "Scholarship not found" });
-    res.json(item);
-  } catch (err) {
-    res.status(500).json({ error: "Internal Server Error" });
+  // Issue #285: normalize `string | string[]` param BEFORE the DB
+  // availability check so an invalid/missing id is rejected with 400
+  // even when the database is offline.
+  const idStr = normalizeParam(req.params.id);
+  if (!idStr) {
+    throw AppError.badRequest("Missing or invalid id");
   }
+  if (!dbCommand || !dbQuery) throw AppError.serviceUnavailable("Database not available");
+  const collection = dbQuery.collection("scholarships");
+  const oid = safeObjectId(idStr);
+  const queryId = oid || idStr;
+  const item = await collection.findOne({ _id: queryId });
+  if (!item) throw AppError.notFound("Scholarship not found");
+  res.json(item);
 };
 
-export const updateScholarship = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    // Issue #285: normalize `string | string[]` param BEFORE the DB
-    // availability check.
-    const idStr = normalizeParam(req.params.id);
-    if (!idStr) {
-      return res.status(400).json({ success: false, error: "Missing or invalid id" });
-    }
-    if (!dbCommand || !dbQuery) return res.status(503).json({ success: false, error: "Database not available" });
-    const parsedData = { ...req.body, updated_at: new Date() };
-    const collection = dbCommand.collection("scholarships");
-    const oid = safeObjectId(idStr);
-    const queryId = oid || idStr;
-
-    await collection.updateOne({ _id: queryId }, { $set: parsedData });
-    res.json({ success: true, updated: true });
-  } catch (err: any) {
-    next(err);
+export const updateScholarship = async (req: Request, res: Response) => {
+  // Issue #285: normalize `string | string[]` param BEFORE the DB
+  // availability check.
+  const idStr = normalizeParam(req.params.id);
+  if (!idStr) {
+    throw AppError.badRequest("Missing or invalid id");
   }
+  if (!dbCommand || !dbQuery) throw AppError.serviceUnavailable("Database not available");
+  const parsedData = { ...req.body, updated_at: new Date() };
+  const collection = dbCommand.collection("scholarships");
+  const oid = safeObjectId(idStr);
+  const queryId = oid || idStr;
+
+  await collection.updateOne({ _id: queryId }, { $set: parsedData });
+  res.json({ success: true, updated: true });
 };
 
 export const deleteScholarship = async (req: Request, res: Response) => {
-  try {
-    // Issue #285: normalize `string | string[]` param BEFORE the DB
-    // availability check.
-    const idStr = normalizeParam(req.params.id);
-    if (!idStr) {
-      return res.status(400).json({ error: "Missing or invalid id" });
-    }
-    if (!dbCommand || !dbQuery) return res.status(503).json({ error: "Database not available" });
-    const collection = dbCommand.collection("scholarships");
-    const oid = safeObjectId(idStr);
-    const queryId = oid || idStr;
-    let deleted = true;
-    if (collection.deleteOne) {
-      const result = await collection.deleteOne({ _id: queryId });
-      deleted = result.deletedCount > 0;
-    }
-    res.json({ success: true, deleted });
-  } catch (err) {
-    res.status(500).json({ error: "Internal Server Error" });
+  // Issue #285: normalize `string | string[]` param BEFORE the DB
+  // availability check.
+  const idStr = normalizeParam(req.params.id);
+  if (!idStr) {
+    throw AppError.badRequest("Missing or invalid id");
   }
+  if (!dbCommand || !dbQuery) throw AppError.serviceUnavailable("Database not available");
+  const collection = dbCommand.collection("scholarships");
+  const oid = safeObjectId(idStr);
+  const queryId = oid || idStr;
+  let deleted = true;
+  if (collection.deleteOne) {
+    const result = await collection.deleteOne({ _id: queryId });
+    deleted = result.deletedCount > 0;
+  }
+  res.json({ success: true, deleted });
 };
 
 export const validateEligibility = async (req: Request, res: Response) => {
   try {
     const { scholarshipId, userProfile } = req.body;
     if (!scholarshipId || !userProfile) {
-      return res.status(400).json({ error: "Missing scholarshipId or userProfile" });
+      throw AppError.badRequest("Missing scholarshipId or userProfile");
     }
 
-    if (!dbCommand || !dbQuery) return res.status(503).json({ error: "Database not available" });
+    if (!dbCommand || !dbQuery) throw AppError.serviceUnavailable("Database not available");
     const collection = dbQuery.collection("scholarships");
     const oid = safeObjectId(scholarshipId);
     const queryId = oid || scholarshipId;
 
     const scholarship = await collection.findOne({ _id: queryId });
-    if (!scholarship) return res.status(404).json({ error: "Scholarship not found" });
+    if (!scholarship) throw AppError.notFound("Scholarship not found");
 
     const ai = getGenAI();
-    if (!ai) return res.status(503).json({ error: "AI Service not available" });
+    if (!ai) throw AppError.serviceUnavailable("AI Service not available");
 
     const prompt = `
 You are an expert AI Eligibility Validator for a scholarship platform.
 Determine if the following user is eligible for the scholarship based on the criteria.
 
 Scholarship Criteria:
- ${JSON.stringify(scholarship, null, 2)}
+  ${JSON.stringify(scholarship, null, 2)}
 
 User Profile:
- ${JSON.stringify(userProfile, null, 2)}
+  ${JSON.stringify(userProfile, null, 2)}
 `;
 
     const response = await ai.models.generateContent({
@@ -164,8 +145,8 @@ User Profile:
   } catch (err: any) {
     console.error("AI Validation Error:", err);
     if (err instanceof z.ZodError) {
-      return res.status(502).json({ error: "AI generated invalid schema", details: err.issues });
+      throw new AppError(502, "AI generated invalid schema", "INVALID_AI_SCHEMA", err.issues);
     }
-    res.status(500).json({ error: "Internal Server Error during validation" });
+    throw err;
   }
 };

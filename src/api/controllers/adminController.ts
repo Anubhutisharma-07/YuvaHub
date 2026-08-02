@@ -160,7 +160,6 @@ export const scraperLogs = async (req: Request, res: Response) => {
 };
 
 export const triggerScraper = async (req: Request, res: Response) => {
-  try {
     const sourceName = req.body.source_name || req.body.sourceName || "Manual Scraper Run";
     const logDoc = {
       id: "log_" + Date.now(),
@@ -185,9 +184,6 @@ export const triggerScraper = async (req: Request, res: Response) => {
       message: `Scraper execution completed for ${sourceName}.`,
       log: logDoc
     });
-  } catch (err: any) {
-    res.status(500).json({ error: "Scraper execution failed: " + err.message });
-  }
 };
 
 export const adminIncidents = (req: Request, res: Response) => {
@@ -195,16 +191,11 @@ export const adminIncidents = (req: Request, res: Response) => {
 };
 
 export const adminDeleteUser = async (req: Request, res: Response) => {
-  try {
     if (!dbCommand || !dbQuery) {
-      return res.status(503).json({ error: "Database unavailable" });
+      throw AppError.serviceUnavailable("Database unavailable");
     }
     const userId = req.params.id;
     res.json({ status: "success", message: `User ${userId} deleted successfully.` });
-  } catch (err) {
-    console.error("Failed to delete user:", err);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
 };
 
 export const adminTelemetryStream = (req: Request, res: Response) => {
@@ -237,7 +228,6 @@ export const adminTelemetryStream = (req: Request, res: Response) => {
 };
 
 export const triggerNodeScraper = async (req: Request, res: Response) => {
-  try {
     const { spawn } = await import("child_process");
     const child = spawn("npx", ["tsx", "scrape-cli.ts"], {
       cwd: process.cwd(),
@@ -249,8 +239,4 @@ export const triggerNodeScraper = async (req: Request, res: Response) => {
       console.error("[Manual Node Trigger] Child process error (failed to spawn or crashed):", err);
     });
     res.json({ message: "Node.js Central Ingestion pipeline triggered asynchronously." });
-  } catch (err: any) {
-    console.error("Manual Node trigger failed:", err);
-    res.status(500).json({ error: "Failed to run Node.js central pipeline." });
-  }
 };
