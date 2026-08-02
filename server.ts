@@ -147,8 +147,29 @@ async function getRankedOpportunities(database: any, profile: any, page: number,
 
     // Retain mock DB logic as a fallback for offline development
     if (database.isMock) {
-      const cursor = database.collection("opportunities").find({}).sort({ created_at: -1 }).limit(150);
-      const opportunities = await cursor.toArray();
+      const opportunities = await database
+  .collection("opportunities")
+  .aggregate([
+    {
+      $match: {
+        $or: [
+          { deadline: { $exists: false } },
+          { deadline: null },
+          { deadline: { $gte: new Date().toISOString() } },
+        ],
+      },
+    },
+    {
+      $sort: {
+        created_at: -1,
+      },
+    },
+  ])
+  .toArray();
+  await dbCommand.collection("opportunities").createIndex({
+  deadline: 1,
+  created_at: -1,
+});
       
       if (opportunities.length === 0) {
         return { items: [], next_page: null };
