@@ -27,7 +27,11 @@ class EventBus {
 
       console.log("[EventBus] Connected to RabbitMQ");
     } catch (error) {
+
       console.error("[EventBus] Connection failed:", error);
+
+      console.warn('[EventBus] Offline (RabbitMQ server not running locally):', (error as Error).message);
+
       throw error;
     }
   }
