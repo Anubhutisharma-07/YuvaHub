@@ -365,6 +365,23 @@ export async function initializeDatabase(): Promise<void> {
       dbCommand.collection("users").createIndex({ firebaseUid: 1 }, { unique: true, sparse: true })
         .then(() => console.log(`[Database] Created unique sparse index on users.firebaseUid`))
         .catch((err: any) => console.error(`[Database] Failed to create unique index:`, err));
+
+      // Paginated list endpoints — sort-field indexes (created_at / uploaded_at)
+      const paginatedIndexes: [string, string][] = [
+        ["teams", "created_at"],
+        ["posts", "created_at"],
+        ["bounties", "created_at"],
+        ["notifications", "created_at"],
+        ["mentorship_sessions", "created_at"],
+        ["bookmark_folders", "created_at"],
+        ["resumes", "uploaded_at"],
+        ["scraper_logs", "created_at"],
+      ];
+      paginatedIndexes.forEach(([collection, field]) => {
+        dbQuery.collection(collection).createIndex({ [field]: -1 })
+          .then(() => console.log(`[Database] Created index on ${collection}.${field}`))
+          .catch((err: any) => console.error(`[Database] Failed to create index on ${collection}.${field}:`, err));
+      });
     } catch (err) {
       console.error("[Database] Connection failed, falling back to Mock Data:", err);
       dbCommand = new MockDB();
