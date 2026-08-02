@@ -297,7 +297,7 @@ export default function Landing() {
                   <div className="p-4 rounded-2xl bg-[#fcf9f2] border border-[#e8ded1] space-y-1.5">
                     <div className="flex items-center justify-between text-xs font-bold">
                       <span className="text-[#b56b37] uppercase tracking-wide">GOOGLE AI ODYSSEY 2026</span>
-                      <span className="text-[#63703d]">$50,000 Pool</span>
+                      <span className="text-[#63703d]"> 0,000 Pool</span>
                     </div>
                     <p className="text-xs text-[#603620]/80">Building LLM-powered applications for social impact.</p>
                   </div>
@@ -317,7 +317,7 @@ export default function Landing() {
                   </div>
                   <div>
                     <p className="text-xs font-bold text-[#231f20]">ETHGlobal Winner</p>
-                    <p className="text-[10px] text-[#8c7569]">$10,000 Grant Awarded</p>
+                    <p className="text-[10px] text-[#8c7569]"> 0,000 Grant Awarded</p>
                   </div>
                 </div>
 

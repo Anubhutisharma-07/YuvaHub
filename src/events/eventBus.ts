@@ -1,12 +1,13 @@
-import * as amqp from 'amqplib';
+import * as amqp from "amqplib";
 
-const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://localhost';
+const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://localhost";
 
-// Dead-Letter Exchange / Queue configuration
-const MAIN_EXCHANGE = 'domain_events';
-const DLX_EXCHANGE = 'domain_events.dlx';
-const DLQ_QUEUE = 'dlq.domain_events';
+const MAIN_EXCHANGE = "domain_events";
+const RETRY_EXCHANGE = "domain_events_retry";
+const DLX_EXCHANGE = "domain_events_dlx";
+
 const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 5000;
 
 class EventBus {
   private connection: amqp.ChannelModel | null = null;
@@ -17,32 +18,22 @@ class EventBus {
 
     try {
       this.connection = await amqp.connect(RABBITMQ_URL);
-      // Use ConfirmChannel for publisher acknowledgments
       this.channel = await this.connection.createConfirmChannel();
 
-      // Setup the main exchange for domain events
-      await this.channel.assertExchange(MAIN_EXCHANGE, 'topic', { durable: true });
+      await this.channel.assertExchange(MAIN_EXCHANGE, "topic", { durable: true });
+      await this.channel.assertExchange(RETRY_EXCHANGE, "topic", { durable: true });
+      await this.channel.assertExchange(DLX_EXCHANGE, "topic", { durable: true });
 
-      // Setup Dead-Letter Exchange and Queue for failed messages
-      await this.channel.assertExchange(DLX_EXCHANGE, 'topic', { durable: true });
-      await this.channel.assertQueue(DLQ_QUEUE, { durable: true });
-      await this.channel.bindQueue(DLQ_QUEUE, DLX_EXCHANGE, '#');
-
-      console.log('[EventBus] Connected to RabbitMQ (ConfirmChannel + DLX enabled)');
+      console.log("[EventBus] Connected to RabbitMQ (ConfirmChannel + DLX enabled)");
     } catch (error) {
-      console.warn('[EventBus] Offline (RabbitMQ server not running locally):', (error as Error).message);
+      console.warn("[EventBus] Offline (RabbitMQ server not running locally):", (error as Error).message);
       throw error;
     }
   }
 
-  /**
-   * Publish an event to the main exchange.
-   * Returns a Promise that resolves to `true` when the broker confirms receipt,
-   * or `false` if the publish was rejected.
-   */
-  async publish(routingKey: string, event: any): Promise<boolean> {
+  async publish(routingKey: string, event: unknown): Promise<boolean> {
     if (!this.channel) {
-      throw new Error('EventBus is not connected');
+      throw new Error("EventBus is not connected");
     }
 
     const payload = Buffer.from(JSON.stringify(event));
@@ -53,36 +44,50 @@ class EventBus {
           console.error(`[EventBus] Publish failed for ${routingKey}:`, err);
           resolve(false);
         } else {
-          // console.log(`[EventBus] Published ${routingKey}`, event.eventId);
           resolve(true);
         }
       });
     });
   }
 
-  /**
-   * Subscribe to a routing key with automatic retry and dead-letter routing.
-   * Failed messages are retried up to MAX_RETRIES times, then routed to DLQ.
-   */
   async subscribe(
     queueName: string,
     routingKey: string,
-    handler: (event: any) => Promise<void>
+    handler: (event: unknown) => Promise<void>,
   ): Promise<void> {
     if (!this.channel) {
-      throw new Error('EventBus is not connected');
+      throw new Error("EventBus is not connected");
     }
 
-    // Configure queue with Dead-Letter Exchange
+    const retryQueue = `${queueName}.retry`;
+    const dlq = `${queueName}.dlq`;
+
+    // Main queue – dead-letters to DLX on nack
     await this.channel.assertQueue(queueName, {
       durable: true,
       arguments: {
-        'x-dead-letter-exchange': DLX_EXCHANGE,
-        'x-dead-letter-routing-key': `${queueName}.failed`
-      }
+        "x-dead-letter-exchange": DLX_EXCHANGE,
+        "x-dead-letter-routing-key": `${queueName}.failed`,
+      },
     });
     await this.channel.bindQueue(queueName, MAIN_EXCHANGE, routingKey);
 
+    // Retry queue – TTL expires and dead-letters back to main exchange
+    await this.channel.assertQueue(retryQueue, {
+      durable: true,
+      arguments: {
+        "x-message-ttl": RETRY_DELAY_MS,
+        "x-dead-letter-exchange": MAIN_EXCHANGE,
+        "x-dead-letter-routing-key": routingKey,
+      },
+    });
+    await this.channel.bindQueue(retryQueue, RETRY_EXCHANGE, routingKey);
+
+    // Dead-letter queue
+    await this.channel.assertQueue(dlq, { durable: true });
+    await this.channel.bindQueue(dlq, DLX_EXCHANGE, `${queueName}.failed`);
+
+    // Main consumer
     await this.channel.consume(queueName, async (msg) => {
       if (!msg) return;
 
@@ -93,28 +98,36 @@ class EventBus {
       } catch (error) {
         console.error(`[EventBus] Error handling message from ${queueName}:`, error);
 
-        // Retry logic: check x-retry-count header
-        const retryCount = (msg.properties.headers?.['x-retry-count'] as number) || 0;
+        const retries = Number(msg.properties.headers?.["x-retry-count"] ?? 0);
 
-        if (retryCount < MAX_RETRIES) {
-          // Republish with incremented retry count for proper retry tracking
-          const updatedHeaders = {
-            ...(msg.properties.headers || {}),
-            'x-retry-count': retryCount + 1
-          };
-          this.channel!.publish(
-            MAIN_EXCHANGE,
-            msg.fields.routingKey,
-            msg.content,
-            { ...msg.properties, headers: updatedHeaders }
-          );
+        if (retries < MAX_RETRIES) {
+          // Publish to retry exchange with exponential backoff
+          this.channel!.publish(RETRY_EXCHANGE, routingKey, msg.content, {
+            persistent: true,
+            expiration: (RETRY_DELAY_MS * Math.pow(2, retries)).toString(),
+            headers: {
+              ...msg.properties.headers,
+              "x-retry-count": retries + 1,
+            },
+          });
           this.channel!.ack(msg);
         } else {
-          // Max retries exceeded — route to DLQ via nack without requeue
-          console.warn(`[EventBus] Max retries (${MAX_RETRIES}) exceeded for ${queueName}. Routing to DLQ.`);
+          console.error(
+            `[EventBus] Max retries (${MAX_RETRIES}) exceeded for ${queueName}. Routing to DLQ.`,
+          );
           this.channel!.nack(msg, false, false);
         }
       }
+    });
+
+    // DLQ consumer – log and acknowledge
+    await this.channel.consume(dlq, (msg) => {
+      if (!msg) return;
+      console.error(
+        `[ALERT] Message reached DLQ for queue "${queueName}" after ${MAX_RETRIES} retries.`,
+      );
+      console.error(msg.content.toString());
+      this.channel!.ack(msg);
     });
 
     console.log(`[EventBus] Subscribed to ${routingKey} via queue ${queueName} (DLX: ${DLX_EXCHANGE})`);
@@ -129,7 +142,7 @@ class EventBus {
       await this.connection.close();
       this.connection = null;
     }
-    console.log('[EventBus] Disconnected');
+    console.log("[EventBus] Disconnected");
   }
 }
 
