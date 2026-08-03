@@ -200,7 +200,7 @@ export default function SplashAuth() {
           <nav className="hidden md:flex items-center gap-10 text-xs uppercase tracking-widest font-bold text-[#603620]">
             <a href="#explore" onClick={(e) => { e.preventDefault(); document.getElementById('explore')?.scrollIntoView({ behavior: 'smooth' }); }} className="hover:text-[#b56b37] transition-colors">Explore</a>
             <a href="#features" onClick={(e) => { e.preventDefault(); document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }); }} className="hover:text-[#b56b37] transition-colors">AI Suite</a>
-            <a href="#stats" className="hover:text-[#b56b37] transition-colors">Impact</a>
+            <a href="#features" className="hover:text-[#b56b37] transition-colors">Impact</a>
             <a href="#faq" onClick={(e) => { e.preventDefault(); document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' }); }} className="hover:text-[#b56b37] transition-colors">FAQ</a>
           </nav>
 
