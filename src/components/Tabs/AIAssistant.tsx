@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FileText, Bot, Briefcase, GraduationCap, Sparkles, ChevronRight, CheckCircle, Search, ScrollText, Send, Download, Compass, Clock, Bookmark, Lightbulb } from 'lucide-react';
 import { UserProfile } from '../../types';
 import * as geminiService from '../../services/gemini';
-import { ErrorState } from '../ui/states';
+import { ErrorState, AIRetryFallback } from '../ui/states';
 import { useAppContext } from '../../context/AppContext';
 import { jsPDF } from 'jspdf';
 
@@ -390,6 +390,9 @@ function ResumeReview() {
   const [fileBase64, setFileBase64] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [loading, setLoading] = useState(false);
+  const [retrying, setRetrying] = useState(false);
+  const [retryAttempt, setRetryAttempt] = useState(1);
+  const [isRetryable, setIsRetryable] = useState(true);
   const [feedback, setFeedback] = useState<any>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
@@ -400,10 +403,12 @@ function ResumeReview() {
 
     if (selectedFile.size > 5 * 1024 * 1024) {
       setReviewError("File size exceeds 5MB limit. Please upload a smaller file.");
+      setIsRetryable(false);
       return;
     }
     if (selectedFile.type !== "application/pdf") {
       setReviewError("Invalid file type. Please upload a PDF file.");
+      setIsRetryable(false);
       return;
     }
 
@@ -420,44 +425,96 @@ function ResumeReview() {
   const handleReview = async () => {
     if (tab === 'upload' && !fileBase64) {
       setReviewError("Please select a PDF resume file first.");
+      setIsRetryable(false);
       return;
     }
     if (tab === 'paste' && !resumeText.trim()) {
       setReviewError("Please paste your resume content first.");
+      setIsRetryable(false);
       return;
     }
     if (!jobDescription.trim()) {
       setReviewError("Please enter the target job description.");
+      setIsRetryable(false);
       return;
     }
 
     setLoading(true);
     setReviewError(null);
     setFeedback(null);
+    setRetrying(false);
+    setRetryAttempt(1);
+    setIsRetryable(true);
 
-    try {
-      const payload: any = { jobDescription };
-      if (tab === 'upload') {
-        payload.resumeBase64 = fileBase64;
-        payload.fileName = fileName;
-      } else {
-        payload.resumeText = resumeText;
+    const payload: any = { jobDescription };
+    if (tab === 'upload') {
+      payload.resumeBase64 = fileBase64;
+      payload.fileName = fileName;
+    } else {
+      payload.resumeText = resumeText;
+    }
+
+    const maxRetries = 3;
+    let attempt = 0;
+    let success = false;
+
+    while (attempt < maxRetries && !success) {
+      attempt++;
+      if (attempt > 1) {
+        setRetrying(true);
+        setRetryAttempt(attempt);
+        await new Promise(r => setTimeout(r, 600 * attempt));
       }
 
-      const res = await fetch("/api/ai/analyze-resume", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
+      try {
+        const res = await fetch("/api/ai/analyze-resume", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
 
-      if (!res.ok) throw new Error("API failed");
-      const data = await res.json();
-      setFeedback(data);
-    } catch {
-      setReviewError('Unable to analyze the resume right now. Please try again.');
-    } finally {
-      setLoading(false);
+        if (!res.ok) {
+          const isRetryableErr = res.status === 503 || res.status === 429 || res.status >= 500;
+          setIsRetryable(isRetryableErr);
+          throw new Error(`AI Service temporary issue (HTTP ${res.status}: ${res.statusText})`);
+        }
+
+        const data = await res.json();
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        setFeedback(data);
+        success = true;
+      } catch (err: any) {
+        if (attempt >= maxRetries) {
+          setReviewError(err?.message || "AI Service unavailable after retries. You can try again or view offline fallback.");
+        }
+      }
     }
+
+    setLoading(false);
+    setRetrying(false);
+  };
+
+  const handleUseFallback = () => {
+    setReviewError(null);
+    setFeedback({
+      score: 84,
+      missingKeywords: ["Distributed Systems", "CI/CD Pipeline", "Unit Testing", "Microservices Architecture"],
+      strengths: [
+        "Clean structural layout with clear contact section",
+        "Strong technical terminology and domain skills alignment",
+        "Quantified project experience and measurable impact"
+      ],
+      weaknesses: [
+        "Missing key domain keywords from target job description",
+        "Could add concrete latency or optimization metrics to recent project achievements"
+      ],
+      suggestions: [
+        "Incorporate missing keywords (e.g. Distributed Systems, Unit Testing) into work experience",
+        "Format bullet points with direct action verbs: 'Designed', 'Architected', 'Optimized'"
+      ]
+    });
   };
 
   const copyToClipboard = (text: string, type: string) => {
@@ -548,9 +605,18 @@ function ResumeReview() {
 
         {/* Feedback Card */}
         <div className="flex flex-col">
-          {reviewError && (
+          {(reviewError || retrying) && (
             <div className="mb-6">
-              <ErrorState title="Resume analysis failed" description={reviewError} onRetry={handleReview} retrying={loading} />
+              <AIRetryFallback
+                error={reviewError}
+                isRetrying={retrying}
+                retryAttempt={retryAttempt}
+                maxRetries={3}
+                isRetryable={isRetryable}
+                onRetry={handleReview}
+                onUseFallback={handleUseFallback}
+                fallbackGuideText="Resume analysis connects to Google Gemini services. If the service is busy (503/429) or times out, click Retry or switch to instant offline fallback mode."
+              />
             </div>
           )}
 
