@@ -16,41 +16,8 @@ import AboutTab from './Tabs/About';
 import Privacy from './Tabs/Privacy';
 import Terms from './Tabs/Terms';
 
-// Reusable Animated Stat Counter Component
-function StatCounter({ targetNumber, suffix = '', prefix = '', duration = 2 }: { targetNumber: number; suffix?: string; prefix?: string; duration?: number }) {
-  const [count, setCount] = useState(0);
-  const ref = useRef<HTMLDivElement>(null);
-  const animatedRef = useRef(false);
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && !animatedRef.current) {
-          animatedRef.current = true;
-          const obj = { val: 0 };
-          gsap.to(obj, {
-            val: targetNumber,
-            duration: duration,
-            ease: 'power2.out',
-            onUpdate: () => {
-              setCount(Math.floor(obj.val));
-            }
-          });
-        }
-      },
-      { threshold: 0.2 }
-    );
 
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [targetNumber, duration]);
-
-  return (
-    <div ref={ref} className="text-3xl sm:text-4xl font-serif font-bold text-[#f3e4bd] tracking-tight">
-      {prefix}{count.toLocaleString()}{suffix}
-    </div>
-  );
-}
 
 export default function SplashAuth() {
   const { activeTab, setActiveTab, theme, toggleTheme } = useAppContext();
@@ -62,14 +29,13 @@ export default function SplashAuth() {
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Refs for GSAP animations
-  const heroBadgeRef = useRef<HTMLDivElement>(null);
+  const heroBadgeRef = useRef<HTMLDivElement>(null);     
   const heroTitleRef = useRef<HTMLHeadingElement>(null);
   const heroParaRef = useRef<HTMLParagraphElement>(null);
   const heroSearchRef = useRef<HTMLDivElement>(null);
   const heroCardRef = useRef<HTMLDivElement>(null);
   const floatBadge1Ref = useRef<HTMLDivElement>(null);
   const floatBadge2Ref = useRef<HTMLDivElement>(null);
-  const statsRef = useRef<HTMLDivElement>(null);
 
   // GSAP Entrance Animations
   useEffect(() => {
@@ -234,7 +200,7 @@ export default function SplashAuth() {
           <nav className="hidden md:flex items-center gap-10 text-xs uppercase tracking-widest font-bold text-[#603620]">
             <a href="#explore" onClick={(e) => { e.preventDefault(); document.getElementById('explore')?.scrollIntoView({ behavior: 'smooth' }); }} className="hover:text-[#b56b37] transition-colors">Explore</a>
             <a href="#features" onClick={(e) => { e.preventDefault(); document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }); }} className="hover:text-[#b56b37] transition-colors">AI Suite</a>
-            <a href="#stats" onClick={(e) => { e.preventDefault(); document.getElementById('stats')?.scrollIntoView({ behavior: 'smooth' }); }} className="hover:text-[#b56b37] transition-colors">Impact</a>
+            <a href="#features" className="hover:text-[#b56b37] transition-colors">Impact</a>
             <a href="#faq" onClick={(e) => { e.preventDefault(); document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' }); }} className="hover:text-[#b56b37] transition-colors">FAQ</a>
           </nav>
 
@@ -372,28 +338,6 @@ export default function SplashAuth() {
 
               </div>
 
-            </div>
-          </section>
-
-          {/* Platform Stats Section with Animated Scroll Counters */}
-          <section id="stats" ref={statsRef} className="bg-[#603620] text-[#fcf9f2] py-16 px-6 border-y border-[#231f20]">
-            <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-              <div className="space-y-1">
-                <StatCounter targetNumber={100} suffix="K+" duration={2} />
-                <div className="text-xs font-bold uppercase tracking-widest text-[#fcf9f2]/80 mt-1">Verified Listings</div>
-              </div>
-              <div className="space-y-1">
-                <StatCounter targetNumber={5} suffix="M+" duration={2} />
-                <div className="text-xs font-bold uppercase tracking-widest text-[#fcf9f2]/80 mt-1">Active Students</div>
-              </div>
-              <div className="space-y-1">
-                <StatCounter targetNumber={50} prefix="₹" suffix="Cr+" duration={2.2} />
-                <div className="text-xs font-bold uppercase tracking-widest text-[#fcf9f2]/80 mt-1">Prizes & Grants</div>
-              </div>
-              <div className="space-y-1">
-                <StatCounter targetNumber={2500} suffix="+" duration={2.5} />
-                <div className="text-xs font-bold uppercase tracking-widest text-[#fcf9f2]/80 mt-1">Top Tech Recruiters</div>
-              </div>
             </div>
           </section>
 
