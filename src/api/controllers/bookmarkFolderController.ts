@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
 import { parsePagination } from "../../lib/utils.js";
 import { paginate } from "../../lib/pagination.js";
+import { AppError } from "../../lib/AppError.js";
 
 export const getFolders = async (req: Request, res: Response) => {
   try {
@@ -29,12 +30,6 @@ export const getFolders = async (req: Request, res: Response) => {
     console.error("Fetch Bookmark Folders Error:", err);
     res.status(500).json({ error: "Failed to fetch bookmark folders" });
   }
-
-  res.json([
-    { folderId: "f_1", uid, name: "GSoC 2026", color: "blue", opportunityIds: [], createdAt: new Date().toISOString() },
-    { folderId: "f_2", uid, name: "Backend Internships", color: "emerald", opportunityIds: [], createdAt: new Date().toISOString() },
-    { folderId: "f_3", uid, name: "US Scholarships", color: "purple", opportunityIds: [], createdAt: new Date().toISOString() }
-  ]);
 };
 
 export const createFolder = async (req: Request, res: Response) => {

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { jsPDF } from "jspdf";
 import { dbCommand, dbQuery } from "../db.js";
+import { AppError } from "../../lib/AppError.js";
 import { safeObjectId, parsePagination } from "../../lib/utils.js";
 import { paginate } from "../../lib/pagination.js";
 

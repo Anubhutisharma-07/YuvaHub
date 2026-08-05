@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
 import { parsePagination } from "../../lib/utils.js";
 import { paginate } from "../../lib/pagination.js";
+import { AppError } from "../../lib/AppError.js";
 
 export const getMentorAvailability = async (req: Request, res: Response) => {
   const mentorUid = (req.query.mentorUid as string) || "mentor_default";
@@ -89,18 +90,6 @@ export const getSessions = async (req: Request, res: Response) => {
     console.error("[Mentorship] Sessions GET error:", err);
     res.status(500).json({ error: "Internal Server Error" });
   }
-
-  res.json([{
-    sessionId: "sess_demo_1",
-    studentUid: uid,
-    mentorUid: "m_sarah",
-    mentorName: "Sarah Jenkins (Senior SWE @ Google)",
-    topic: "GSoC Proposal & System Design Review",
-    slotDateTime: "2026-07-25 at 10:00 AM IST",
-    meetingUrl: "https://meet.jit.si/yuvahub-mentorship-gsoc",
-    status: "Confirmed",
-    createdAt: new Date().toISOString()
-  }]);
 };
 
 export const updateSessionStatus = async (req: Request, res: Response) => {
