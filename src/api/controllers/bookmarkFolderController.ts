@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
 import { parsePagination } from "../../lib/utils.js";
-import { paginate } from "../../lib/pagination.js";
+import { AppError } from "../../lib/AppError.js";
+import { sendPaginated, sendSuccess, sendError } from "../../lib/apiResponse.js";
 
 export const getFolders = async (req: Request, res: Response) => {
   try {
@@ -14,7 +15,7 @@ export const getFolders = async (req: Request, res: Response) => {
         dbQuery.collection("bookmark_folders").countDocuments(filter)
       ]);
       if (folders.length > 0) {
-        return res.json(paginate(folders, page, limit, total));
+        return sendPaginated(res, folders, page, limit, total);
       }
     }
 
@@ -24,17 +25,11 @@ export const getFolders = async (req: Request, res: Response) => {
       { folderId: "f_3", uid, name: "US Scholarships", color: "purple", opportunityIds: [], createdAt: new Date().toISOString() }
     ];
     const sliced = defaults.slice(skip, skip + limit);
-    res.json(paginate(sliced, page, limit, defaults.length));
+    return sendPaginated(res, sliced, page, limit, defaults.length);
   } catch (err) {
     console.error("Fetch Bookmark Folders Error:", err);
-    res.status(500).json({ error: "Failed to fetch bookmark folders" });
+    return sendError(res, "Failed to fetch bookmark folders", 500);
   }
-
-  res.json([
-    { folderId: "f_1", uid, name: "GSoC 2026", color: "blue", opportunityIds: [], createdAt: new Date().toISOString() },
-    { folderId: "f_2", uid, name: "Backend Internships", color: "emerald", opportunityIds: [], createdAt: new Date().toISOString() },
-    { folderId: "f_3", uid, name: "US Scholarships", color: "purple", opportunityIds: [], createdAt: new Date().toISOString() }
-  ]);
 };
 
 export const createFolder = async (req: Request, res: Response) => {
@@ -56,7 +51,7 @@ export const createFolder = async (req: Request, res: Response) => {
     await dbCommand.collection("bookmark_folders").insertOne(folderDoc);
   }
 
-  res.status(201).json(folderDoc);
+  return sendSuccess(res, folderDoc, 201);
 };
 
 export const deleteFolder = async (req: Request, res: Response) => {
@@ -67,7 +62,7 @@ export const deleteFolder = async (req: Request, res: Response) => {
     await dbCommand.collection("bookmark_folders").deleteOne({ folderId: idStr });
   }
 
-  res.json({ success: true, message: `Folder ${idStr} deleted successfully` });
+  sendSuccess(res, { message: `Folder ${idStr} deleted successfully` });
 };
 
 export const organizeBookmark = async (req: Request, res: Response) => {
@@ -88,8 +83,7 @@ export const organizeBookmark = async (req: Request, res: Response) => {
     );
   }
 
-  res.json({
-    success: true,
+  sendSuccess(res, {
     message: "Bookmark organized successfully",
     opportunityId,
     folderId: folderId || null,

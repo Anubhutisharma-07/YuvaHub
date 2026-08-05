@@ -6,13 +6,14 @@ import { z } from "zod";
 import { getGenAI } from "../genai.js";
 import { ScholarshipSchema, AIEvaluationResponseSchema } from "../../models/scholarshipSchema.js";
 import { Type } from "@google/genai";
+import { sendPaginated, sendSuccess } from "../../lib/apiResponse.js";
 
 export const createScholarship = async (req: Request, res: Response) => {
   if (!dbCommand) throw AppError.serviceUnavailable("Database not available");
   const parsedData = req.body;
   const collection = dbCommand.collection("scholarships");
   const result = await collection.insertOne(parsedData);
-  res.status(201).json({ success: true, id: result.insertedId, ...parsedData });
+  return sendSuccess(res, { id: result.insertedId, ...parsedData }, 201);
 };
 
 export const getScholarships = async (req: Request, res: Response) => {
@@ -33,7 +34,7 @@ export const getScholarships = async (req: Request, res: Response) => {
     items = allItems.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(skip, skip + limit);
   }
 
-  res.json({ items, total, page, next_page: skip + limit < total ? page + 1 : null });
+  return sendPaginated(res, items, page, limit, total);
 };
 
 export const getScholarshipById = async (req: Request, res: Response) => {
@@ -50,7 +51,7 @@ export const getScholarshipById = async (req: Request, res: Response) => {
   const queryId = oid || idStr;
   const item = await collection.findOne({ _id: queryId });
   if (!item) throw AppError.notFound("Scholarship not found");
-  res.json(item);
+  return sendSuccess(res, item);
 };
 
 export const updateScholarship = async (req: Request, res: Response) => {
@@ -67,7 +68,7 @@ export const updateScholarship = async (req: Request, res: Response) => {
   const queryId = oid || idStr;
 
   await collection.updateOne({ _id: queryId }, { $set: parsedData });
-  res.json({ success: true, updated: true });
+  return sendSuccess(res, { updated: true });
 };
 
 export const deleteScholarship = async (req: Request, res: Response) => {
@@ -86,7 +87,7 @@ export const deleteScholarship = async (req: Request, res: Response) => {
     const result = await collection.deleteOne({ _id: queryId });
     deleted = result.deletedCount > 0;
   }
-  res.json({ success: true, deleted });
+  return sendSuccess(res, { deleted });
 };
 
 export const validateEligibility = async (req: Request, res: Response) => {
@@ -141,7 +142,7 @@ User Profile:
     const parsedJson = JSON.parse(rawJson);
     const validatedOutput = AIEvaluationResponseSchema.parse(parsedJson);
 
-    res.json(validatedOutput);
+    return sendSuccess(res, validatedOutput);
   } catch (err: any) {
     console.error("AI Validation Error:", err);
     if (err instanceof z.ZodError) {

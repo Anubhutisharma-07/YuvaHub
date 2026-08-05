@@ -2,13 +2,13 @@ import { Request, Response } from "express";
 import { jsPDF } from "jspdf";
 import { dbCommand, dbQuery } from "../db.js";
 import { safeObjectId, parsePagination } from "../../lib/utils.js";
-import { paginate } from "../../lib/pagination.js";
+import { sendPaginated, sendSuccess, sendError } from "../../lib/apiResponse.js";
 
 export const handleListResumes = async (req: any, res: any) => {
   try {
     const user = req.user;
-    if (!user || !user.uid) return res.status(401).json({ error: "Unauthorized" });
-    if (!dbQuery) return res.status(503).json({ error: "Database unavailable" });
+    if (!user || !user.uid) return sendError(res, "Unauthorized", 401);
+    if (!dbQuery) return sendError(res, "Database unavailable", 503);
 
     const { page, limit, skip } = parsePagination(req.query);
     const resumesCol = dbQuery.collection("resumes");
@@ -18,10 +18,10 @@ export const handleListResumes = async (req: any, res: any) => {
       resumesCol.countDocuments(filter)
     ]);
     const formatted = list.map((r: any) => ({ ...r, id: r._id.toString() }));
-    res.json(paginate(formatted, page, limit, total));
+    return sendPaginated(res, formatted, page, limit, total);
   } catch (err: any) {
     console.error("[Resumes] List error:", err);
-    res.status(500).json({ error: err.message || "Failed to list resumes" });
+    return sendError(res, err.message || "Failed to list resumes", 500);
   }
 };
 
@@ -67,7 +67,7 @@ export const handleCreateResume = async (req: any, res: any) => {
     );
   }
 
-  res.status(201).json({ status: "success", resume: { ...newResume, id: insertedId } });
+  return sendSuccess(res, { resume: { ...newResume, id: insertedId } }, 201);
 };
 
 export const handleRenameResume = async (req: any, res: any) => {
@@ -97,7 +97,7 @@ export const handleRenameResume = async (req: any, res: any) => {
   await resumesCol.updateOne(query, { $set: { displayName: displayName.trim(), updatedAt: now } });
 
   const updated = await resumesCol.findOne(query);
-  res.json({ status: "success", resume: { ...updated, id: updated._id.toString() } });
+  return sendSuccess(res, { resume: { ...updated, id: updated._id.toString() } });
 };
 
 export const handleDeleteResume = async (req: any, res: any) => {
@@ -132,7 +132,7 @@ export const handleDeleteResume = async (req: any, res: any) => {
     }
   }
 
-  res.json({ status: "success", message: "Resume deleted successfully" });
+  return sendSuccess(res, { message: "Resume deleted successfully" });
 };
 
 export const handleSetDefaultResume = async (req: any, res: any) => {
@@ -161,20 +161,20 @@ export const handleSetDefaultResume = async (req: any, res: any) => {
   await usersCol.updateOne({ uid: user.uid }, { $set: { resumeUrl: target.fileUrl, resumePublicId: target.publicId || "", updatedAt: now } });
 
   const updated = await resumesCol.findOne(query);
-  res.json({ status: "success", resume: { ...updated, id: updated._id.toString() } });
+  return sendSuccess(res, { resume: { ...updated, id: updated._id.toString() } });
 };
 
 export const handleExportResumeToPDF = async (req: any, res: any) => {
   try {
     const user = req.user;
-    if (!user || !user.uid) return res.status(401).json({ error: "Unauthorized" });
-    if (!dbQuery) return res.status(503).json({ error: "Database unavailable" });
+    if (!user || !user.uid) return sendError(res, "Unauthorized", 401);
+    if (!dbQuery) return sendError(res, "Database unavailable", 503);
 
     const usersCol = dbQuery.collection("users");
     const userProfile = await usersCol.findOne({ uid: user.uid });
 
     if (!userProfile) {
-      return res.status(404).json({ error: "User profile not found" });
+      return sendError(res, "User profile not found", 404);
     }
 
     const doc = new jsPDF({
@@ -262,7 +262,7 @@ export const handleExportResumeToPDF = async (req: any, res: any) => {
     
   } catch (err: any) {
     console.error("[Resumes] Export to PDF error:", err);
-    res.status(500).json({ error: err.message || "Failed to export resume to PDF" });
+    return sendError(res, err.message || "Failed to export resume to PDF", 500);
   }
 };
 

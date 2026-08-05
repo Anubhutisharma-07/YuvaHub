@@ -299,7 +299,8 @@ function MyBookingsMain({ user }: { user: any }) {
       const res = await fetch(`/api/v1/mentorship/sessions?uid=${user?.uid || 'user_default'}`);
       if (!res.ok) throw new Error('Failed to load your bookings');
       const data = await res.json();
-      setSessions(data);
+      const sessionList = Array.isArray(data) ? data : (data.items ?? data.data ?? []);
+      setSessions(sessionList);
     } catch (err) {
       console.error('Error fetching sessions:', err);
       setError(err instanceof Error ? err.message : 'Failed to load your bookings');

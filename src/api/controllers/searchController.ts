@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
+import { sendSuccess } from "../../lib/apiResponse.js";
 
 export const searchHandler = async (req: Request, res: Response) => {
   const q = (req.query.q as string) || "";
@@ -11,7 +12,7 @@ export const searchHandler = async (req: Request, res: Response) => {
   const startDateStr = req.query.startDate as string;
   const endDateStr = req.query.endDate as string;
 
-  if (!dbCommand || !dbQuery) return res.json({ results: [], meta: { total_found: 0 } });
+  if (!dbCommand || !dbQuery) return sendSuccess(res, { results: [], meta: { total_found: 0 } });
   const andConditions: any[] = [];
 
   // 1. Opportunity Type Filter (multiple types supported)
@@ -179,7 +180,7 @@ export const searchHandler = async (req: Request, res: Response) => {
     return d;
   });
 
-  res.json({
+  return sendSuccess(res, {
     results: mapped.slice(0, 20),
     meta: { query: q, total_found: mapped.length }
   });

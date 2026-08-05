@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { analyticsBuffer } from "../analytics.js";
+import { sendSuccess, sendTooManyRequests, sendServiceUnavailable } from "../../lib/apiResponse.js";
 
 /**
  * POST /analytics/track
@@ -14,10 +15,7 @@ import { analyticsBuffer } from "../analytics.js";
 export const track = async (req: Request, res: Response) => {
   // Reject events during shutdown drain
   if (analyticsBuffer.isShuttingDown) {
-    return res.status(503).json({
-      status: "Unavailable",
-      error: "Server is shutting down — analytics events not accepted.",
-    });
+    return sendServiceUnavailable(res, "Server is shutting down — analytics events not accepted.");
   }
 
   const eventPayload = { ...req.body, userId: (req as any).user?.uid || req.body.userId };
@@ -26,15 +24,12 @@ export const track = async (req: Request, res: Response) => {
   if (analyticsBuffer.size > analyticsBuffer.capacity * 0.8) {
     // Still accept the event, but tell the client to slow down
     analyticsBuffer.push(eventPayload);
-    return res.status(429).json({
-      status: "Backpressure",
-      warning: "Buffer is near capacity. Reduce event rate.",
-    });
+    return sendTooManyRequests(res, "Buffer is near capacity. Reduce event rate.");
   }
 
   // Normal path — accept and buffer
   analyticsBuffer.push(eventPayload);
-  return res.status(202).json({ status: "Accepted" });
+  return sendSuccess(res, { status: "Accepted" }, 202);
 };
 
 /**
@@ -43,7 +38,7 @@ export const track = async (req: Request, res: Response) => {
  * Returns current buffer metrics for monitoring / health checks.
  */
 export const bufferStatus = async (_req: Request, res: Response) => {
-  res.json({
+  return sendSuccess(res, {
     size: analyticsBuffer.size,
     capacity: analyticsBuffer.capacity,
     utilizationPct: Math.round((analyticsBuffer.size / analyticsBuffer.capacity) * 100),

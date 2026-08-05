@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { getGenAI, getAIFallback, getCachedResponse, setCachedResponse } from "../genai.js";
+import { sendSuccess, sendBadRequest, sendError } from "../../lib/apiResponse.js";
 async function generateWithTimeout<T>(
   promise: Promise<T>,
   timeout = 15000
@@ -26,17 +27,17 @@ ${text.slice(0, 5000)}
 export const aiGenerate = async (req: Request, res: Response) => {
   try {
     const { prompt, expectJson } = req.body;
-    if (!prompt) return res.status(400).json({ error: "No prompt" });
+    if (!prompt) return sendBadRequest(res, "No prompt");
 
     const cached = getCachedResponse(prompt);
     if (cached) {
-      return res.json({ text: cached });
+      return sendSuccess(res, { text: cached });
     }
 
     const ai = getGenAI();
     if (!ai) {
       const fb = getAIFallback(prompt, !!expectJson);
-      return res.json({ text: fb });
+      return sendSuccess(res, { text: fb });
     }
 
     let responseText = "";
@@ -76,23 +77,23 @@ export const aiGenerate = async (req: Request, res: Response) => {
     }
 
     setCachedResponse(prompt, responseText);
-    res.json({ text: responseText });
+    return sendSuccess(res, { text: responseText });
   } catch (err) {
     const { prompt, expectJson } = req.body;
     const fallback = getAIFallback(prompt || "", !!expectJson);
-    res.json({ text: fallback });
+    return sendSuccess(res, { text: fallback });
   }
 };
 
 export const aiResumeReview = async (req: Request, res: Response) => {
   try {
     const { resume } = req.body;
-    if (!resume) return res.status(400).json({ error: "No resume provided" });
+    if (!resume) return sendBadRequest(res, "No resume provided");
 
     const cacheKey = `resume_review:${resume.substring(0, 300)}`;
     const cached = getCachedResponse(cacheKey);
     if (cached) {
-      return res.json(cached);
+      return sendSuccess(res, cached);
     }
 
     const defaultFallback = {
@@ -104,7 +105,7 @@ export const aiResumeReview = async (req: Request, res: Response) => {
 
     const ai = getGenAI();
     if (!ai) {
-      return res.json(defaultFallback);
+      return sendSuccess(res, defaultFallback);
     }
 
     const prompt = `Review this student resume for structure, impact, and ATS readiness. 
@@ -169,9 +170,9 @@ Return JSON strictly in this format:
     }
 
     setCachedResponse(cacheKey, parsed);
-    res.json(parsed);
+    return sendSuccess(res, parsed);
   } catch (err) {
-    res.json({
+    return sendSuccess(res, {
       score: 82,
       strengths: ["Clean structure and section flow", "Clear contact details and header"],
       weaknesses: ["Requires more quantifiable impact metrics", "Descriptions of projects are relatively short"],
@@ -194,7 +195,7 @@ export const handleCareerRoadmap = async (req: Request, res: Response) => {
     const cacheKey = `career_roadmap:${roleStr}:${eduStr}:${skillsStr}:${timeStr}`;
     const cached = getCachedResponse(cacheKey);
     if (cached) {
-      return res.json(cached);
+      return sendSuccess(res, cached);
     }
 
     const defaultFallback = {
@@ -213,7 +214,7 @@ export const handleCareerRoadmap = async (req: Request, res: Response) => {
 
     const ai = getGenAI();
     if (!ai) {
-      return res.json(defaultFallback);
+      return sendSuccess(res, defaultFallback);
     }
 
     const prompt = `You are a senior engineering mentor. Build a structured, step-by-step career roadmap for a student.
@@ -293,7 +294,7 @@ let parsed = defaultFallback;
     }
 
     setCachedResponse(cacheKey, parsed);
-    res.json(parsed);
+    return sendSuccess(res, parsed);
 };
 
 export const analyzeResume = async (req: Request, res: Response) => {
@@ -309,7 +310,7 @@ export const analyzeResume = async (req: Request, res: Response) => {
     const cacheKey = `resume_analysis:${cacheInput}:${jobDescription.substring(0, 100)}`;
     const cached = getCachedResponse(cacheKey);
     if (cached) {
-      return res.json(cached);
+      return sendSuccess(res, cached);
     }
 
     const defaultFallback = {
@@ -323,7 +324,7 @@ export const analyzeResume = async (req: Request, res: Response) => {
     const ai = getGenAI();
     if (!ai) {
       console.warn("Gemini AI client not available, returning fallback.");
-      return res.json(defaultFallback);
+      return sendSuccess(res, defaultFallback);
     }
 
     let contents: any[] = [];
@@ -406,7 +407,7 @@ ${wrapUserInput(jobDescription)}
     }
 
     setCachedResponse(cacheKey, parsed);
-    res.json(parsed);
+    return sendSuccess(res, parsed);
 };
 
 export const generateOutreach = async (req: Request, res: Response) => {
@@ -414,7 +415,7 @@ export const generateOutreach = async (req: Request, res: Response) => {
     const { recruiterName, company, jobRole, outreachType, resumeContext } = req.body;
     
     if (!recruiterName || !company || !jobRole || !outreachType) {
-      return res.status(400).json({ error: "Missing required fields" });
+      return sendBadRequest(res, "Missing required fields");
     }
 
     const typeStr = outreachType === 'LinkedIn Connect' ? 'LinkedIn connection request' : 'cold email';
@@ -440,12 +441,12 @@ Constraints:
     const cacheKey = `outreach:${recruiterName}:${company}:${jobRole}:${outreachType}`;
     const cached = getCachedResponse(cacheKey);
     if (cached) {
-      return res.json({ text: cached });
+      return sendSuccess(res, { text: cached });
     }
 
     const ai = getGenAI();
     if (!ai) {
-      return res.json({ text: `Hi ${recruiterName}, I'm reaching out about the ${jobRole} role at ${company}. Given my background, I'd love to connect and learn more.` });
+      return sendSuccess(res, { text: `Hi ${recruiterName}, I'm reaching out about the ${jobRole} role at ${company}. Given my background, I'd love to connect and learn more.` });
     }
 
     let responseText = "";
@@ -476,10 +477,12 @@ Constraints:
     }
 
     setCachedResponse(cacheKey, responseText);
-    res.json({ text: responseText });
+    return sendSuccess(res, { text: responseText });
 
   } catch (err) {
     console.error("/api/ai/outreach error:", err);
-    res.status(500).json({ error: "Internal Server Error" });
+    return sendError(res, "Internal Server Error", 500);
   }
 };
+
+

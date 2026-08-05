@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
 import { parsePagination } from "../../lib/utils.js";
-import { paginate } from "../../lib/pagination.js";
+import { sendPaginated, sendSuccess, sendError } from "../../lib/apiResponse.js";
 
 const sseClients: any[] = [];
 
 export const adminHealth = (req: Request, res: Response) => {
-  res.json({
+  return sendSuccess(res, {
     status: "healthy",
     database: dbQuery ? "connected" : "disconnected",
     cache: "connected",
@@ -20,7 +20,7 @@ export const adminMetrics = async (req: Request, res: Response) => {
   if (dbCommand && dbQuery) {
     opportunitiesAdded = await dbQuery.collection("opportunities").countDocuments();
   }
-  res.json({
+  return sendSuccess(res, {
     activeUsers: 1500 + Math.floor(Math.random() * 50),
     opportunitiesAdded,
     fallbackRate: 2.1,
@@ -31,7 +31,7 @@ export const adminMetrics = async (req: Request, res: Response) => {
 export const adminScrapers = async (req: Request, res: Response) => {
   try {
     if (!dbCommand || !dbQuery) {
-      return res.json([]);
+      return sendSuccess(res, []);
     }
 
     const metrics = await dbQuery.collection("scraper_metrics").find({}).toArray();
@@ -67,7 +67,7 @@ export const adminScrapers = async (req: Request, res: Response) => {
         yield_quality: m.yield_quality ?? 85,
         ops_per_hour: m.ops_per_hour ?? 30
       }));
-      return res.json(adminScrapers);
+      return sendSuccess(res, adminScrapers);
     }
 
     const pipeline = [
@@ -104,10 +104,10 @@ export const adminScrapers = async (req: Request, res: Response) => {
       }
     });
 
-    res.json(adminScrapersResult);
+    return sendSuccess(res, adminScrapersResult);
   } catch (err) {
     console.error("Admin scrapers fetch error:", err);
-    res.status(500).json([]);
+    return sendError(res, "Failed to fetch scraper metrics", 500);
   }
 };
 
@@ -121,7 +121,7 @@ export const scraperStats = async (req: Request, res: Response) => {
         opps24h = await dbQuery.collection("opportunities").countDocuments();
       }
     }
-    res.json({
+    return sendSuccess(res, {
       activeScrapers: 5,
       opportunitiesAdded24h: opps24h || 128,
       healthPercentage: 98.5,
@@ -129,7 +129,7 @@ export const scraperStats = async (req: Request, res: Response) => {
       failedExecutions: 2
     });
   } catch (err) {
-    res.json({ activeScrapers: 5, opportunitiesAdded24h: 128, healthPercentage: 98.5, totalExecutions: 342, failedExecutions: 2 });
+    return sendSuccess(res, { activeScrapers: 5, opportunitiesAdded24h: 128, healthPercentage: 98.5, totalExecutions: 342, failedExecutions: 2 });
   }
 };
 
@@ -142,7 +142,7 @@ export const scraperLogs = async (req: Request, res: Response) => {
         dbQuery.collection("scraper_logs").countDocuments({})
       ]);
       if (logs.length > 0) {
-        return res.json(paginate(logs, page, limit, total));
+        return sendPaginated(res, logs, page, limit, total);
       }
     }
     const mockLogs = [
@@ -153,9 +153,9 @@ export const scraperLogs = async (req: Request, res: Response) => {
       { id: "log_105", sourceName: "Eventbrite Scraper", status: "error", startTime: new Date(Date.now() - 360 * 60 * 1000).toISOString(), endTime: new Date(Date.now() - 359 * 60 * 1000).toISOString(), durationMs: 890, opportunitiesAdded: 0, statusCode: 404, errorMessage: "DOM Selector Failure: Unable to locate container '.event-card-wrapper'", stackTrace: "ValidationError: Target selector .event-card-wrapper returned 0 elements\n    at EventbriteScraper.parseHTML (src/scrapers/eventbrite.ts:68:15)\n    at async EventbriteScraper.scrape (src/scrapers/eventbrite.ts:24:5)" }
     ];
     const sliced = mockLogs.slice(skip, skip + limit);
-    res.json(paginate(sliced, page, limit, mockLogs.length));
+    return sendPaginated(res, sliced, page, limit, mockLogs.length);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch scraper logs" });
+    return sendError(res, "Failed to fetch scraper logs", 500);
   }
 };
 
@@ -179,7 +179,7 @@ export const triggerScraper = async (req: Request, res: Response) => {
       await dbCommand.collection("scraper_logs").insertOne(logDoc);
     }
 
-    res.json({
+    return sendSuccess(res, {
       status: "success",
       message: `Scraper execution completed for ${sourceName}.`,
       log: logDoc
@@ -187,7 +187,7 @@ export const triggerScraper = async (req: Request, res: Response) => {
 };
 
 export const adminIncidents = (req: Request, res: Response) => {
-  res.json([]);
+  return sendSuccess(res, []);
 };
 
 export const adminDeleteUser = async (req: Request, res: Response) => {
@@ -195,7 +195,7 @@ export const adminDeleteUser = async (req: Request, res: Response) => {
       throw AppError.serviceUnavailable("Database unavailable");
     }
     const userId = req.params.id;
-    res.json({ status: "success", message: `User ${userId} deleted successfully.` });
+    return sendSuccess(res, { message: `User ${userId} deleted successfully.` });
 };
 
 export const adminTelemetryStream = (req: Request, res: Response) => {
@@ -238,5 +238,5 @@ export const triggerNodeScraper = async (req: Request, res: Response) => {
     child.on("error", (err: any) => {
       console.error("[Manual Node Trigger] Child process error (failed to spawn or crashed):", err);
     });
-    res.json({ message: "Node.js Central Ingestion pipeline triggered asynchronously." });
+    return sendSuccess(res, { message: "Node.js Central Ingestion pipeline triggered asynchronously." });
 };

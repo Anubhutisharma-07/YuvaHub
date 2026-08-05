@@ -3,7 +3,7 @@ import { dbCommand, dbQuery } from "../db.js";
 import { ObjectId } from "mongodb";
 import { safeObjectId, normalizeParam, parsePagination } from "../../lib/utils.js";
 import escapeHtml from "escape-html";
-import { paginate } from "../../lib/pagination.js";
+import { sendPaginated, sendSuccess, sendError } from "../../lib/apiResponse.js";
 
 const containsProfanity = (text: string): boolean => {
   const profanityRegex =
@@ -28,7 +28,7 @@ export const getPosts = async (req: Request, res: Response) => {
         .toArray();
       if (posts.length > 0) {
         const total = await dbQuery.collection("posts").countDocuments({});
-        return res.json(paginate(posts, page, limit, total));
+        return sendPaginated(res, posts, page, limit, total);
       }
     }
 
@@ -84,10 +84,10 @@ export const getPosts = async (req: Request, res: Response) => {
       mockPosts.sort((a, b) => b.upvotes - a.upvotes);
     }
     const sliced = mockPosts.slice(skip, skip + limit);
-    res.json(paginate(sliced, page, limit, mockPosts.length));
+    return sendPaginated(res, sliced, page, limit, mockPosts.length);
   } catch (err) {
     console.error("Fetch Posts Error:", err);
-    res.status(500).json({ error: "Internal Server Error" });
+    return sendError(res, "Internal Server Error", 500);
   }
 };
 
@@ -120,18 +120,22 @@ export const createPost = async (req: Request, res: Response) => {
 
     if (dbCommand) {
       const result = await dbCommand.collection("posts").insertOne(post);
-      return res
-        .status(201)
-        .json({
+      return sendSuccess(
+        res,
+        {
           ...post,
           _id: result.insertedId,
           id: result.insertedId.toString(),
-        });
+        },
+        201,
+      );
     }
 
-    res
-      .status(201)
-      .json({ ...post, _id: "post_" + Date.now(), id: "post_" + Date.now() });
+    return sendSuccess(
+      res,
+      { ...post, _id: "post_" + Date.now(), id: "post_" + Date.now() },
+      201,
+    );
 };
 
 export const deletePost = async (req: Request, res: Response) => {
@@ -148,7 +152,7 @@ export const deletePost = async (req: Request, res: Response) => {
         .collection("posts")
         .deleteOne({ $or: [{ _id: queryId }, { id: idStr }] });
     }
-    res.json({ success: true, message: "Post deleted successfully" });
+    sendSuccess(res, { message: "Post deleted successfully" });
 };
 
 export const getPostById = async (req: Request, res: Response) => {
@@ -169,7 +173,7 @@ export const getPostById = async (req: Request, res: Response) => {
     if (!post) {
       throw AppError.notFound("Post not found");
     }
-    res.json(post);
+    sendSuccess(res, post);
 };
 
 export const createComment = async (req: Request, res: Response) => {
@@ -216,7 +220,7 @@ export const createComment = async (req: Request, res: Response) => {
     };
 
     await dbCommand.collection("comments").insertOne(comment);
-    res.status(201).json(comment);
+    return sendSuccess(res, comment, 201);
 };
 
 export const editComment = async (req: Request, res: Response) => {
@@ -246,7 +250,7 @@ export const editComment = async (req: Request, res: Response) => {
     if (!updatedComment) {
       throw AppError.notFound("Comment not found");
     }
-    res.json(updatedComment);
+    sendSuccess(res, updatedComment);
 };
 
 export const getComments = async (req: Request, res: Response) => {
@@ -265,26 +269,28 @@ export const getComments = async (req: Request, res: Response) => {
         .toArray();
 
       if (comments.length > 0) {
-        return res.json(comments);
+        return sendSuccess(res, { comments });
       }
     }
 
-    res.json([
-      {
-        _id: "c_101",
-        postId: postIdStr,
-        author: "Neha Sharma",
-        content: "Great resource! Thanks for sharing the roadmap repo.",
-        createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-      },
-      {
-        _id: "c_102",
-        postId: postIdStr,
-        author: "Vikas Kumar",
-        content: "Super helpful! Added to my study bookmarks.",
-        createdAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-      },
-    ]);
+    sendSuccess(res, {
+      comments: [
+        {
+          _id: "c_101",
+          postId: postIdStr,
+          author: "Neha Sharma",
+          content: "Great resource! Thanks for sharing the roadmap repo.",
+          createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+        },
+        {
+          _id: "c_102",
+          postId: postIdStr,
+          author: "Vikas Kumar",
+          content: "Super helpful! Added to my study bookmarks.",
+          createdAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+        },
+      ],
+    });
 };
 
 export const upvotePost = async (req: Request, res: Response) => {
@@ -318,5 +324,5 @@ export const upvotePost = async (req: Request, res: Response) => {
       throw AppError.conflict("User has already upvoted this post");
     }
 
-    res.json({ success: true, message: "Post upvoted successfully" });
+    sendSuccess(res, { message: "Post upvoted successfully" });
 };

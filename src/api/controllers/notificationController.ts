@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
 import { safeObjectId, parsePagination } from "../../lib/utils.js";
-import { paginate } from "../../lib/pagination.js";
+import { sendPaginated, sendSuccess, sendError } from "../../lib/apiResponse.js";
 
 export const getNotifications = async (req: Request, res: Response) => {
   try {
@@ -20,7 +20,7 @@ export const getNotifications = async (req: Request, res: Response) => {
 
     if (!dbQuery) {
       const sliced = DEFAULT_NOTIFICATIONS.slice(skip, skip + limit);
-      return res.json(paginate(sliced, page, limit, DEFAULT_NOTIFICATIONS.length));
+      return sendPaginated(res, sliced, page, limit, DEFAULT_NOTIFICATIONS.length);
     }
 
     const collection = dbQuery.collection("notifications");
@@ -61,7 +61,7 @@ export const getNotifications = async (req: Request, res: Response) => {
       return copy;
     });
 
-    res.json(paginate(formatted, page, limit, total));
+    return sendPaginated(res, formatted, page, limit, total);
   } catch (err: any) {
     console.error("GET /api/v1/notifications error:", err);
     const welcome = [{
@@ -72,7 +72,7 @@ export const getNotifications = async (req: Request, res: Response) => {
       time: "Just now",
       read: false
     }];
-    res.json(paginate(welcome, 1, 20, welcome.length));
+    return sendPaginated(res, welcome, 1, 20, welcome.length);
   }
 };
 
@@ -80,7 +80,7 @@ export const markRead = async (req: Request, res: Response) => {
   const user = req.user;
   const rawNotifId = req.params.id;
   const id = Array.isArray(rawNotifId) ? rawNotifId[0] : rawNotifId;
-  if (!dbCommand) return res.json({ success: true });
+  if (!dbCommand) return sendSuccess(res, {});
 
   const collection = dbCommand.collection("notifications");
   const oid = safeObjectId(id);
@@ -96,12 +96,12 @@ export const markRead = async (req: Request, res: Response) => {
     );
   }
 
-  res.json({ success: true });
+  return sendSuccess(res, {});
 };
 
 export const markAllRead = async (req: Request, res: Response) => {
   const user = req.user;
-  if (!dbCommand) return res.json({ success: true });
+  if (!dbCommand) return sendSuccess(res, {});
 
   const collection = dbCommand.collection("notifications");
 
@@ -118,19 +118,19 @@ export const markAllRead = async (req: Request, res: Response) => {
     );
   }
 
-  res.json({ success: true });
+  return sendSuccess(res, {});
 };
 
 export const markBulkRead = async (req: Request, res: Response) => {
   try {
     const user = req.user;
     const { notificationIds, all } = req.body;
-    if (!dbCommand) return res.json({ updatedCount: 0 });
+    if (!dbCommand) return sendSuccess(res, { updatedCount: 0 });
 
     const collection = dbCommand.collection("notifications");
 
     if (!Array.isArray(notificationIds) && !all) {
-      return res.status(400).json({ error: "Invalid payload: notificationIds must be an array or all must be true" });
+      return sendError(res, "Invalid payload: notificationIds must be an array or all must be true", 400);
     }
 
     let filter: any = { userId: user.uid, read: { $ne: true } };
@@ -159,16 +159,17 @@ export const markBulkRead = async (req: Request, res: Response) => {
           }
         });
       }
-      return res.json({ updatedCount });
+      return sendSuccess(res, { updatedCount });
     } else {
       const result = await collection.updateMany(
         filter,
         { $set: { read: true, isRead: true } }
       );
-      res.json({ updatedCount: result.modifiedCount });
+      sendSuccess(res, { updatedCount: result.modifiedCount });
     }
   } catch (err: any) {
     console.error("PUT /api/v1/notifications/read-bulk error:", err);
-    res.status(500).json({ error: "Internal Server Error" });
+    sendError(res, "Internal Server Error", 500);
   }
 };
+
