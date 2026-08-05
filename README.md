@@ -159,20 +159,32 @@ docker compose up -d
 
 ## Environment Variables Guide
 
-YuvaHub enforces **strict startup environment variable validation** (Issue #588). The server will terminate with a descriptive error if any required variables are missing during launch.
+Copy the reviewed template:
 
-| Variable Name | Status | Description | Source / Link |
-| :--- | :--- | :--- | :--- |
-| `MONGODB_URI` | **Required** | Connection URI for the MongoDB Atlas Cluster. | MongoDB Atlas Dashboard |
-| `JWT_SECRET` | **Required** | Secret key for signing and verifying JWT tokens. | Random secure string |
-| `GEMINI_API_KEY` | **Required** | **Server-only secret.** Used by backend Gemini services; never expose in frontend. | [Google AI Studio](https://aistudio.google.com/) |
-| `REDIS_URL` | **Required if Redis Enabled** | Redis connection URL when `ENABLE_REDIS=true` or `REQUIRE_REDIS=true`. | Upstash / Redis Cloud |
-| `MONGODB_DB_NAME` | Optional | Target database collection name (defaults to `yuvahub`). | `yuvahub` |
-| `APP_URL` | Optional | Base host URL of the local or deployed server. | `http://localhost:5173` |
-| `FRONTEND_URL` | Optional | Allowed client origin to enforce CORS security policy. | `http://localhost:5173` |
-| `VITE_EMAILJS_SERVICE_ID` | Optional | EmailJS service connection ID. | [EmailJS Dashboard](https://www.emailjs.com/) |
-| `VITE_EMAILJS_TEMPLATE_ID`| Optional | EmailJS template container ID. | [EmailJS Dashboard](https://www.emailjs.com/) |
-| `VITE_EMAILJS_PUBLIC_KEY` | Optional | Public client key for direct frontend transmission. | [EmailJS Dashboard](https://www.emailjs.com/) |
+```bash
+cp .env.example .env
+```
+
+The template classifies variables as required, conditional, optional,
+development-only, public, or secret. Values prefixed with `VITE_` are bundled
+into browser assets and must never contain server credentials.
+
+Startup validation currently requires:
+
+```text
+MONGODB_URI
+JWT_SECRET
+GEMINI_API_KEY
+```
+
+`REDIS_URL` is additionally required when Redis is explicitly enabled.
+
+See the complete guide for supported integrations, safe secret handling,
+split MongoDB connections, workers, Firebase, SMTP, Sentry, dynamic scraper
+URLs, and deployment guidance:
+
+- [Environment variables guide](./docs/ENVIRONMENT_VARIABLES.md)
+- [Environment template](./.env.example)
 
 ---
 
