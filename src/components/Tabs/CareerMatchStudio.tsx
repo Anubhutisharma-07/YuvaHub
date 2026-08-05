@@ -31,6 +31,7 @@ import {
   ArrowUpRight
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { EmptyState } from '../ui/states';
 
 /**
  * CareerMatchStudio Component
@@ -538,45 +539,53 @@ export default function CareerMatchStudio() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredTeammates.map((tm) => (
-              <div key={tm.id} className="p-5 bg-gray-50 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-600 text-white font-black text-sm flex items-center justify-center shadow-md">
-                      {tm.name.charAt(0)}
+          {filteredTeammates.length === 0 ? (
+            <EmptyState
+              title="No teammates found"
+              description="No teammates match your current search. Try a different skill or role."
+              icon={<Users className="h-6 w-6" aria-hidden="true" />}
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredTeammates.map((tm) => (
+                <div key={tm.id} className="p-5 bg-gray-50 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-blue-600 text-white font-black text-sm flex items-center justify-center shadow-md">
+                        {tm.name.charAt(0)}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-gray-900 dark:text-white text-sm">{tm.name}</h4>
+                        <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">{tm.role}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-gray-900 dark:text-white text-sm">{tm.name}</h4>
-                      <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">{tm.role}</p>
-                    </div>
-                  </div>
-                  <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 rounded-md">
-                    {tm.badge}
-                  </span>
-                </div>
-
-                <div className="text-xs text-gray-600 dark:text-gray-300">
-                  <strong className="text-gray-900 dark:text-white">Looking for:</strong> {tm.lookingFor}
-                </div>
-
-                <div className="flex flex-wrap gap-1.5">
-                  {tm.skills.map(s => (
-                    <span key={s} className="px-2 py-0.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-[11px] font-medium rounded-md">
-                      {s}
+                    <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 rounded-md">
+                      {tm.badge}
                     </span>
-                  ))}
-                </div>
+                  </div>
 
-                <button
-                  onClick={() => setNotification({ type: 'success', message: `Team invite sent to ${tm.name}!` })}
-                  className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition"
-                >
-                  Send Team Invite
-                </button>
-              </div>
-            ))}
-          </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-300">
+                    <strong className="text-gray-900 dark:text-white">Looking for:</strong> {tm.lookingFor}
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5">
+                    {tm.skills.map(s => (
+                      <span key={s} className="px-2 py-0.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-[11px] font-medium rounded-md">
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => setNotification({ type: 'success', message: `Team invite sent to ${tm.name}!` })}
+                    className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition"
+                  >
+                    Send Team Invite
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

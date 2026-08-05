@@ -7,7 +7,7 @@ import { db } from '../../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ChatMessage } from '../../types';
 import { chatWithAIMentorBackend } from '../../services/apiClient';
-import { ErrorState } from '../ui/states';
+import { EmptyState, ErrorState, LoadingState } from '../ui/states';
 import { useAppContext } from '../../context/AppContext';
 
 interface Mentor {
@@ -291,16 +291,18 @@ function BookingModal({ mentor, user, onClose, onSuccess }: { mentor: Mentor; us
 function MyBookingsMain({ user }: { user: any }) {
   const [sessions, setSessions] = useState<MentorshipSession[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchSessions = async () => {
+    setError(null);
     try {
       const res = await fetch(`/api/v1/mentorship/sessions?uid=${user?.uid || 'user_default'}`);
-      if (res.ok) {
-        const data = await res.json();
-        setSessions(data);
-      }
+      if (!res.ok) throw new Error('Failed to load your bookings');
+      const data = await res.json();
+      setSessions(data);
     } catch (err) {
       console.error('Error fetching sessions:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load your bookings');
     } finally {
       setLoading(false);
     }
@@ -375,13 +377,23 @@ END:VCALENDAR`;
       </div>
 
       {loading ? (
-        <div className="p-8 text-center text-xs text-gray-500 font-semibold">Loading bookings...</div>
+        <LoadingState compact title="Loading bookings..." description="" />
+      ) : error ? (
+        <ErrorState
+          title="We could not load your bookings"
+          description={error}
+          onRetry={() => {
+            setLoading(true);
+            void fetchSessions();
+          }}
+          retrying={loading}
+        />
       ) : sessions.length === 0 ? (
-        <div className="bg-white p-8 rounded-2xl border border-gray-200 text-center space-y-2">
-          <Calendar className="w-8 h-8 text-gray-300 mx-auto" />
-          <h4 className="font-bold text-gray-900 text-sm">No Booked Sessions Yet</h4>
-          <p className="text-xs text-gray-500">Book a 1-on-1 session with a mentor from the Human Mentors list.</p>
-        </div>
+        <EmptyState
+          title="No Booked Sessions Yet"
+          description="Book a 1-on-1 session with a mentor from the Human Mentors list."
+          icon={<Calendar className="h-6 w-6" aria-hidden="true" />}
+        />
       ) : (
         <div className="space-y-4">
           {sessions.map(s => (
