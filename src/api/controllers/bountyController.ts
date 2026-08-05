@@ -1,7 +1,8 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { dbCommand, dbQuery } from "../db.js";
 import { safeObjectId, parsePagination } from "../../lib/utils.js";
 import { paginate } from "../../lib/pagination.js";
+import { AppError } from "../../lib/AppError.js";
 
 export const getBounties = async (req: Request, res: Response, next: NextFunction) => {
   try {

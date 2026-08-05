@@ -117,7 +117,7 @@ function escapeXml(unsafe: string): string {
       case ">": return ">";
       case "&": return "&";
       case "'": return "&apos;";
-      case '"': return """;
+      case '"': return "&quot;";
       default: return c;
     }
   });

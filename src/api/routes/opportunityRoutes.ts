@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getOpportunities, getTrendingOpportunities, semanticSearch, getLatestOpportunities, submitOpportunity, getOpportunityById, updateOpportunity, toggleBookmark } from "../controllers/opportunityController.js";
-import { authMiddleware, adminOnly } from "../../middleware/auth.js";
+import { authMiddleware, adminOnly } from "../middlewares/auth.js";
 import { cacheMiddleware } from "../middlewares/cacheMiddleware.js";
 import { markdownNegotiation } from "../middlewares/markdownNegotiation.js";
 
