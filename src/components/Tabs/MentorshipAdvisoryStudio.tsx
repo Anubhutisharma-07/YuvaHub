@@ -24,6 +24,7 @@ import {
   Building2
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { EmptyState } from '../ui/states';
 
 /**
  * MentorshipAdvisoryStudio Component
@@ -257,8 +258,15 @@ export default function MentorshipAdvisoryStudio() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {filteredMentors.map((m) => (
+          {filteredMentors.length === 0 ? (
+            <EmptyState
+              title="No mentors found"
+              description="No mentors match your current search. Try a different skill or domain."
+              icon={<UserCheck className="h-6 w-6" aria-hidden="true" />}
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {filteredMentors.map((m) => (
               <div key={m.id} className="p-5 bg-gray-50 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3 text-xs flex flex-col justify-between">
                 <div>
                   <div className="flex items-center gap-3">
@@ -294,7 +302,8 @@ export default function MentorshipAdvisoryStudio() {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
 

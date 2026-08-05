@@ -27,6 +27,7 @@ import {
   FileCode
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { EmptyState } from '../ui/states';
 
 /**
  * TechEcosystemStudio Component
@@ -245,8 +246,15 @@ export default function TechEcosystemStudio() {
             </div>
           </div>
 
-          <div className="space-y-3">
-            {filteredLeaderboard.map((dev) => (
+          {filteredLeaderboard.length === 0 ? (
+            <EmptyState
+              title="No developers found"
+              description="No contributors match your current search. Try a different filter."
+              icon={<Users className="h-6 w-6" aria-hidden="true" />}
+            />
+          ) : (
+            <div className="space-y-3">
+              {filteredLeaderboard.map((dev) => (
               <div key={dev.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-gray-50 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-700 text-xs">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white font-black text-sm flex items-center justify-center">
@@ -271,7 +279,8 @@ export default function TechEcosystemStudio() {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -29,6 +29,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { EmptyState } from '../ui/states';
 
 /**
  * CampusAlumniHub Component
@@ -367,8 +368,15 @@ export default function CampusAlumniHub() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {filteredChapters.map((c) => (
+          {filteredChapters.length === 0 ? (
+            <EmptyState
+              title="No chapters found"
+              description="No campus chapters match your current search. Try a different college or location."
+              icon={<GraduationCap className="h-6 w-6" aria-hidden="true" />}
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {filteredChapters.map((c) => (
               <div key={c.id} className="p-5 bg-gray-50 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3 flex flex-col justify-between text-xs">
                 <div>
                   <div className="flex items-center justify-between">
@@ -404,7 +412,8 @@ export default function CampusAlumniHub() {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -429,8 +438,15 @@ export default function CampusAlumniHub() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {filteredAlumni.map((a) => (
+          {filteredAlumni.length === 0 ? (
+            <EmptyState
+              title="No alumni found"
+              description="No alumni match your current search. Try a different company or alma mater."
+              icon={<Users className="h-6 w-6" aria-hidden="true" />}
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {filteredAlumni.map((a) => (
               <div key={a.id} className="p-5 bg-gray-50 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3 text-xs">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white font-black text-sm flex items-center justify-center">
@@ -459,7 +475,8 @@ export default function CampusAlumniHub() {
                 </button>
               </div>
             ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
 

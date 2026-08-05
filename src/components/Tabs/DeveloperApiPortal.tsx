@@ -28,6 +28,7 @@ import {
   FileJson
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { EmptyState } from '../ui/states';
 
 /**
  * DeveloperApiPortal Component
@@ -371,46 +372,62 @@ func main() {
           </div>
 
           <div className="space-y-3">
-            {apiKeys.map((k) => {
-              const isShowing = showKeyId === k.id;
-              return (
-                <div key={k.id} className="p-4 bg-gray-50 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-700 text-xs space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Key size={16} className="text-sky-600" />
-                      <span className="font-bold text-gray-900 dark:text-white">{k.name}</span>
-                      <span className="px-2 py-0.5 text-[10px] font-bold bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 rounded-md">
-                        {k.environment}
-                      </span>
+            {apiKeys.length === 0 ? (
+              <EmptyState
+                title="No API keys yet"
+                description="Generate your first API key to authenticate requests to the YuvaHub API."
+                icon={<Key className="h-6 w-6" aria-hidden="true" />}
+                action={
+                  <button
+                    onClick={() => setNewKeyModal(true)}
+                    className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-1"
+                  >
+                    <Plus size={14} /> Generate New Key
+                  </button>
+                }
+              />
+            ) : (
+              apiKeys.map((k) => {
+                const isShowing = showKeyId === k.id;
+                return (
+                  <div key={k.id} className="p-4 bg-gray-50 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-700 text-xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Key size={16} className="text-sky-600" />
+                        <span className="font-bold text-gray-900 dark:text-white">{k.name}</span>
+                        <span className="px-2 py-0.5 text-[10px] font-bold bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 rounded-md">
+                          {k.environment}
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={() => handleRevokeKey(k.id)}
+                        className="text-red-500 hover:underline font-bold text-[11px]"
+                      >
+                        Revoke
+                      </button>
                     </div>
 
-                    <button
-                      onClick={() => handleRevokeKey(k.id)}
-                      className="text-red-500 hover:underline font-bold text-[11px]"
-                    >
-                      Revoke
-                    </button>
-                  </div>
+                    <div className="flex items-center gap-2 font-mono bg-white dark:bg-gray-800 p-2.5 rounded-xl border border-gray-200 dark:border-gray-700">
+                      <span className="flex-1 truncate text-gray-700 dark:text-gray-300">
+                        {isShowing ? k.token : `${k.token.substring(0, 10)}••••••••••••••••`}
+                      </span>
+                      <button
+                        onClick={() => setShowKeyId(isShowing ? null : k.id)}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        {isShowing ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
 
-                  <div className="flex items-center gap-2 font-mono bg-white dark:bg-gray-800 p-2.5 rounded-xl border border-gray-200 dark:border-gray-700">
-                    <span className="flex-1 truncate text-gray-700 dark:text-gray-300">
-                      {isShowing ? k.token : `${k.token.substring(0, 10)}••••••••••••••••`}
-                    </span>
-                    <button
-                      onClick={() => setShowKeyId(isShowing ? null : k.id)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      {isShowing ? <EyeOff size={14} /> : <Eye size={14} />}
-                    </button>
+                    <div className="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400 pt-1">
+                      <span>Scope: <code className="text-sky-600">{k.scope}</code></span>
+                      <span>Last Used: {k.lastUsed}</span>
+                    </div>
                   </div>
-
-                  <div className="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400 pt-1">
-                    <span>Scope: <code className="text-sky-600">{k.scope}</code></span>
-                    <span>Last Used: {k.lastUsed}</span>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
       )}
@@ -519,21 +536,29 @@ func main() {
           </form>
 
           <div className="space-y-3">
-            {webhooks.map((w) => (
-              <div key={w.id} className="p-4 bg-gray-50 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-700 text-xs space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-sky-600 dark:text-sky-400">{w.event}</span>
-                  <span className="px-2 py-0.5 text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 rounded-md">
-                    {w.status}
-                  </span>
+            {webhooks.length === 0 ? (
+              <EmptyState
+                title="No webhooks registered"
+                description="Register your first webhook endpoint to receive real-time event notifications."
+                icon={<Webhook className="h-6 w-6" aria-hidden="true" />}
+              />
+            ) : (
+              webhooks.map((w) => (
+                <div key={w.id} className="p-4 bg-gray-50 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-700 text-xs space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-sky-600 dark:text-sky-400">{w.event}</span>
+                    <span className="px-2 py-0.5 text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 rounded-md">
+                      {w.status}
+                    </span>
+                  </div>
+                  <div className="font-mono text-gray-900 dark:text-white">{w.url}</div>
+                  <div className="text-[11px] text-gray-500 dark:text-gray-400 pt-1 flex items-center justify-between">
+                    <span>Last Delivery: {w.lastDelivered}</span>
+                    <span>Total Events: {w.deliveriesCount}</span>
+                  </div>
                 </div>
-                <div className="font-mono text-gray-900 dark:text-white">{w.url}</div>
-                <div className="text-[11px] text-gray-500 dark:text-gray-400 pt-1 flex items-center justify-between">
-                  <span>Last Delivery: {w.lastDelivered}</span>
-                  <span>Total Events: {w.deliveriesCount}</span>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       )}

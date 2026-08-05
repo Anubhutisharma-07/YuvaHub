@@ -28,6 +28,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { EmptyState } from '../ui/states';
 
 /**
  * InterviewPrepStudio Component
@@ -277,8 +278,15 @@ export default function InterviewPrepStudio() {
             </div>
           </div>
 
-          <div className="space-y-3">
-            {filteredQuestions.map((q) => (
+          {filteredQuestions.length === 0 ? (
+            <EmptyState
+              title="No practice questions found"
+              description="No questions match your current search or topic filter. Try a different keyword."
+              icon={<Brain className="h-6 w-6" aria-hidden="true" />}
+            />
+          ) : (
+            <div className="space-y-3">
+              {filteredQuestions.map((q) => (
               <div key={q.id} className="p-4 bg-gray-50 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-2 text-xs">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -309,7 +317,8 @@ export default function InterviewPrepStudio() {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
 

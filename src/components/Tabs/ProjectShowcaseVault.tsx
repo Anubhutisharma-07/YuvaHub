@@ -25,6 +25,7 @@ import {
   Users
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { EmptyState } from '../ui/states';
 
 /**
  * ProjectShowcaseVault Component
@@ -282,8 +283,15 @@ export default function ProjectShowcaseVault() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {filteredProjects.map((p) => (
+          {filteredProjects.length === 0 ? (
+            <EmptyState
+              title="No projects found"
+              description="No projects match your current search. Try a different keyword or filter."
+              icon={<FolderGit2 className="h-6 w-6" aria-hidden="true" />}
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {filteredProjects.map((p) => (
               <div key={p.id} className="p-5 bg-gray-50 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3 text-xs flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between">
@@ -320,7 +328,8 @@ export default function ProjectShowcaseVault() {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
 

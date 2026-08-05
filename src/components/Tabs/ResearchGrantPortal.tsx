@@ -25,6 +25,7 @@ import {
   Flame
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { EmptyState } from '../ui/states';
 
 /**
  * ResearchGrantPortal Component
@@ -234,8 +235,15 @@ export default function ResearchGrantPortal() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {filteredGrants.map((g) => (
+          {filteredGrants.length === 0 ? (
+            <EmptyState
+              title="No grants found"
+              description="No grants match your current search. Try a different keyword or category."
+              icon={<BookOpen className="h-6 w-6" aria-hidden="true" />}
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {filteredGrants.map((g) => (
               <div key={g.id} className="p-5 bg-gray-50 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3 text-xs flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between">
@@ -262,7 +270,8 @@ export default function ResearchGrantPortal() {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -4,11 +4,13 @@ import { auth } from '../../lib/firebase';
 import { Bounty } from '../../types';
 import Leaderboard from '../ui/Leaderboard';
 import BountyChat from '../BountyChat';
+import { EmptyState, ErrorState } from '../ui/states';
 
 export default function BountyBoard() {
   const { profile, karmaBalance } = useAppContext();
   const [bounties, setBounties] = useState<Bounty[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const [showPostModal, setShowPostModal] = useState(false);
   const [newTitle, setNewTitle] = useState("");
@@ -18,12 +20,15 @@ export default function BountyBoard() {
   const [activeChatBounty, setActiveChatBounty] = useState<Bounty | null>(null);
 
   const fetchBounties = async () => {
+    setError(null);
     try {
       const res = await fetch('/api/v1/bounties');
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load bounties');
       if (data.items) setBounties(data.items);
     } catch (e) {
       console.error(e);
+      setError(e instanceof Error ? e.message : 'Failed to load bounties');
     } finally {
       setLoading(false);
     }
@@ -112,12 +117,20 @@ export default function BountyBoard() {
             <div className="animate-pulse space-y-4">
               {[1,2,3].map(i => <div key={i} className="h-32 bg-gray-100 dark:bg-gray-800 rounded-xl w-full" />)}
             </div>
+          ) : error ? (
+            <ErrorState
+              description={error}
+              onRetry={() => {
+                setLoading(true);
+                void fetchBounties();
+              }}
+              retrying={loading}
+            />
           ) : bounties.length === 0 ? (
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-10 text-center border border-gray-100 dark:border-gray-700">
-              <div className="text-4xl mb-4">🎯</div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No active bounties</h3>
-              <p className="text-gray-500">Be the first to ask for help from the community!</p>
-            </div>
+            <EmptyState
+              title="No active bounties"
+              description="Be the first to ask for help from the community!"
+            />
           ) : bounties.map(bounty => (
             <div key={bounty.id} className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition">
               <div className="flex justify-between items-start mb-3">
