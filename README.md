@@ -159,18 +159,20 @@ docker compose up -d
 
 ## Environment Variables Guide
 
-Provide these keys in your `.env` file to fully enable application databases and AI APIs:
+YuvaHub enforces **strict startup environment variable validation** (Issue #588). The server will terminate with a descriptive error if any required variables are missing during launch.
 
-| Variable Name | Description | Source / Link |
-| :--- | :--- | :--- |
-| `MONGODB_URI` | Connection URI for the MongoDB Atlas Cluster. | MongoDB Atlas Dashboard |
-| `MONGODB_DB_NAME` | Target database collection name. | `yuvahub` |
-| `GEMINI_API_KEY` | **Server-only secret.** Used by backend Gemini services; never expose it through Vite or browser code. | [Google AI Studio](https://aistudio.google.com/) |
-| `APP_URL` | Base host URL of the local or deployed server. | `http://localhost:3000` |
-| `FRONTEND_URL` | Allowed client origin to enforce CORS security policy. | `http://localhost:5173` (or Vercel URL) |
-| `VITE_EMAILJS_SERVICE_ID` | EmailJS service connection ID. | [EmailJS Dashboard](https://www.emailjs.com/) |
-| `VITE_EMAILJS_TEMPLATE_ID`| EmailJS template container ID. | [EmailJS Dashboard](https://www.emailjs.com/) |
-| `VITE_EMAILJS_PUBLIC_KEY` | Public client key for direct frontend transmission. | [EmailJS Dashboard](https://www.emailjs.com/) |
+| Variable Name | Status | Description | Source / Link |
+| :--- | :--- | :--- | :--- |
+| `MONGODB_URI` | **Required** | Connection URI for the MongoDB Atlas Cluster. | MongoDB Atlas Dashboard |
+| `JWT_SECRET` | **Required** | Secret key for signing and verifying JWT tokens. | Random secure string |
+| `GEMINI_API_KEY` | **Required** | **Server-only secret.** Used by backend Gemini services; never expose in frontend. | [Google AI Studio](https://aistudio.google.com/) |
+| `REDIS_URL` | **Required if Redis Enabled** | Redis connection URL when `ENABLE_REDIS=true` or `REQUIRE_REDIS=true`. | Upstash / Redis Cloud |
+| `MONGODB_DB_NAME` | Optional | Target database collection name (defaults to `yuvahub`). | `yuvahub` |
+| `APP_URL` | Optional | Base host URL of the local or deployed server. | `http://localhost:5173` |
+| `FRONTEND_URL` | Optional | Allowed client origin to enforce CORS security policy. | `http://localhost:5173` |
+| `VITE_EMAILJS_SERVICE_ID` | Optional | EmailJS service connection ID. | [EmailJS Dashboard](https://www.emailjs.com/) |
+| `VITE_EMAILJS_TEMPLATE_ID`| Optional | EmailJS template container ID. | [EmailJS Dashboard](https://www.emailjs.com/) |
+| `VITE_EMAILJS_PUBLIC_KEY` | Optional | Public client key for direct frontend transmission. | [EmailJS Dashboard](https://www.emailjs.com/) |
 
 ---
 
