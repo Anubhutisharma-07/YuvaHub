@@ -22,26 +22,12 @@ import { createNotificationConsumer } from "./src/consumers/notificationConsumer
 import { createOpportunityScrapedConsumer } from "./src/consumers/opportunityScrapedConsumer.js";
 import swaggerSpec from "./src/config/swagger.js";
 
+import { validateStartupEnv } from "./src/config/envValidation.js";
+
 dotenv.config();
 
-// ---------------------------------------------------------------------------
-// JWT Secret Validation — fail fast in production
-// ---------------------------------------------------------------------------
-const { JWT_SECRET, JWT_REFRESH_SECRET, NODE_ENV } = process.env;
-
-if (NODE_ENV === 'production') {
-  const MISSING: string[] = [];
-  if (!JWT_SECRET) MISSING.push('JWT_SECRET');
-  if (!JWT_REFRESH_SECRET) MISSING.push('JWT_REFRESH_SECRET');
-
-  if (MISSING.length > 0) {
-    console.error(`[FATAL] ${MISSING.join(' and ')} must be explicitly set in production mode.`);
-    process.exit(1);
-  }
-} else {
-  if (!JWT_SECRET) console.warn('[WARN] JWT_SECRET not set. Using auto-generated secrets for development only.');
-  if (!JWT_REFRESH_SECRET) console.warn('[WARN] JWT_REFRESH_SECRET not set. Using auto-generated secrets for development only.');
-}
+// Validate required environment variables during startup (Issue #588)
+validateStartupEnv();
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
