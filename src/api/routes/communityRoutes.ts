@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getPosts, createPost, deletePost, getPostById, createComment, editComment, getComments, upvotePost } from "../controllers/communityController.js";
-import { authMiddleware, adminOnly } from "../../middleware/auth.js";
+import { authMiddleware, adminOnly } from "../middlewares/auth.js";
 
 const router = Router();
 
