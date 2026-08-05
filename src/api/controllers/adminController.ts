@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
 import { parsePagination } from "../../lib/utils.js";
 import { paginate } from "../../lib/pagination.js";
+import { AppError } from "../../lib/AppError.js";
 
 const sseClients: any[] = [];
 
@@ -239,4 +240,49 @@ export const triggerNodeScraper = async (req: Request, res: Response) => {
       console.error("[Manual Node Trigger] Child process error (failed to spawn or crashed):", err);
     });
     res.json({ message: "Node.js Central Ingestion pipeline triggered asynchronously." });
+};
+
+export const adminDlqStats = async (req: Request, res: Response) => {
+  try {
+    const { eventBus } = await import("../../events/eventBus.js");
+    const stats = await eventBus.getAllDlqStats();
+    res.json({ status: "success", dlq: stats });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
+export const adminInspectDlq = async (req: Request, res: Response) => {
+  try {
+    const { eventBus } = await import("../../events/eventBus.js");
+    const queueName = String(req.params.queueName);
+    const limit = Number(req.query.limit || 10);
+    const messages = await eventBus.inspectDlq(queueName, limit);
+    res.json({ queueName, dlqName: `${queueName}.dlq`, count: messages.length, messages });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
+export const adminReplayDlq = async (req: Request, res: Response) => {
+  try {
+    const { eventBus } = await import("../../events/eventBus.js");
+    const queueName = String(req.params.queueName);
+    const maxMessages = Number(req.query.maxMessages || 100);
+    const replayed = await eventBus.replayDlq(queueName, maxMessages);
+    res.json({ status: "success", queueName, replayedCount: replayed });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
+export const adminPurgeDlq = async (req: Request, res: Response) => {
+  try {
+    const { eventBus } = await import("../../events/eventBus.js");
+    const queueName = String(req.params.queueName);
+    const purged = await eventBus.purgeDlq(queueName);
+    res.json({ status: "success", queueName, purgedCount: purged });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
 };

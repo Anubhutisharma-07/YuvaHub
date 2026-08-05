@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { AppError } from "../../lib/AppError.js";
 import { getGenAI, getAIFallback, getCachedResponse, setCachedResponse } from "../genai.js";
 async function generateWithTimeout<T>(
   promise: Promise<T>,
