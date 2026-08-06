@@ -1,4 +1,4 @@
-import React, { useEffect, Suspense, lazy } from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { LayoutDashboard, Globe, PlusCircle, Users, User, Menu, X, Activity, Bookmark, Sparkles, MessageSquare, Settings, Sun, Moon } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import {
@@ -39,6 +39,7 @@ const AboutTab = lazy(() => import('./components/Tabs/About'));
 const HelpCenterPage = lazy(() => import('./pages/HelpCenter'));
 const GettingStartedDetail = lazy(() => import('./pages/GettingStartedDetail'));
 import OpportunityDetail from './components/Tabs/OpportunityDetail';
+const AIAssistant = lazy(() => import('./components/Tabs/AIAssistant'));
 import AIAssistant from './components/Tabs/AIAssistant';
 import BountyBoard from './components/Tabs/BountyBoard';
 import BackToTopButton from './components/ui/BackToTopButton';import OnboardingFlow from './components/OnboardingFlow';
@@ -298,6 +299,20 @@ function App() {
       case 'opportunities': return <Opportunities />;
       case 'teams': return <Teams />;
       case 'bookmarks': return <Bookmarks />;
+      case 'ai_assistant': return (
+        <Suspense fallback={
+          <div className="flex flex-col items-center justify-center h-full min-h-[400px] gap-4">
+            <div className="flex gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB] animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB] animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB] animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            </div>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Loading AI Assistant...</p>
+          </div>
+        }>
+          <AIAssistant />
+        </Suspense>
+      );
       case 'ai_assistant': return <AIAssistant />;
       case 'career_match': return <CareerMatchStudio />;
       case 'hackathon_studio': return <HackathonStudio />;
