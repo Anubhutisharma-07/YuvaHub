@@ -9,9 +9,26 @@ const DLX_EXCHANGE = "domain_events_dlx";
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 5000;
 
+export interface DlqStats {
+  queueName: string;
+  dlqName: string;
+  messageCount: number;
+  consumerCount: number;
+  routingKey: string;
+}
+
+export interface DlqMessageInfo {
+  payload: unknown;
+  headers: Record<string, unknown>;
+  routingKey: string;
+  failedAt?: string;
+  retryCount?: number;
+}
+
 class EventBus {
   private connection: amqp.ChannelModel | null = null;
   private channel: amqp.ConfirmChannel | null = null;
+  private registeredQueues: Map<string, string> = new Map();
 
   async connect(): Promise<void> {
     if (this.connection) return;
@@ -68,6 +85,7 @@ class EventBus {
       throw new Error("EventBus is not connected");
     }
 
+    this.registeredQueues.set(queueName, routingKey);
     const retryQueue = `${queueName}.retry`;
     const dlq = `${queueName}.dlq`;
 
@@ -123,12 +141,141 @@ class EventBus {
           console.error(
             `[EventBus] Max retries (${MAX_RETRIES}) exceeded for ${queueName}. Routing to DLQ.`,
           );
+          msg.properties.headers = {
+            ...msg.properties.headers,
+            "x-death-reason": (error as Error)?.message || "Max retries exceeded",
+            "x-death-timestamp": new Date().toISOString(),
+            "x-original-queue": queueName,
+            "x-original-routing-key": routingKey,
+          };
           this.channel!.nack(msg, false, false);
         }
       }
     });
 
     console.log(`[EventBus] Subscribed to ${routingKey} via queue ${queueName} (DLX: ${DLX_EXCHANGE})`);
+  }
+
+  async getDlqStats(queueName: string): Promise<DlqStats> {
+    if (!this.channel) {
+      throw new Error("EventBus is not connected");
+    }
+    const dlqName = `${queueName}.dlq`;
+    const routingKey = this.registeredQueues.get(queueName) || `${queueName}.failed`;
+    try {
+      const info = await this.channel.checkQueue(dlqName);
+      return {
+        queueName,
+        dlqName,
+        messageCount: info.messageCount,
+        consumerCount: info.consumerCount,
+        routingKey,
+      };
+    } catch {
+      return {
+        queueName,
+        dlqName,
+        messageCount: 0,
+        consumerCount: 0,
+        routingKey,
+      };
+    }
+  }
+
+  async getAllDlqStats(): Promise<DlqStats[]> {
+    const stats: DlqStats[] = [];
+    for (const queueName of this.registeredQueues.keys()) {
+      stats.push(await this.getDlqStats(queueName));
+    }
+    return stats;
+  }
+
+  async inspectDlq(queueName: string, maxMessages = 10): Promise<DlqMessageInfo[]> {
+    if (!this.channel) {
+      throw new Error("EventBus is not connected");
+    }
+    const dlqName = `${queueName}.dlq`;
+    const messages: DlqMessageInfo[] = [];
+
+    for (let i = 0; i < maxMessages; i++) {
+      const msg = await this.channel.get(dlqName, { noAck: false });
+      if (!msg) break;
+
+      try {
+        const payload = JSON.parse(msg.content.toString());
+        messages.push({
+          payload,
+          headers: (msg.properties.headers || {}) as Record<string, unknown>,
+          routingKey: msg.fields.routingKey,
+          failedAt: msg.properties.headers?.["x-death-timestamp"] as string | undefined,
+          retryCount: Number(msg.properties.headers?.["x-retry-count"] ?? 0),
+        });
+      } catch {
+        messages.push({
+          payload: msg.content.toString(),
+          headers: (msg.properties.headers || {}) as Record<string, unknown>,
+          routingKey: msg.fields.routingKey,
+        });
+      }
+
+      this.channel.nack(msg, false, true);
+    }
+
+    return messages;
+  }
+
+  async replayDlq(queueName: string, maxMessages = 100): Promise<number> {
+    if (!this.channel) {
+      throw new Error("EventBus is not connected");
+    }
+    const dlqName = `${queueName}.dlq`;
+    const targetRoutingKey = this.registeredQueues.get(queueName) || `${queueName}.failed`;
+    let replayedCount = 0;
+
+    for (let i = 0; i < maxMessages; i++) {
+      const msg = await this.channel.get(dlqName, { noAck: false });
+      if (!msg) break;
+
+      const headers = { ...msg.properties.headers };
+      delete headers["x-retry-count"];
+      delete headers["x-death-reason"];
+      delete headers["x-death-timestamp"];
+
+      const published = await new Promise<boolean>((resolve) => {
+        this.channel!.publish(MAIN_EXCHANGE, targetRoutingKey, msg.content, {
+          persistent: true,
+          headers: {
+            ...headers,
+            "x-replayed-from-dlq": true,
+            "x-replayed-at": new Date().toISOString(),
+          },
+        }, (err) => resolve(!err));
+      });
+
+      if (published) {
+        this.channel.ack(msg);
+        replayedCount++;
+      } else {
+        this.channel.nack(msg, false, true);
+        break;
+      }
+    }
+
+    console.log(`[EventBus] Replayed ${replayedCount} messages from DLQ ${dlqName} to ${targetRoutingKey}`);
+    return replayedCount;
+  }
+
+  async purgeDlq(queueName: string): Promise<number> {
+    if (!this.channel) {
+      throw new Error("EventBus is not connected");
+    }
+    const dlqName = `${queueName}.dlq`;
+    try {
+      const res = await this.channel.purgeQueue(dlqName);
+      return res.messageCount;
+    } catch {
+      return 0;
+    }
   }
 
   async disconnect(): Promise<void> {
@@ -145,3 +292,4 @@ class EventBus {
 }
 
 export const eventBus = new EventBus();
+

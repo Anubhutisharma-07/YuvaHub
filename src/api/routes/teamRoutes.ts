@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { createTeam, listTeams, getTeamById, submitJoinRequest, getTeamRequests, respondToRequest } from "../controllers/teamController.js";
-import { authMiddleware } from "../../middleware/auth.js";
+import { authMiddleware } from "../middlewares/auth.js";
 
 const router = Router();
 

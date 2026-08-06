@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
 import { parsePagination } from "../../lib/utils.js";
-import { sendPaginated, sendSuccess, sendError } from "../../lib/apiResponse.js";
+import { paginate } from "../../lib/pagination.js";
+import { AppError } from "../../lib/AppError.js";
 
 export const getMentorAvailability = async (req: Request, res: Response) => {
   const mentorUid = (req.query.mentorUid as string) || "mentor_default";

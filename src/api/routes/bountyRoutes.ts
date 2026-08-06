@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { z } from "zod";
 import { getBounties, createBounty, acceptBounty, resolveBounty, rateBounty, getLeaderboard } from "../controllers/bountyController.js";
-import { authMiddleware } from "../../middleware/auth.js";
-import { validateRequest } from "../../middlewares/validateRequest.js";
+import { authMiddleware } from "../middlewares/auth.js";
+import { validateRequest } from "../middlewares/validateRequest.js";
 import { BountySchema } from "../../models/bountySchema.js";
 
 const router = Router();

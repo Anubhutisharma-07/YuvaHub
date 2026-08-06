@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
 import { safeObjectId } from "../../lib/utils.js";
-import { deleteFirebaseUser } from "../../middleware/auth.js";
+import { deleteFirebaseUser } from "../middlewares/auth.js";
 import { calculateProfileProgress } from "../services/profileProgressService.js";
 import { sendSuccess, sendServiceUnavailable, sendNotFound, sendError } from "../../lib/apiResponse.js";
 

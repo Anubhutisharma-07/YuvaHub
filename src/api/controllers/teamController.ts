@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
+import { AppError } from "../../lib/AppError.js";
 import { safeObjectId, parsePagination } from "../../lib/utils.js";
 import { sendPaginated, sendSuccess, sendError } from "../../lib/apiResponse.js";
 
