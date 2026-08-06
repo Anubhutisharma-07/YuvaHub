@@ -89,11 +89,13 @@ const AdminDashboard = () => {
       if (statsRes && !statsRes.error) {
         setStats(prev => ({ ...prev, ...statsRes }));
       }
-      if (scrapersRes && Array.isArray(scrapersRes) && scrapersRes.length > 0) {
-        setScrapers(scrapersRes);
+      const scrapersList = Array.isArray(scrapersRes) ? scrapersRes : (scrapersRes?.items ?? scrapersRes?.data ?? []);
+      if (scrapersRes && scrapersList.length > 0) {
+        setScrapers(scrapersList);
       }
-      if (modRes && Array.isArray(modRes)) {
-        setModerationOpps(modRes);
+      const modList = Array.isArray(modRes) ? modRes : (modRes?.items ?? modRes?.data ?? []);
+      if (modRes && Array.isArray(modList)) {
+        setModerationOpps(modList);
       }
     } catch (err) {
       console.error('Failed to load admin dashboard telemetry:', err);

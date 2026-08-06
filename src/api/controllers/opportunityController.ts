@@ -6,6 +6,7 @@ import { meiliClient } from "../../services/searchSync.js";
 import { generateOpportunityEmbedding } from "../../services/embedding.js";
 import { CURATED_FALLBACKS } from "../../services/staticFallbacks.js";
 import { AppError } from "../../lib/AppError.js";
+import { sendSuccess } from "../../lib/apiResponse.js";
 
 /**
  * Helper to escape user-controlled text strings for safe HTML / SEO metadata insertion
@@ -43,7 +44,7 @@ export const toggleBookmark = async (req: Request, res: Response) => {
   if (existing) {
     // Un-bookmark
     await collection.deleteOne({ userId: user.uid, opportunityId });
-    return res.json({ saved: false });
+    return sendSuccess(res, { saved: false });
   } else {
     // Bookmark
     await collection.insertOne({
@@ -51,7 +52,7 @@ export const toggleBookmark = async (req: Request, res: Response) => {
       opportunityId,
       createdAt: new Date()
     });
-    return res.json({ saved: true });
+    return sendSuccess(res, { saved: true });
   }
 };
 
@@ -232,6 +233,7 @@ export const getOpportunities = async (req: Request, res: Response) => {
       num_results: 0,
       next_page: null,
       next_cursor: null,
+      meta: { page, limit, total: totalItems },
       pagination: { page, limit, totalItems, totalPages },
     });
   }
@@ -260,18 +262,19 @@ export const getOpportunities = async (req: Request, res: Response) => {
     num_results: items.length,
     next_page: result.next_page,
     next_cursor: result.next_page ? String(result.next_page) : null,
+    meta: { page, limit, total: totalItems },
     pagination: { page, limit, totalItems, totalPages },
   });
 };
 
 export const getTrendingOpportunities = async (req: Request, res: Response) => {
     if (!dbCommand || !dbQuery) {
-      return res.json({ num_results: 0, next_page: null, next_cursor: null, items: [] });
+      return sendSuccess(res, { num_results: 0, next_page: null, next_cursor: null, items: [] });
     }
 
     const result = await getRankedOpportunities(dbQuery, {}, 1, 5);
 
-    res.json({
+    return sendSuccess(res, {
       num_results: result.items.length,
       next_page: null,
       next_cursor: null,
@@ -291,7 +294,7 @@ export const semanticSearch = async (req: Request, res: Response) => {
     }
 
     if (!dbQuery) {
-      return res.json({ num_results: 0, items: [] });
+      return sendSuccess(res, { num_results: 0, items: [] });
     }
 
     const allOps = await dbQuery.collection("opportunities").find({ embedding: { $exists: true } }).toArray();
@@ -318,12 +321,12 @@ export const semanticSearch = async (req: Request, res: Response) => {
     scoredItems.sort((a: any, b: any) => b.score - a.score);
     const items = scoredItems.slice(0, 10);
 
-    res.json({ num_results: items.length, items });
+    return sendSuccess(res, { num_results: items.length, items });
 };
 
 export const getLatestOpportunities = async (req: Request, res: Response) => {
     if (!dbCommand || !dbQuery) {
-      return res.json({ num_results: 0, items: [] });
+      return sendSuccess(res, { num_results: 0, items: [] });
     }
 
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -361,10 +364,10 @@ export const getLatestOpportunities = async (req: Request, res: Response) => {
         .sort({ created_at: -1 })
         .limit(10);
       const fallbackItems = await fallbackCursor.toArray();
-      return res.json({ num_results: fallbackItems.length, items: fallbackItems, fallback: true });
+      return sendSuccess(res, { num_results: fallbackItems.length, items: fallbackItems, fallback: true });
     }
 
-    res.json({ num_results: items.length, items });
+    return sendSuccess(res, { num_results: items.length, items });
 };
 
 export const submitOpportunity = async (req: Request, res: Response) => {
@@ -408,14 +411,14 @@ export const submitOpportunity = async (req: Request, res: Response) => {
 
     await dbCommand.collection('opportunities').insertOne(doc);
 
-    res.status(201).json({ success: true });
+    return sendSuccess(res, {}, 201);
 };
 
 export const getOpportunityById = async (req: Request, res: Response) => {
     const rawId = req.params.id;
 
     if (typeof rawId === 'string' && (rawId.startsWith("fall_ai_") || rawId.startsWith("scout_"))) {
-      return res.json({
+      return sendSuccess(res, {
         id: rawId,
         title: "AI Intelligent Fallback Match",
         organization: "YuvaHub AI Curated Network",
@@ -449,7 +452,7 @@ export const getOpportunityById = async (req: Request, res: Response) => {
     };
     delete mapped._id;
 
-    res.json(mapped);
+    return sendSuccess(res, mapped);
 };
 
 export const updateOpportunity = async (req: Request, res: Response) => {
@@ -488,5 +491,5 @@ export const updateOpportunity = async (req: Request, res: Response) => {
       }
     }
 
-    res.json({ success: true, updated: result.modifiedCount > 0 });
+    return sendSuccess(res, { updated: result.modifiedCount > 0 });
 };

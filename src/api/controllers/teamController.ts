@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
 import { AppError } from "../../lib/AppError.js";
 import { safeObjectId, parsePagination } from "../../lib/utils.js";
-import { paginate } from "../../lib/pagination.js";
+import { sendPaginated, sendSuccess, sendError } from "../../lib/apiResponse.js";
 
 export const createTeam = async (req: Request, res: Response) => {
   const { name, opportunityId, opportunityTitle, description, requiredRoles, maxMembers } = req.body;
@@ -23,7 +23,7 @@ export const createTeam = async (req: Request, res: Response) => {
   };
 
   const result = await dbCommand.collection("teams").insertOne(teamData);
-  return res.status(201).json({ id: result.insertedId.toString(), ...teamData });
+  return sendSuccess(res, { id: result.insertedId.toString(), ...teamData }, 201);
 };
 
 export const listTeams = async (req: Request, res: Response) => {
@@ -49,10 +49,10 @@ export const listTeams = async (req: Request, res: Response) => {
     ]);
     const formatted = teams.map((t: any) => ({ id: t._id.toString(), _id: t._id.toString(), ...t }));
 
-    return res.json(paginate(formatted, page, limit, total));
+    return sendPaginated(res, formatted, page, limit, total);
   } catch (err: any) {
     console.error("[Team API] Error fetching teams:", err);
-    return res.status(500).json({ error: "Failed to fetch teams" });
+    return sendError(res, "Failed to fetch teams", 500);
   }
 };
 
@@ -64,7 +64,7 @@ export const getTeamById = async (req: Request, res: Response) => {
   const team = await dbCommand.collection("teams").findOne(filter);
   if (!team) throw AppError.notFound("Team not found");
 
-  return res.json({ id: team._id.toString(), _id: team._id.toString(), ...team });
+  return sendSuccess(res, { id: team._id.toString(), _id: team._id.toString(), ...team });
 };
 
 export const submitJoinRequest = async (req: Request, res: Response) => {
@@ -108,7 +108,7 @@ export const submitJoinRequest = async (req: Request, res: Response) => {
   };
 
   const result = await dbCommand.collection("team_requests").insertOne(requestData);
-  return res.status(201).json({ id: result.insertedId.toString(), ...requestData });
+  return sendSuccess(res, { id: result.insertedId.toString(), ...requestData }, 201);
 };
 
 export const getTeamRequests = async (req: Request, res: Response) => {
@@ -126,7 +126,7 @@ export const getTeamRequests = async (req: Request, res: Response) => {
   const requests = await dbCommand.collection("team_requests").find({ teamId: team._id.toString() }).sort({ createdAt: -1 }).toArray();
   const formatted = requests.map((r: any) => ({ id: r._id.toString(), _id: r._id.toString(), ...r }));
 
-  return res.json({ requests: formatted });
+  return sendSuccess(res, { requests: formatted });
 };
 
 export const respondToRequest = async (req: Request, res: Response) => {
@@ -179,5 +179,5 @@ export const respondToRequest = async (req: Request, res: Response) => {
     $set: { status: updatedStatus, updatedAt: new Date().toISOString() }
   });
 
-  return res.json({ message: `Request successfully ${updatedStatus}`, status: updatedStatus });
+  return sendSuccess(res, { message: `Request successfully ${updatedStatus}`, status: updatedStatus });
 };

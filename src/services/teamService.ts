@@ -45,7 +45,8 @@ export async function fetchTeams(filters?: { opportunityId?: string; q?: string;
   if (!response.ok) {
     throw new Error(data.error || "Failed to fetch teams");
   }
-  return data;
+  const teams = data.teams ?? data.items ?? data.data ?? [];
+  return { teams, total: data.meta?.total ?? data.total ?? teams.length };
 }
 
 export async function fetchTeamById(teamId: string): Promise<Team> {

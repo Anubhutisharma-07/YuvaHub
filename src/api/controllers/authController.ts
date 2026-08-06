@@ -5,6 +5,7 @@ import { dbCommand, dbQuery } from "../db.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { AppError } from "../../lib/AppError.js";
+import { sendSuccess, sendBadRequest, sendUnauthorized, sendServiceUnavailable, sendError } from "../../lib/apiResponse.js";
 
 export const authSync = async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
@@ -74,8 +75,7 @@ export const authSync = async (req: Request, res: Response) => {
 
     // 3. Sync profile with MongoDB
     if (!dbCommand || !dbQuery) {
-      return res.json({
-        status: "success",
+      return sendSuccess(res, {
         profile: {
           uid,
           name,
@@ -185,7 +185,7 @@ export const authSync = async (req: Request, res: Response) => {
         generatedRefreshSecret,
         { expiresIn: '7d' }
       );
-      return { accessToken, refreshToken };
+      return sendSuccess(res, { accessToken, refreshToken });
     }
 
     // Generate custom JWTs
@@ -220,8 +220,7 @@ export const authSync = async (req: Request, res: Response) => {
       );
     }
 
-    res.json({
-      status: "success",
+    return sendSuccess(res, {
       profile: updatedProfile,
       accessToken,
       refreshToken
@@ -232,44 +231,40 @@ export const refreshTokens = async (req: Request, res: Response) => {
   try {
     const { refreshToken } = req.body;
     if (!refreshToken) {
-      return res.status(400).json({ error: "Refresh token is required" });
+      return sendBadRequest(res, "Refresh token is required");
     }
 
     const refreshSecret = process.env.JWT_REFRESH_SECRET;
     const jwtSecret = process.env.JWT_SECRET;
 
     if (process.env.NODE_ENV === 'production' && (!refreshSecret || !jwtSecret)) {
-      return res.status(503).json({
-        error: 'Authentication service unavailable. JWT secrets must be configured in production.',
-      });
+      return sendServiceUnavailable(res, 'Authentication service unavailable. JWT secrets must be configured in production.');
     }
 
     if (!refreshSecret || !jwtSecret) {
-      return res.status(503).json({
-        error: 'Authentication service unavailable. JWT secrets not configured.',
-      });
+      return sendServiceUnavailable(res, 'Authentication service unavailable. JWT secrets not configured.');
     }
 
     let decoded: any;
     try {
       decoded = jwt.verify(refreshToken, refreshSecret);
     } catch (e) {
-      return res.status(401).json({ error: "Invalid or expired refresh token" });
+      return sendUnauthorized(res, "Invalid or expired refresh token");
     }
 
     if (!decoded || !decoded.uid) {
-      return res.status(401).json({ error: "Invalid refresh token payload" });
+      return sendUnauthorized(res, "Invalid refresh token payload");
     }
 
     if (!dbCommand) {
-      return res.status(500).json({ error: "Database not connected" });
+      return sendError(res, "Database not connected", 500);
     }
 
     const usersCollection = dbCommand.collection("users");
     const user = await usersCollection.findOne({ uid: decoded.uid });
 
     if (!user) {
-      return res.status(401).json({ error: "User not found" });
+      return sendUnauthorized(res, "User not found");
     }
 
     const hashedIncomingToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
@@ -283,7 +278,7 @@ export const refreshTokens = async (req: Request, res: Response) => {
         { $set: { hashedRefreshTokens: [] } }
       );
       console.warn(`[Auth] Refresh token reuse detected for user ${decoded.uid}. Revoked all sessions.`);
-      return res.status(401).json({ error: "Session revoked due to token reuse" });
+      return sendUnauthorized(res, "Session revoked due to token reuse");
     }
 
     // Generate new tokens
@@ -317,14 +312,13 @@ export const refreshTokens = async (req: Request, res: Response) => {
       }
     );
 
-    res.json({
-      status: "success",
+    return sendSuccess(res, {
       accessToken: newAccessToken,
       refreshToken: newRefreshToken
     });
   } catch (error) {
     console.error("[Auth] Error refreshing token:", error);
-    res.status(500).json({ error: "Internal server error" });
+    return sendError(res, "Internal server error", 500);
   }
 };
 
@@ -332,15 +326,13 @@ export const logout = async (req: Request, res: Response) => {
   try {
     const { refreshToken } = req.body;
     if (!refreshToken) {
-      return res.status(400).json({ error: "Refresh token is required" });
+      return sendBadRequest(res, "Refresh token is required");
     }
 
     const refreshSecret = process.env.JWT_REFRESH_SECRET;
 
     if (process.env.NODE_ENV === 'production' && !refreshSecret) {
-      return res.status(503).json({
-        error: 'Authentication service unavailable. JWT_REFRESH_SECRET must be configured in production.',
-      });
+      return sendServiceUnavailable(res, 'Authentication service unavailable. JWT_REFRESH_SECRET must be configured in production.');
     }
 
     let decoded: any;
@@ -350,7 +342,7 @@ export const logout = async (req: Request, res: Response) => {
       try {
         decoded = jwt.verify(refreshToken, refreshSecret);
       } catch (e) {
-        return res.json({ status: "success", message: "Logged out" });
+        return sendSuccess(res, { message: "Logged out" });
       }
     }
 
@@ -364,9 +356,9 @@ export const logout = async (req: Request, res: Response) => {
       );
     }
 
-    res.json({ status: "success", message: "Logged out successfully" });
+    return sendSuccess(res, { message: "Logged out successfully" });
   } catch (error) {
     console.error("[Auth] Error during logout:", error);
-    res.status(500).json({ error: "Internal server error" });
+    return sendError(res, "Internal server error", 500);
   }
 };

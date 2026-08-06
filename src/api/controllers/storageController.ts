@@ -5,6 +5,7 @@ import fs from "fs";
 import crypto from "crypto";
 import { dbCommand, dbQuery } from "../db.js";
 import { AppError } from "../../lib/AppError.js";
+import { sendSuccess } from "../../lib/apiResponse.js";
 // @ts-ignore
 import multer from "multer";
 
@@ -86,7 +87,7 @@ export const handleSignatureRequest = async (req: any, res: any) => {
   const apiSecret = process.env.CLOUDINARY_API_SECRET || "";
   if (!apiSecret) {
     if (process.env.NODE_ENV !== "production") {
-      return res.json({
+      return sendSuccess(res, {
         signature: "dummy_signature",
         timestamp,
         folder,
@@ -101,7 +102,7 @@ export const handleSignatureRequest = async (req: any, res: any) => {
 
   const signature = cloudinary.utils.api_sign_request(paramsToSign, apiSecret);
 
-  res.json({
+  return sendSuccess(res, {
     signature,
     timestamp,
     folder,
@@ -187,8 +188,7 @@ export const handleSaveUpload = async (req: any, res: any) => {
     delete updatedProfile._id;
   }
 
-  res.json({
-    status: "success",
+  return sendSuccess(res, {
     profile: updatedProfile
   });
 };
@@ -224,7 +224,7 @@ export const localUpload = multer({
 export const handleLocalUpload = async (req: any, res: any) => {
   if (!req.file) throw AppError.badRequest("No file uploaded");
   const publicUrl = `/uploads/${req.file.filename}`;
-  res.json({
+  return sendSuccess(res, {
     secure_url: publicUrl,
     public_id: req.file.filename,
     format: path.extname(req.file.filename).replace('.', '')

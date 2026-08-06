@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
 import { safeObjectId } from "../../lib/utils.js";
 import { AppError } from "../../lib/AppError.js";
+import { sendSuccess } from "../../lib/apiResponse.js";
 
 export const getBookmarks = async (req: Request, res: Response) => {
   const user = req.user;
@@ -13,7 +14,7 @@ export const getBookmarks = async (req: Request, res: Response) => {
   }
 
   const bookmarks = userDoc.bookmarks || [];
-  res.json({ status: "success", bookmarks });
+  return sendSuccess(res, { bookmarks });
 };
 
 export const addBookmark = async (req: Request, res: Response) => {
@@ -41,7 +42,7 @@ export const addBookmark = async (req: Request, res: Response) => {
     { $addToSet: { bookmarks: opportunityId } }
   );
 
-  res.json({ status: "success", message: "Bookmark added successfully" });
+  return sendSuccess(res, { message: "Bookmark added successfully" });
 };
 
 export const deleteBookmark = async (req: Request, res: Response) => {
@@ -59,5 +60,5 @@ export const deleteBookmark = async (req: Request, res: Response) => {
     { $pull: { bookmarks: opportunityId } }
   );
 
-  res.json({ status: "success", message: "Bookmark removed successfully" });
+  return sendSuccess(res, { message: "Bookmark removed successfully" });
 };

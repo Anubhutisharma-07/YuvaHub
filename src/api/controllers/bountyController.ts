@@ -6,14 +6,14 @@ import { AppError } from "../../lib/AppError.js";
 
 export const getBounties = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!dbQuery) return res.status(503).json({ error: "Database not available" });
+    if (!dbQuery) return sendServiceUnavailable(res);
     const { page, limit, skip } = parsePagination(req.query);
     const filter = { status: { $in: ['open', 'accepted'] } };
     const [bounties, total] = await Promise.all([
       dbQuery.collection("bounties").find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).toArray(),
       dbQuery.collection("bounties").countDocuments(filter)
     ]);
-    res.json(paginate(bounties.map((b: any) => ({ ...b, id: b._id.toString() })), page, limit, total));
+    return sendPaginated(res, bounties.map((b: any) => ({ ...b, id: b._id.toString() })), page, limit, total);
   } catch (err: any) {
     next(err);
   }
@@ -44,7 +44,7 @@ export const createBounty = async (req: Request, res: Response) => {
     updatedAt: Date.now()
   };
   const result = await dbCommand.collection("bounties").insertOne(bounty);
-  res.json({ success: true, bounty: { ...bounty, id: result.insertedId.toString() } });
+  sendSuccess(res, { bounty: { ...bounty, id: result.insertedId.toString() } });
 };
 
 export const acceptBounty = async (req: Request, res: Response) => {
@@ -60,7 +60,7 @@ export const acceptBounty = async (req: Request, res: Response) => {
     { $set: { status: 'accepted', mentorId: user.uid, mentorName, updatedAt: Date.now() } }
   );
   if (result.modifiedCount === 0) throw AppError.badRequest("Bounty not available");
-  res.json({ success: true });
+  sendSuccess(res, {});
 };
 
 export const resolveBounty = async (req: Request, res: Response) => {
@@ -87,7 +87,7 @@ export const resolveBounty = async (req: Request, res: Response) => {
     metadata: { bountyId: bountyId }
   });
 
-  res.json({ success: true });
+  sendSuccess(res, {});
 };
 
 export const rateBounty = async (req: Request, res: Response) => {
@@ -108,7 +108,7 @@ export const rateBounty = async (req: Request, res: Response) => {
     { $inc: { reputation: rating, bountiesResolved: 1 } }
   );
 
-  res.json({ success: true });
+  sendSuccess(res, {});
 };
 
 export const getLeaderboard = async (req: Request, res: Response) => {
@@ -119,7 +119,7 @@ export const getLeaderboard = async (req: Request, res: Response) => {
     .limit(10)
     .toArray();
 
-  res.json({
+  sendSuccess(res, {
     items: topUsers.map((u: any) => ({
       userId: u.uid,
       name: u.name,

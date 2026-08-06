@@ -11,6 +11,7 @@ import {
 } from "../../services/recommendationEngine.js";
 import { checkAndDispatchHighMatchNotifications } from "../../services/recommendationNotificationService.js";
 import { RecommendationPreferences } from "../../types.js";
+import { sendSuccess, sendUnauthorized, sendBadRequest, sendError } from "../../lib/apiResponse.js";
 
 /**
  * GET /api/v1/recommendations
@@ -20,7 +21,7 @@ export const getRecommendations = async (req: Request, res: Response) => {
   try {
     const user = req.user;
     if (!user || !user.uid) {
-      return res.status(401).json({ error: "Unauthorized" });
+      return sendUnauthorized(res);
     }
 
     const minScore = parseInt(req.query.minScore as string) || 0;
@@ -81,7 +82,7 @@ export const getRecommendations = async (req: Request, res: Response) => {
       { minScore, type, limit, offset }
     );
 
-    res.json({
+    return sendSuccess(res, {
       status: "success",
       items: rankingResult.items,
       total: rankingResult.total,
@@ -91,7 +92,7 @@ export const getRecommendations = async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     console.error("GET /api/v1/recommendations error:", err);
-    res.status(500).json({ error: err.message || "Failed to fetch recommendations" });
+    return sendError(res, err.message || "Failed to fetch recommendations", 500);
   }
 };
 
@@ -104,8 +105,8 @@ export const getMatchExplanation = async (req: Request, res: Response) => {
     const user = req.user;
     const opportunityId = req.params.id;
 
-    if (!user || !user.uid) return res.status(401).json({ error: "Unauthorized" });
-    if (!opportunityId) return res.status(400).json({ error: "Missing opportunityId" });
+    if (!user || !user.uid) return sendUnauthorized(res);
+    if (!opportunityId) return sendBadRequest(res, "Missing opportunityId");
 
     let userProfile: any = user;
     if (dbQuery) {
@@ -141,7 +142,7 @@ export const getMatchExplanation = async (req: Request, res: Response) => {
     const matchDetails = calculateOpportunityMatch(userProfile, opportunity, interactions, userProfile.recommendationPreferences);
     const explanation = await generateMatchExplanation(userProfile, opportunity, matchDetails);
 
-    res.json({
+    return sendSuccess(res, {
       status: "success",
       opportunityId,
       explanation,
@@ -149,7 +150,7 @@ export const getMatchExplanation = async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     console.error("GET /api/v1/recommendations/explanation/:id error:", err);
-    res.status(500).json({ error: err.message || "Failed to generate explanation" });
+    return sendError(res, err.message || "Failed to generate explanation", 500);
   }
 };
 
@@ -160,7 +161,7 @@ export const getMatchExplanation = async (req: Request, res: Response) => {
 export const parseProfileSkills = async (req: Request, res: Response) => {
   try {
     const user = req.user;
-    if (!user || !user.uid) return res.status(401).json({ error: "Unauthorized" });
+    if (!user || !user.uid) return sendUnauthorized(res);
 
     const { resumeText, bioText } = req.body || {};
     const parsed = await parseProfileResumeAndSkills(resumeText || "", bioText || "");
@@ -199,7 +200,7 @@ export const parseProfileSkills = async (req: Request, res: Response) => {
     const updatedUser = dbQuery ? await dbQuery.collection("users").findOne({ uid: user.uid }) : null;
     const completeness = calculateProfileCompletenessScore(updatedUser || { ...user, skills: parsed.skills, interests: parsed.interests }, resumesCount);
 
-    res.json({
+    return sendSuccess(res, {
       status: "success",
       extractedSkills: parsed.skills,
       extractedInterests: parsed.interests,
@@ -207,7 +208,7 @@ export const parseProfileSkills = async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     console.error("POST /api/v1/recommendations/parse-profile error:", err);
-    res.status(500).json({ error: err.message || "Failed to parse profile" });
+    return sendError(res, err.message || "Failed to parse profile", 500);
   }
 };
 
@@ -218,7 +219,7 @@ export const parseProfileSkills = async (req: Request, res: Response) => {
 export const getPreferences = async (req: Request, res: Response) => {
   try {
     const user = req.user;
-    if (!user || !user.uid) return res.status(401).json({ error: "Unauthorized" });
+    if (!user || !user.uid) return sendUnauthorized(res);
 
     let prefs: RecommendationPreferences = {
       targetRole: "Software & AI Engineer",
@@ -236,10 +237,10 @@ export const getPreferences = async (req: Request, res: Response) => {
       }
     }
 
-    res.json({ status: "success", preferences: prefs });
+    return sendSuccess(res, { status: "success", preferences: prefs });
   } catch (err: any) {
     console.error("GET /api/v1/recommendations/preferences error:", err);
-    res.status(500).json({ error: err.message || "Failed to fetch preferences" });
+    return sendError(res, err.message || "Failed to fetch preferences", 500);
   }
 };
 
@@ -250,7 +251,7 @@ export const getPreferences = async (req: Request, res: Response) => {
 export const updatePreferences = async (req: Request, res: Response) => {
   try {
     const user = req.user;
-    if (!user || !user.uid) return res.status(401).json({ error: "Unauthorized" });
+    if (!user || !user.uid) return sendUnauthorized(res);
 
     const newPrefs: Partial<RecommendationPreferences> = req.body || {};
 
@@ -272,10 +273,10 @@ export const updatePreferences = async (req: Request, res: Response) => {
       );
     }
 
-    res.json({ status: "success", message: "Preferences updated successfully", preferences: newPrefs });
+    return sendSuccess(res, { status: "success", message: "Preferences updated successfully", preferences: newPrefs });
   } catch (err: any) {
     console.error("PUT /api/v1/recommendations/preferences error:", err);
-    res.status(500).json({ error: err.message || "Failed to update preferences" });
+    return sendError(res, err.message || "Failed to update preferences", 500);
   }
 };
 
@@ -286,12 +287,12 @@ export const updatePreferences = async (req: Request, res: Response) => {
 export const recordInteraction = async (req: Request, res: Response) => {
   try {
     const user = req.user;
-    if (!user || !user.uid) return res.status(401).json({ error: "Unauthorized" });
+    if (!user || !user.uid) return sendUnauthorized(res);
 
     const { opportunityId, interactionType, tags = [], opportunityType = "" } = req.body || {};
 
     if (!opportunityId || !interactionType) {
-      return res.status(400).json({ error: "Missing opportunityId or interactionType" });
+      return sendBadRequest(res, "Missing opportunityId or interactionType");
     }
 
     if (dbCommand) {
@@ -306,10 +307,10 @@ export const recordInteraction = async (req: Request, res: Response) => {
       });
     }
 
-    res.json({ status: "success", recorded: true });
+    return sendSuccess(res, { status: "success", recorded: true });
   } catch (err: any) {
     console.error("POST /api/v1/recommendations/interaction error:", err);
-    res.status(500).json({ error: err.message || "Failed to record interaction" });
+    return sendError(res, err.message || "Failed to record interaction", 500);
   }
 };
 
@@ -320,7 +321,7 @@ export const recordInteraction = async (req: Request, res: Response) => {
 export const getCompleteness = async (req: Request, res: Response) => {
   try {
     const user = req.user;
-    if (!user || !user.uid) return res.status(401).json({ error: "Unauthorized" });
+    if (!user || !user.uid) return sendUnauthorized(res);
 
     let userProfile: any = user;
     let resumesCount = 0;
@@ -333,10 +334,10 @@ export const getCompleteness = async (req: Request, res: Response) => {
 
     const completeness = calculateProfileCompletenessScore(userProfile, resumesCount);
 
-    res.json({ status: "success", completeness });
+    return sendSuccess(res, { status: "success", completeness });
   } catch (err: any) {
     console.error("GET /api/v1/recommendations/completeness error:", err);
-    res.status(500).json({ error: err.message || "Failed to get completeness score" });
+    return sendError(res, err.message || "Failed to get completeness score", 500);
   }
 };
 
@@ -347,7 +348,7 @@ export const getCompleteness = async (req: Request, res: Response) => {
 export const checkAlerts = async (req: Request, res: Response) => {
   try {
     const user = req.user;
-    if (!user || !user.uid) return res.status(401).json({ error: "Unauthorized" });
+    if (!user || !user.uid) return sendUnauthorized(res);
 
     let userProfile: any = user;
     if (dbQuery) {
@@ -356,9 +357,10 @@ export const checkAlerts = async (req: Request, res: Response) => {
     }
 
     await checkAndDispatchHighMatchNotifications(userProfile);
-    res.json({ status: "success", message: "Alerts checked successfully" });
+    return sendSuccess(res, { status: "success", message: "Alerts checked successfully" });
   } catch (err: any) {
     console.error("POST /api/v1/recommendations/check-alerts error:", err);
-    res.status(500).json({ error: err.message || "Failed to check alerts" });
+    return sendError(res, err.message || "Failed to check alerts", 500);
   }
 };
+

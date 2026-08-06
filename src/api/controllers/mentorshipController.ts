@@ -8,10 +8,10 @@ export const getMentorAvailability = async (req: Request, res: Response) => {
   const mentorUid = (req.query.mentorUid as string) || "mentor_default";
   if (dbQuery) {
     const avail = await dbQuery.collection("mentor_availability").findOne({ mentorUid });
-    if (avail) return res.json(avail);
+    if (avail) return sendSuccess(res, avail);
   }
 
-  res.json({
+  return sendSuccess(res, {
     mentorUid,
     timezone: "IST (UTC+5:30)",
     maxSessionsPerWeek: 5,
@@ -56,7 +56,7 @@ export const bookSession = async (req: Request, res: Response) => {
     await dbCommand.collection("mentorship_sessions").insertOne(newSession);
   }
 
-  res.status(201).json({ success: true, session: newSession });
+  return sendSuccess(res, { session: newSession }, 201);
 };
 
 export const getSessions = async (req: Request, res: Response) => {
@@ -70,7 +70,7 @@ export const getSessions = async (req: Request, res: Response) => {
         dbQuery.collection("mentorship_sessions").countDocuments(filter)
       ]);
 
-      return res.json(paginate(sessions, page, limit, total));
+      return sendPaginated(res, sessions, page, limit, total);
     }
 
     const demo = [{
@@ -85,10 +85,10 @@ export const getSessions = async (req: Request, res: Response) => {
       createdAt: new Date().toISOString()
     }];
     const sliced = demo.slice(skip, skip + limit);
-    res.json(paginate(sliced, page, limit, demo.length));
+    return sendPaginated(res, sliced, page, limit, demo.length);
   } catch (err) {
     console.error("[Mentorship] Sessions GET error:", err);
-    res.status(500).json({ error: "Internal Server Error" });
+    return sendError(res, "Internal Server Error", 500);
   }
 };
 
@@ -105,5 +105,5 @@ export const updateSessionStatus = async (req: Request, res: Response) => {
     );
   }
 
-  res.json({ success: true, sessionId, status });
+  sendSuccess(res, { sessionId, status });
 };

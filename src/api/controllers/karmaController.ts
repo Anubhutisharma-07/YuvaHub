@@ -1,12 +1,13 @@
 import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
 import { AppError } from "../../lib/AppError.js";
+import { sendSuccess } from "../../lib/apiResponse.js";
 
 export const getKarmaBalance = async (req: Request, res: Response) => {
   const user = req.user;
   if (!dbQuery) {
     // In offline / mock mode, return default initial karma balance
-    return res.json({ balance: 1000 });
+    return sendSuccess(res, { balance: 1000 });
   }
   const txs = await dbQuery.collection("transactions").find({ userId: user.uid }).toArray();
   let balance = txs.reduce((acc: number, tx: any) => acc + (tx.amount || 0), 0);
@@ -25,13 +26,13 @@ export const getKarmaBalance = async (req: Request, res: Response) => {
     }
   }
 
-  res.json({ balance });
+  return sendSuccess(res, { balance });
 };
 
 export const awardKarma = async (req: Request, res: Response) => {
   const user = req.user;
   if (!dbCommand) {
-    return res.json({ success: true, awarded: 10, note: "Mock mode award" });
+    return sendSuccess(res, { awarded: 10, note: "Mock mode award" });
   }
   const { type, metadata } = req.body;
   let amount = 0;
@@ -71,5 +72,5 @@ export const awardKarma = async (req: Request, res: Response) => {
       });
     }
   }
-  res.json({ success: true, awarded: amount });
+  return sendSuccess(res, { awarded: amount });
 };

@@ -157,7 +157,9 @@ export interface PaginationMeta {
 }
 
 export interface PaginatedResponse<T> {
+  success: true;
   data: T[];
+  items: T[];
   meta: PaginationMeta;
 }
 
@@ -175,5 +177,5 @@ export function buildPaginationMeta(page: number, limit: number, total: number):
 
 /** Wrap items + meta into the standard paginated envelope. */
 export function paginate<T>(data: T[], page: number, limit: number, total: number): PaginatedResponse<T> {
-  return { data, meta: buildPaginationMeta(page, limit, total) };
+  return { success: true, data, items: data, meta: buildPaginationMeta(page, limit, total) };
 }

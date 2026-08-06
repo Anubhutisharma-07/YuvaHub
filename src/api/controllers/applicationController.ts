@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { generateApplicationDraft } from "../../services/applicationGenerator.js";
 import { addApplicationJob } from "../../queues/applicationQueue.js";
 import { AppError } from "../../lib/AppError.js";
+import { sendSuccess } from "../../lib/apiResponse.js";
 
 export const generateDraft = async (req: Request, res: Response) => {
   const { opportunity, profile } = req.body;
@@ -16,7 +17,7 @@ export const generateDraft = async (req: Request, res: Response) => {
     profile
   });
 
-  return res.json({ success: true, content: draft });
+  return sendSuccess(res, { content: draft });
 };
 
 export const queueApplication = async (req: Request, res: Response) => {
@@ -29,5 +30,5 @@ export const queueApplication = async (req: Request, res: Response) => {
     action: req.body.action || "generate_draft"
   });
 
-  return res.json({ success: true, jobId: job.id });
+  return sendSuccess(res, { jobId: job.id });
 };
