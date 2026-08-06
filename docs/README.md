@@ -15,3 +15,6 @@ Comprehensive migration guide to host the Express backend Web Service and the ba
 
 ### 4. [Custom Domain & Firebase Setup Guide (DOMAIN_SETUP.md)](./DOMAIN_SETUP.md)
 Instructions on mapping custom domains, configuring Firebase Authorized Domains to enable authentication correctly, and publishing DNS Service records (DNS-AID).
+
+### 5. [RabbitMQ Dead Letter Queue (DLQ) & Recovery Guide (RABBITMQ_DLQ_RECOVERY.md)](./RABBITMQ_DLQ_RECOVERY.md)
+Detailed reference guide for RabbitMQ exchanges, DLQ topology, message failure lifecycle, dead-letter headers, inspection endpoints, and recovery replay procedures.
