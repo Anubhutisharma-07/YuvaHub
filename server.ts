@@ -357,8 +357,6 @@ const __dirname = __filename ? path.dirname(__filename) : "";
 
 // MongoDB setup
 const uri = process.env.MONGODB_URI || "";
-const commandUri = process.env.MONGODB_COMMAND_URI || uri;
-const queryUri = process.env.MONGODB_QUERY_URI || uri;
 const dbName = process.env.MONGODB_DB_NAME || "yuvahub";
 import { CURATED_FALLBACKS } from "./src/services/staticFallbacks.js";
 import fs from "fs";
@@ -497,9 +495,9 @@ function setupDNL(database: any) {
   });
 }
 
-if (commandUri && queryUri) {
-  const commandClient = new MongoClient(commandUri);
-  const queryClient = new MongoClient(queryUri);
+if (uri) {
+  const commandClient = new MongoClient(uri);
+  const queryClient = new MongoClient(uri);
   
   Promise.all([commandClient.connect(), queryClient.connect()]).then(() => {
     dbCommand = commandClient.db(process.env.MONGODB_COMMAND_DB || dbName);

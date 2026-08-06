@@ -18,8 +18,6 @@ async function runBookmarksTest() {
       ...process.env,
       PORT: PORT.toString(),
       MONGODB_URI: '', // Force MockDB mode
-      MONGODB_COMMAND_URI: '',
-      MONGODB_QUERY_URI: ''
     },
     stdio: 'pipe',
   });

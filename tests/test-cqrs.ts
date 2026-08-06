@@ -8,7 +8,7 @@ import * as path from 'path';
 // Define two distinct database URIs for testing
 const COMMAND_DB_NAME = 'yuvahub-test-command';
 const QUERY_DB_NAME = 'yuvahub-test-query';
-const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 const PORT = 4005;
 
 async function runCQRSTest() {
@@ -16,8 +16,8 @@ async function runCQRSTest() {
   console.log('          CQRS Connection Separation Test            ');
   console.log('=====================================================');
 
-  const commandClient = new MongoClient(MONGO_URI);
-  const queryClient = new MongoClient(MONGO_URI);
+  const commandClient = new MongoClient(MONGODB_URI);
+  const queryClient = new MongoClient(MONGODB_URI);
   
   await commandClient.connect();
   await queryClient.connect();
@@ -40,8 +40,7 @@ async function runCQRSTest() {
     env: {
       ...process.env,
       PORT: PORT.toString(),
-      MONGODB_COMMAND_URI: `${MONGO_URI}/${COMMAND_DB_NAME}?authSource=admin`,
-      MONGODB_QUERY_URI: `${MONGO_URI}/${QUERY_DB_NAME}?authSource=admin`,
+      MONGODB_URI: MONGODB_URI,
       MONGODB_COMMAND_DB: COMMAND_DB_NAME,
       MONGODB_QUERY_DB: QUERY_DB_NAME,
       MONGODB_DB_NAME: 'yuvahub-test-command', // For fallback safety, but our script ignores this mostly
