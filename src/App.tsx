@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { LayoutDashboard, Globe, PlusCircle, Users, User, Menu, X, Activity, Bookmark, Sparkles, MessageSquare, Settings, Sun, Moon } from 'lucide-react';
 import { signInWithGoogle, logout } from './lib/firebase';
 import { UserProfile } from './types';
@@ -17,7 +17,7 @@ import SettingsTab from './components/Tabs/Settings';
 import AdminDashboard from './components/Admin/AdminDashboard';
 import NotificationDropdown from './components/ui/NotificationDropdown';
 import OpportunityDetail from './components/Tabs/OpportunityDetail';
-import AIAssistant from './components/Tabs/AIAssistant';
+const AIAssistant = lazy(() => import('./components/Tabs/AIAssistant'));
 import BackToTopButton from './components/ui/BackToTopButton';import OnboardingFlow from './components/OnboardingFlow';
 import SplashAuth from './components/SplashAuth';
 import Security from './components/Tabs/Security';
@@ -205,7 +205,20 @@ function App() {
       case 'dashboard': return <Dashboard />;
       case 'opportunities': return <Opportunities />;
       case 'bookmarks': return <Bookmarks />;
-      case 'ai_assistant': return <AIAssistant />;
+      case 'ai_assistant': return (
+        <Suspense fallback={
+          <div className="flex flex-col items-center justify-center h-full min-h-[400px] gap-4">
+            <div className="flex gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB] animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB] animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB] animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            </div>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Loading AI Assistant...</p>
+          </div>
+        }>
+          <AIAssistant />
+        </Suspense>
+      );
       case 'submit': return <SubmitOpportunity />;
       case 'mentorship': return <Mentorship />;
       case 'community': return <Community />;
