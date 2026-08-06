@@ -80,6 +80,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.1",
     "@playwright/test": "^1.61.1",
     "@types/cors": "^2.8.19",
     "@types/escape-html": "^1.0.4",
