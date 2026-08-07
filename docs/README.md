@@ -18,3 +18,6 @@ Instructions on mapping custom domains, configuring Firebase Authorized Domains 
 
 ### 5. [RabbitMQ Dead Letter Queue (DLQ) & Recovery Guide (RABBITMQ_DLQ_RECOVERY.md)](./RABBITMQ_DLQ_RECOVERY.md)
 Detailed reference guide for RabbitMQ exchanges, DLQ topology, message failure lifecycle, dead-letter headers, inspection endpoints, and recovery replay procedures.
+
+### 6. [Backend Architecture (BACKEND_ARCHITECTURE.md)](./BACKEND_ARCHITECTURE.md)
+Comprehensive guide to the backend: project structure, request lifecycle, authentication, queues, scraper pipeline, database layer, AI integration, and contributor guidance.
