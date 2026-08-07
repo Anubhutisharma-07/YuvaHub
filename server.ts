@@ -134,6 +134,38 @@ app.get("/sitemap.xml", async (req: Request, res: Response) => {
   </url>`;
     });
 
+    // 3. Sort by our dynamic scores
+    scoredItems.sort((a: any, b: any) => b.metrics.totalScore - a.metrics.totalScore);
+
+    const paginatedItems = scoredItems.slice(0, limit);
+
+    return {
+      items: paginatedItems,
+      next_page: searchRes.estimatedTotalHits && (skip + searchLimit < searchRes.estimatedTotalHits) ? page + 1 : null
+    };
+  } catch (scoreErr) {
+    console.error("Scoring failure:", scoreErr);
+    return { items: [], next_page: null };
+  }
+}
+
+const __filename = typeof import.meta !== "undefined" && import.meta.url
+  ? fileURLToPath(import.meta.url)
+  : "";
+const __dirname = __filename ? path.dirname(__filename) : "";
+
+// MongoDB setup
+const uri = process.env.MONGODB_URI || "";
+const dbName = process.env.MONGODB_DB_NAME || "yuvahub";
+import { CURATED_FALLBACKS } from "./src/services/staticFallbacks.js";
+import fs from "fs";
+import { initializeDNLDatabase } from "./src/services/dnl/metrics.js";
+import { DNLDispatcher } from "./src/services/dnl/scheduler.js";
+import { DevpostAdapter } from "./src/services/dnl/adapters/DevpostAdapter.js";
+import { InternshalaAdapter } from "./src/services/dnl/adapters/InternshalaAdapter.js";
+
+let dbCommand: any = null;
+let dbQuery: any = null;
     // Fetch opportunities if DB is ready
     if (dbQuery) {
       try {
@@ -165,6 +197,91 @@ app.get("/sitemap.xml", async (req: Request, res: Response) => {
         console.error("[Sitemap] Error fetching opportunities:", dbErr);
       }
     }
+    return { modifiedCount: 0 };
+  }
+  async insertOne(doc: any) { this.data.push(doc); return { insertedId: "mock_id" }; }
+  async deleteOne(query: any) {
+    const initialLen = this.data.length;
+    const item = await this.findOne(query);
+    if (item) {
+      this.data = this.data.filter(r => r !== item);
+    }
+    return { deletedCount: this.data.length < initialLen ? 1 : 0 };
+  }
+  async countDocuments() { return this.data.length; }
+  async createIndex(keys: any, options: any) { return "mock_index"; }
+  aggregate() { return { toArray: async () => [] }; }
+  initializeUnorderedBulkOp() {
+    const ops: any[] = [];
+    return {
+      insert: (doc: any) => {
+        ops.push(doc);
+      },
+      execute: async () => {
+        this.data.push(...ops);
+        return { ok: 1, nInserted: ops.length };
+      }
+    };
+  }
+}
+
+class MockDB {
+  isMock = true;
+  collections: Record<string, MemoryCollection> = {
+    opportunities: new MemoryCollection(CURATED_FALLBACKS.map(f => ({...f, created_at: new Date()}))),
+    interactions: new MemoryCollection(),
+    scraper_metrics: new MemoryCollection()
+  };
+  collection(name: string) { return this.collections[name] || (this.collections[name] = new MemoryCollection()); }
+}
+
+function setupDNL(database: any) {
+  initializeDNLDatabase(database).then(() => {
+    const dispatcher = new DNLDispatcher(database);
+    dispatcher.registerAdapter(new DevpostAdapter());
+    dispatcher.registerAdapter(new InternshalaAdapter());
+    dispatcher.start(3600000); // 1 hour
+    console.log("[DNL] Scheduler initialized and started.");
+  }).catch(err => {
+    console.error("[DNL] Setup failed:", err);
+  });
+}
+
+if (uri) {
+  const commandClient = new MongoClient(uri);
+  const queryClient = new MongoClient(uri);
+  
+  Promise.all([commandClient.connect(), queryClient.connect()]).then(() => {
+    dbCommand = commandClient.db(process.env.MONGODB_COMMAND_DB || dbName);
+    dbQuery = queryClient.db(process.env.MONGODB_QUERY_DB || dbName);
+    console.log(`[Database] Connected to Command and Query MongoDB pools`);
+    setupDNL(dbCommand);
+    initializeSearchSync(dbQuery);
+    
+    dbCommand.collection("opportunities").createIndex({ created_at: -1, source_quality_score: -1 })
+      .then(() => console.log(`[Database] Created compound index on opportunities`))
+      .catch((err: any) => console.error(`[Database] Failed to create index:`, err));
+
+    dbQuery.collection("users").createIndex({ uid: 1 }, { unique: true })
+      .then(() => console.log(`[Database] Created unique index on users.uid`))
+      .catch((err: any) => console.error(`[Database] Failed to create index on users.uid:`, err));
+    dbCommand.collection("users").createIndex({ firebaseUid: 1 }, { unique: true, sparse: true })
+      .then(() => console.log(`[Database] Created unique sparse index on users.firebaseUid`))
+      .catch((err: any) => console.error(`[Database] Failed to create unique index:`, err));
+  }).catch(err => {
+    console.error("[Database] Connection failed, falling back to Mock Data:", err);
+    dbCommand = new MockDB();
+    dbQuery = new MockDB();
+    setupDNL(dbCommand);
+    initializeSearchSync(dbQuery);
+  });
+} else {
+  console.log("[Database] No MONGODB_URI provided. Running in Offline Mock mode.");
+  dbCommand = new MockDB();
+  dbQuery = new MockDB();
+  setupDNL(dbCommand);
+  initializeSearchSync(dbQuery);
+}
 
     const sitemapXml = [
       `<?xml version="1.0" encoding="UTF-8"?>`,
