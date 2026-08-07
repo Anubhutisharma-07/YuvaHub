@@ -3,6 +3,7 @@ import { dbCommand, dbQuery } from "../db.js";
 import { safeObjectId, parsePagination } from "../../lib/utils.js";
 import { paginate } from "../../lib/pagination.js";
 import { AppError } from "../../lib/AppError.js";
+import { sendSuccess, sendError, sendPaginated, sendServiceUnavailable } from "../../lib/apiResponse.js";
 
 export const getBounties = async (req: Request, res: Response, next: NextFunction) => {
   try {
