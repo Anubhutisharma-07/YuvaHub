@@ -1,6 +1,4 @@
-import React, { useEffect, lazy, Suspense } from 'react';
-import { LayoutDashboard, Globe, PlusCircle, Users, User, Menu, X, Activity, Bookmark, Sparkles, MessageSquare, Settings, Sun, Moon } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import {
   LayoutDashboard, Globe, PlusCircle, Users, User, Menu, X, Bookmark, Sparkles, MessageSquare, Settings, Sun, Moon, Mic,
   Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert
@@ -10,9 +8,12 @@ import { UserProfile } from './types';
 import { useAppContext } from './context/AppContext';
 import { useSocket } from './context/SocketContext';
 import { scrollContentToTop } from './lib/smoothScroll';
+import { SEO } from './components/SEO';
 import LoadingScreen from './components/ui/LoadingScreen';
+import NotificationDropdown from './components/ui/NotificationDropdown';
+import BackToTopButton from './components/ui/BackToTopButton';
 
-// Tab/View Components
+// Route components are lazy-loaded to reduce the initial bundle size (code splitting)
 const Dashboard = lazy(() => import('./components/Tabs/Dashboard'));
 const Opportunities = lazy(() => import('./components/Tabs/Opportunities'));
 const SubmitOpportunity = lazy(() => import('./components/Tabs/SubmitOpportunity'));
@@ -22,10 +23,8 @@ const Community = lazy(() => import('./components/Tabs/Community'));
 const Bookmarks = lazy(() => import('./components/Tabs/Bookmarks'));
 const SettingsTab = lazy(() => import('./components/Tabs/Settings'));
 const AdminDashboard = lazy(() => import('./components/Admin/AdminDashboard'));
-import NotificationDropdown from './components/ui/NotificationDropdown';
 const OpportunityDetail = lazy(() => import('./components/Tabs/OpportunityDetail'));
 const AIAssistant = lazy(() => import('./components/Tabs/AIAssistant'));
-import BackToTopButton from './components/ui/BackToTopButton';
 const OnboardingFlow = lazy(() => import('./components/OnboardingFlow'));
 const SplashAuth = lazy(() => import('./components/SplashAuth'));
 const Security = lazy(() => import('./components/Tabs/Security'));
@@ -38,44 +37,45 @@ const Guidelines = lazy(() => import('./components/Tabs/Guidelines'));
 const AboutTab = lazy(() => import('./components/Tabs/About'));
 const HelpCenterPage = lazy(() => import('./pages/HelpCenter'));
 const GettingStartedDetail = lazy(() => import('./pages/GettingStartedDetail'));
-import OpportunityDetail from './components/Tabs/OpportunityDetail';
-const AIAssistant = lazy(() => import('./components/Tabs/AIAssistant'));
-import AIAssistant from './components/Tabs/AIAssistant';
-import BountyBoard from './components/Tabs/BountyBoard';
-import BackToTopButton from './components/ui/BackToTopButton';import OnboardingFlow from './components/OnboardingFlow';
-import SplashAuth from './components/SplashAuth';
-import Security from './components/Tabs/Security';
-import AuthSecurityCenter from './components/Tabs/AuthSecurityCenter';
-import CareerMatchStudio from './components/Tabs/CareerMatchStudio';
-import HackathonStudio from './components/Tabs/HackathonStudio';
-import DeveloperApiPortal from './components/Tabs/DeveloperApiPortal';
-import GrantFellowshipStudio from './components/Tabs/GrantFellowshipStudio';
-import CampusAlumniHub from './components/Tabs/CampusAlumniHub';
-import ResumeAtsStudio from './components/Tabs/ResumeAtsStudio';
-import InterviewPrepStudio from './components/Tabs/InterviewPrepStudio';
-import OpenSourceBountyStudio from './components/Tabs/OpenSourceBountyStudio';
-import OpportunityMatchStudio from './components/Tabs/OpportunityMatchStudio';
-import TechEcosystemStudio from './components/Tabs/TechEcosystemStudio';
-import HackathonJudgeStudio from './components/Tabs/HackathonJudgeStudio';
-import MentorshipAdvisoryStudio from './components/Tabs/MentorshipAdvisoryStudio';
-import ResearchGrantPortal from './components/Tabs/ResearchGrantPortal';
-import ProjectShowcaseVault from './components/Tabs/ProjectShowcaseVault';
-import StarInterviewStudio from './components/Tabs/StarInterviewStudio';
-import Legal from './components/Tabs/Legal';
-import Support from './components/Tabs/Support';
-import HelpCenter from './components/Tabs/HelpCenter';
-import FAQ from './components/Tabs/FAQ';
-import Privacy from './pages/Privacy';
-import Terms from './pages/Terms';
-import Cookies from './pages/Cookies';
-import Guidelines from './components/Tabs/Guidelines';
-import About from './pages/About';
-import AboutTab from './components/Tabs/About';
-import HelpCenterPage from './pages/HelpCenter';
-import GettingStartedDetail from './pages/GettingStartedDetail';
-import { SEO } from './components/SEO';
-import Teams from './components/Tabs/Teams';
-import MockInterviewRoom from './pages/MockInterviewRoom';
+const BountyBoard = lazy(() => import('./components/Tabs/BountyBoard'));
+const AuthSecurityCenter = lazy(() => import('./components/Tabs/AuthSecurityCenter'));
+const CareerMatchStudio = lazy(() => import('./components/Tabs/CareerMatchStudio'));
+const HackathonStudio = lazy(() => import('./components/Tabs/HackathonStudio'));
+const DeveloperApiPortal = lazy(() => import('./components/Tabs/DeveloperApiPortal'));
+const GrantFellowshipStudio = lazy(() => import('./components/Tabs/GrantFellowshipStudio'));
+const CampusAlumniHub = lazy(() => import('./components/Tabs/CampusAlumniHub'));
+const ResumeAtsStudio = lazy(() => import('./components/Tabs/ResumeAtsStudio'));
+const InterviewPrepStudio = lazy(() => import('./components/Tabs/InterviewPrepStudio'));
+const OpenSourceBountyStudio = lazy(() => import('./components/Tabs/OpenSourceBountyStudio'));
+const OpportunityMatchStudio = lazy(() => import('./components/Tabs/OpportunityMatchStudio'));
+const TechEcosystemStudio = lazy(() => import('./components/Tabs/TechEcosystemStudio'));
+const HackathonJudgeStudio = lazy(() => import('./components/Tabs/HackathonJudgeStudio'));
+const MentorshipAdvisoryStudio = lazy(() => import('./components/Tabs/MentorshipAdvisoryStudio'));
+const ResearchGrantPortal = lazy(() => import('./components/Tabs/ResearchGrantPortal'));
+const ProjectShowcaseVault = lazy(() => import('./components/Tabs/ProjectShowcaseVault'));
+const StarInterviewStudio = lazy(() => import('./components/Tabs/StarInterviewStudio'));
+const HelpCenter = lazy(() => import('./components/Tabs/HelpCenter'));
+const FAQ = lazy(() => import('./components/Tabs/FAQ'));
+const Teams = lazy(() => import('./components/Tabs/Teams'));
+const MockInterviewRoom = lazy(() => import('./pages/MockInterviewRoom'));
+
+const LoadingFallback = () => (
+  <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
+    <div className="flex items-center gap-3 animate-pulse">
+       <div className="w-12 h-12 rounded-xl bg-[#2563EB] flex items-center justify-center shadow-lg shadow-blue-500/20">
+         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+       </div>
+       <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">
+         Yuva<span className="text-[#2563EB]">Hub</span>
+       </h1>
+    </div>
+    <div className="flex gap-2">
+      <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB] animate-bounce" style={{ animationDelay: '0ms' }}></div>
+      <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB] animate-bounce" style={{ animationDelay: '150ms' }}></div>
+      <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB] animate-bounce" style={{ animationDelay: '300ms' }}></div>
+    </div>
+  </div>
+);
 
 const PUBLIC_TABS = ['opportunities', 'about', 'privacy', 'terms', 'cookies', 'guidelines', 'security', 'support', 'legal'];
 
@@ -313,7 +313,6 @@ function App() {
           <AIAssistant />
         </Suspense>
       );
-      case 'ai_assistant': return <AIAssistant />;
       case 'career_match': return <CareerMatchStudio />;
       case 'hackathon_studio': return <HackathonStudio />;
       case 'developer_api': return <DeveloperApiPortal />;
@@ -416,25 +415,6 @@ function App() {
     );
   }
 
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 gap-6">
-        <div className="flex items-center gap-3 animate-pulse">
-           <div className="w-12 h-12 rounded-xl bg-[#2563EB] flex items-center justify-center shadow-lg shadow-blue-500/20">
-             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-           </div>
-           <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-             Yuva<span className="text-[#2563EB]">Hub</span>
-           </h1>
-        </div>
-        <div className="flex gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB] animate-bounce" style={{ animationDelay: '0ms' }}></div>
-          <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB] animate-bounce" style={{ animationDelay: '150ms' }}></div>
-          <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB] animate-bounce" style={{ animationDelay: '300ms' }}></div>
-        </div>
-      </div>
-    );
-  }
-
   if (!user) {
     return (
       <Suspense fallback={<LoadingScreen fullScreen={true} />}>
@@ -443,12 +423,6 @@ function App() {
     );
   }
 
-  if (user && profile && !profile.onboarded) {
-    return (
-      <Suspense fallback={<LoadingScreen fullScreen={true} />}>
-        <OnboardingFlow user={user} profile={profile} onComplete={(updated) => setProfile(updated)} />
-      </Suspense>
-    );
   // Ensure they are onboarded or we show the onboarding flow (for first-time signups only)
   const hasOnboarded = Boolean(
     profile?.onboarded || 
@@ -457,7 +431,11 @@ function App() {
   );
 
   if (user && profile && !hasOnboarded) {
-    return <OnboardingFlow user={user} profile={profile} onComplete={(updated) => setProfile(updated)} />;
+    return (
+      <Suspense fallback={<LoadingScreen fullScreen={true} />}>
+        <OnboardingFlow user={user} profile={profile} onComplete={(updated) => setProfile(updated)} />
+      </Suspense>
+    );
   }
 
   return (
@@ -697,12 +675,6 @@ function App() {
               renderContent()
             )}
           </Suspense>
-        <div className="flex-1 p-4 lg:p-8 overflow-y-auto no-scrollbar pb-8" id="app-content">
-          {selectedOppId ? (
-            <OpportunityDetail />
-          ) : (
-            renderContent()
-          )}
         </div>
 
         <BackToTopButton />

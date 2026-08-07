@@ -3,6 +3,7 @@ import { dbCommand, dbQuery } from "../db.js";
 import { parsePagination } from "../../lib/utils.js";
 import { paginate } from "../../lib/pagination.js";
 import { AppError } from "../../lib/AppError.js";
+import { sendSuccess, sendError, sendPaginated } from "../../lib/apiResponse.js";
 
 export const getMentorAvailability = async (req: Request, res: Response) => {
   const mentorUid = (req.query.mentorUid as string) || "mentor_default";

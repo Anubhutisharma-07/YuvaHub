@@ -134,6 +134,38 @@ app.get("/sitemap.xml", async (req: Request, res: Response) => {
   </url>`;
     });
 
+    // 3. Sort by our dynamic scores
+    scoredItems.sort((a: any, b: any) => b.metrics.totalScore - a.metrics.totalScore);
+
+    const paginatedItems = scoredItems.slice(0, limit);
+
+    return {
+      items: paginatedItems,
+      next_page: searchRes.estimatedTotalHits && (skip + searchLimit < searchRes.estimatedTotalHits) ? page + 1 : null
+    };
+  } catch (scoreErr) {
+    console.error("Scoring failure:", scoreErr);
+    return { items: [], next_page: null };
+  }
+}
+
+const __filename = typeof import.meta !== "undefined" && import.meta.url
+  ? fileURLToPath(import.meta.url)
+  : "";
+const __dirname = __filename ? path.dirname(__filename) : "";
+
+// MongoDB setup
+const uri = process.env.MONGODB_URI || "";
+const dbName = process.env.MONGODB_DB_NAME || "yuvahub";
+import { CURATED_FALLBACKS } from "./src/services/staticFallbacks.js";
+import fs from "fs";
+import { initializeDNLDatabase } from "./src/services/dnl/metrics.js";
+import { DNLDispatcher } from "./src/services/dnl/scheduler.js";
+import { DevpostAdapter } from "./src/services/dnl/adapters/DevpostAdapter.js";
+import { InternshalaAdapter } from "./src/services/dnl/adapters/InternshalaAdapter.js";
+
+let dbCommand: any = null;
+let dbQuery: any = null;
     // Fetch opportunities if DB is ready
     if (dbQuery) {
       try {
@@ -218,6 +250,9 @@ function setupDNL(database: any) {
 if (commandUri && queryUri) {
   const commandClient = new MongoClient(commandUri);
   const queryClient = new MongoClient(queryUri);
+if (uri) {
+  const commandClient = new MongoClient(uri);
+  const queryClient = new MongoClient(uri);
   
   Promise.all([commandClient.connect(), queryClient.connect()]).then(() => {
     dbCommand = commandClient.db(process.env.MONGODB_COMMAND_DB || dbName);
