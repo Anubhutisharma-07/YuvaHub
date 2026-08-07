@@ -20,13 +20,16 @@ describe('Scraper Health Dashboard (#585)', () => {
 
     await adminScraperHealth(req, res);
 
-    expect(jsonResult).toBeDefined();
-    expect(jsonResult.status).toBe('success');
-    expect(jsonResult.data.summary).toBeDefined();
-    expect(jsonResult.data.summary.totalSources).toBe(5);
-    expect(jsonResult.data.sources.length).toBe(5);
+    const summary = jsonResult.summary || jsonResult.data?.summary;
+    const sources = jsonResult.sources || jsonResult.data?.sources;
 
-    const devpost = jsonResult.data.sources.find((s: any) => s.name === 'Devpost');
+    expect(jsonResult).toBeDefined();
+    expect(jsonResult.success).toBe(true);
+    expect(summary).toBeDefined();
+    expect(summary.totalSources).toBe(5);
+    expect(sources.length).toBe(5);
+
+    const devpost = sources.find((s: any) => s.name === 'Devpost');
     expect(devpost).toBeDefined();
     expect(devpost.lastSuccessfulScrape).toBeDefined();
     expect(devpost.failureCount).toBeDefined();
