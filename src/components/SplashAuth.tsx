@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import {
   Sparkles, Search, Zap, Code, Lightbulb, Trophy, Target, ArrowRight, Mail, X,
   Github, Sun, Moon, ChevronDown, Rocket, Calendar, Users, AlertCircle, CheckCircle2,
@@ -160,6 +161,14 @@ export default function SplashAuth() {
   const handleLogin = () => {
     setIsModalOpen(true);
   };
+
+  const handleCloseModal = useCallback(() => setIsModalOpen(false), []);
+
+  // Ref for the sign-in modal dialog
+  const signInModalRef = useRef<HTMLDivElement>(null);
+
+  // Trap focus inside modal, handle Esc
+  useFocusTrap(signInModalRef, isModalOpen, handleCloseModal);
 
   const categories = [
     { id: 'all', label: 'All Opportunities', icon: Zap, count: '12,400+' },
@@ -718,21 +727,31 @@ export default function SplashAuth() {
 
       {/* Sign In Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-[#231f20]/75 backdrop-blur-md z-[60] flex items-center justify-center p-4">
-          <div className="bg-[#fcf9f2] rounded-3xl w-full max-w-md shadow-2xl p-8 border border-[#e8ded1] relative space-y-6">
+        <div
+          className="fixed inset-0 bg-[#231f20]/75 backdrop-blur-md z-[60] flex items-center justify-center p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) handleCloseModal(); }}
+        >
+          <div
+            ref={signInModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="signin-modal-title"
+            className="bg-[#fcf9f2] rounded-3xl w-full max-w-md shadow-2xl p-8 border border-[#e8ded1] relative space-y-6"
+          >
 
             <button
-              onClick={() => setIsModalOpen(false)}
+              onClick={handleCloseModal}
+              aria-label="Close sign-in dialog"
               className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white border border-[#e8ded1] flex items-center justify-center text-[#603620] hover:text-[#231f20] transition-all cursor-pointer"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4" aria-hidden="true" />
             </button>
 
             <div className="text-center space-y-2">
-              <div className="w-12 h-12 rounded-2xl bg-[#603620] text-[#f3e4bd] flex items-center justify-center mx-auto shadow-md">
-                <Zap className="w-6 h-6" />
+              <div className="w-12 h-12 rounded-2xl bg-[#603620] text-[#f3e4bd] flex items-center justify-center mx-auto shadow-md" aria-hidden="true">
+                <Zap className="w-6 h-6" aria-hidden="true" />
               </div>
-              <h3 className="text-2xl font-serif font-bold text-[#231f20]">Welcome to YuvaHub</h3>
+              <h3 id="signin-modal-title" className="text-2xl font-serif font-bold text-[#231f20]">Welcome to YuvaHub</h3>
               <p className="text-xs text-[#603620]">Sign in to unlock AI matching, ATS resume scores, & mentorship.</p>
             </div>
 
