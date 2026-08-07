@@ -86,13 +86,16 @@ scraperWorker.on("completed", (job) => {
 });
 
 scraperWorker.on("failed", (job, err) => {
-  console.error(`[ScraperWorker] Job ${job?.id} failed with error: ${err.message}`);
+  const attempt = job?.attemptsMade || 1;
+  const maxAttempts = job?.opts.attempts || 3;
 
-  // Alerting mechanism: Check if this was the final attempt
-  if (job && job.opts.attempts && job.attemptsMade === job.opts.attempts) {
-    console.error(`[ALERT] Scraper Job ${job.id} for domain ${job.data.domain} failed ${job.attemptsMade} times in a row! Maintenance required.`);
-
-    sendAdminAlert("ScraperWorker", job, err);
+  if (attempt < maxAttempts) {
+    console.warn(`[ScraperWorker] Job ${job?.id} attempt ${attempt}/${maxAttempts} failed: ${err.message}. Retrying automatically with exponential backoff...`);
+  } else {
+    console.error(`[ScraperWorker] Job ${job?.id} for domain ${job?.data?.domain} failed all ${maxAttempts} retry attempts! Permanent failure.`);
+    if (job) {
+      sendAdminAlert("ScraperWorker", job, err);
+    }
   }
 });
 
