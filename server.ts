@@ -247,6 +247,9 @@ function setupDNL(database: any) {
   });
 }
 
+if (commandUri && queryUri) {
+  const commandClient = new MongoClient(commandUri);
+  const queryClient = new MongoClient(queryUri);
 if (uri) {
   const commandClient = new MongoClient(uri);
   const queryClient = new MongoClient(uri);
@@ -261,6 +264,13 @@ if (uri) {
     dbCommand.collection("opportunities").createIndex({ created_at: -1, source_quality_score: -1 })
       .then(() => console.log(`[Database] Created compound index on opportunities`))
       .catch((err: any) => console.error(`[Database] Failed to create index:`, err));
+
+    dbCommand.collection("opportunities").createIndex(
+      { dedupe_hash: 1 },
+      { unique: true, partialFilterExpression: { dedupe_hash: { $exists: true } } }
+    )
+      .then(() => console.log(`[Database] Created unique index on opportunities.dedupe_hash`))
+      .catch((err: any) => console.error(`[Database] Failed to create unique index on opportunities.dedupe_hash:`, err));
 
     dbQuery.collection("users").createIndex({ uid: 1 }, { unique: true })
       .then(() => console.log(`[Database] Created unique index on users.uid`))
