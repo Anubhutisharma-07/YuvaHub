@@ -4,6 +4,7 @@ import { MongoClient } from "mongodb";
 import dotenv from "dotenv";
 import crypto from "crypto";
 import { generateOpportunityEmbedding } from "../services/embedding.js";
+import { scrapeOpportunity } from "../services/scrapers/realScraper.js";
 
 import { sendAdminAlert } from "../services/adminAlertService.js";
 import { scrapeRealURL } from "../scrapers/realScrapers.js";
@@ -13,8 +14,8 @@ dotenv.config();
 const uri = process.env.MONGODB_URI || "mongodb://localhost:27017";
 const dbName = process.env.MONGODB_DB_NAME || "yuvahub";
 
-// Maintain a single MongoDB client for the worker
 const mongoClient = new MongoClient(uri);
+
 mongoClient.connect().catch((err) => {
   console.error("[ScraperWorker] MongoDB connection error:", err);
 });
@@ -23,6 +24,7 @@ export const scraperWorker = new Worker(
   "scraper-jobs",
   async (job: Job) => {
     const { domain, url, type } = job.data;
+
     console.log(`[ScraperWorker] Processing job ${job.id} for domain: ${domain}, url: ${url}`);
 
     const realData = url ? await scrapeRealURL(url, domain, type) : null;
@@ -52,28 +54,94 @@ export const scraperWorker = new Worker(
       embedding: null as number[] | null,
     };
 
-    const embeddingText = `${title} ${organization} ${opportunity.description} ${type}`;
-    opportunity.embedding = await generateOpportunityEmbedding(embeddingText);
 
-    // Upsert into MongoDB for idempotency
+    console.log(
+      `[ScraperWorker] Processing job ${job.id} for domain: ${domain}, url: ${url}`
+    );
+
+    const scrapedItems = await scrapeOpportunity(domain, url, type);
+
+    if (scrapedItems.length === 0) {
+      throw new Error(`No opportunities extracted from ${url}`);
+    }
+
     const db = mongoClient.db(dbName);
+    const results = [];
+
+    for (const item of scrapedItems) {
+      const dedupeHash = crypto
+        .createHash("md5")
+        .update(`${item.sourceName}:${item.url}:${item.title}:${item.company}`)
+        .digest("hex");
+
+      const opportunity = {
+        url: item.url,
+        title: item.title,
+        company: item.company,
+        description: item.description,
+        sourceName: item.sourceName,
+        tags: item.tags,
+        opportunityType: item.opportunityType,
+        deadline: item.deadline,
+        location: item.location,
+        dedupeHash,
+        createdAt: new Date().toISOString(),
+        embedding: null as number[] | null,
+      };
+
     const result = await db.collection("opportunities").updateOne(
       { dedupe_hash: opportunity.dedupe_hash },
       { $set: opportunity },
       { upsert: true }
     );
 
-    if (result.upsertedCount > 0) {
-      console.log(`[ScraperWorker] Inserted new opportunity: ${title}`);
-    } else {
-      console.log(`[ScraperWorker] Updated existing opportunity: ${title}`);
+
+      const embeddingText = [
+        item.title,
+        item.company,
+        item.description,
+        item.opportunityType,
+      ].join(" ");
+
+      opportunity.embedding =
+        await generateOpportunityEmbedding(embeddingText);
+
+      const result = await db.collection("opportunities").updateOne(
+        { dedupeHash: opportunity.dedupeHash },
+        { $set: opportunity },
+        { upsert: true }
+      );
+
+      if (result.upsertedCount > 0) {
+        console.log(
+          `[ScraperWorker] Inserted real opportunity: ${item.title}`
+        );
+      } else {
+        console.log(
+          `[ScraperWorker] Updated existing opportunity: ${item.title}`
+        );
+      }
+
+      results.push({
+        title: item.title,
+        dedupeHash: opportunity.dedupeHash,
+      });
     }
 
+
+    return {
+      status: "success",
+      source: domain,
+      count: results.length,
+      results,
+    };
+
     return { status: "success", dedupe_hash: opportunity.dedupe_hash };
+
   },
   {
     connection: connection as any,
-    // Rate Limiting: max 5 jobs per second
+
     limiter: {
       max: 5,
       duration: 1000,
@@ -86,6 +154,20 @@ scraperWorker.on("completed", (job) => {
 });
 
 scraperWorker.on("failed", (job, err) => {
+
+  console.error(
+    `[ScraperWorker] Job ${job?.id} failed with error: ${err.message}`
+  );
+
+  if (
+    job &&
+    job.opts.attempts &&
+    job.attemptsMade === job.opts.attempts
+  ) {
+    console.error(
+      `[ALERT] Scraper Job ${job.id} for domain ${job.data.domain} failed ${job.attemptsMade} times in a row!`
+    );
+
   console.error(`[ScraperWorker] Job ${job?.id} failed with error: ${err.message}`);
 
   // Alerting mechanism: Check if this was the final attempt
@@ -101,5 +183,6 @@ scraperWorker.on("error", (err) => {
   if (!scraperWorkerErrorLogged) {
     console.warn('[ScraperWorker] Redis connection offline. Worker listening paused.');
     scraperWorkerErrorLogged = true;
+
   }
 });
