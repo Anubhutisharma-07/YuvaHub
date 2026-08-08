@@ -10,10 +10,15 @@
 
 export type ApplicationStatus =
   | "draft"
+  | "interested"
   | "pending_confirmation"
   | "queued"
   | "submitting"
   | "submitted"
+  | "under_review"
+  | "interview_scheduled"
+  | "selected"
+  | "rejected"
   | "failed"
   | "retrying";
 
@@ -26,7 +31,12 @@ export interface ApplicationAuditLog {
     | "SUBMISSION_STARTED"
     | "SUBMITTED"
     | "FAILED"
-    | "RETRY_TRIGGERED";
+    | "RETRY_TRIGGERED"
+    | "INTERESTED"
+    | "UNDER_REVIEW"
+    | "INTERVIEW_SCHEDULED"
+    | "SELECTED"
+    | "REJECTED";
 
   timestamp: Date;
 
@@ -44,7 +54,9 @@ export interface ApplicationDocument {
    */
   userId: string;
 
+notes?: string;
 
+deadline?: Date | string;
   /**
    * Opportunity being applied for
    */
@@ -61,6 +73,16 @@ export interface ApplicationDocument {
     platform?: string;
     applyUrl?: string;
   };
+
+  /**
+ * Personal notes for application tracking
+ */
+notes?: string;
+
+/**
+ * Application deadline snapshot
+ */
+deadline?: Date | string;
 
 
   /**
@@ -151,6 +173,9 @@ export function createApplicationDocument(
     opportunity: data.opportunity || {
       title: "",
     },
+    notes: data.notes,
+
+deadline: data.deadline,
 
     resume: data.resume,
 

@@ -29,6 +29,13 @@ import { createBullBoard } from '@bull-board/api';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { scraperQueue } from './src/queues/scraperQueue.js';
 import { generateOpportunityEmbedding } from "./src/services/embedding.js";
+import {
+  createApplication,
+  confirmApplication,
+  updateApplicationStatus,
+  retryApplication,
+  getApplicationHistory,
+} from "./src/services/applicationService.js";
 
 dotenv.config();
 
@@ -107,7 +114,353 @@ const resumeRateLimiter = rateLimit({
   store: createFailOpenStore('rate-limit:ai-resume:'),
   message: { error: "Too many resume review requests. Please try again later." }
 });
+// --- Application Tracker API ---
 
+app.get("/api/v1/applications", async (req, res) => {
+  try {
+    const user = await getAuthenticatedUser(req);
+
+    const applications = await getApplicationHistory(user.uid);
+
+    res.json({
+      status: "success",
+      applications,
+    });
+  } catch (err: any) {
+    console.error("GET /api/v1/applications error:", err);
+
+    res.status(
+      err.message?.startsWith("Unauthorized") ? 401 : 500
+    ).json({
+      error: err.message || "Internal Server Error",
+    });
+  }
+});
+
+app.post("/api/v1/applications", async (req, res) => {
+  try {
+    const user = await getAuthenticatedUser(req);
+
+    const application = await createApplication({
+      ...req.body,
+      userId: user.uid,
+    });
+
+    res.status(201).json({
+      status: "success",
+      ...application,
+    });
+  } catch (err: any) {
+    console.error("POST /api/v1/applications error:", err);
+
+    res.status(
+      err.message?.startsWith("Unauthorized") ? 401 : 500
+    ).json({
+      error: err.message || "Internal Server Error",
+    });
+  }
+});
+
+app.post("/api/v1/applications/:id/confirm", async (req, res) => {
+  try {
+    await getAuthenticatedUser(req);
+
+    const application = await confirmApplication(
+      req.params.id
+    );
+
+    res.json({
+      status: "success",
+      application,
+    });
+  } catch (err: any) {
+    console.error(
+      "POST /api/v1/applications/:id/confirm error:",
+      err
+    );
+
+    res.status(500).json({
+      error: err.message || "Internal Server Error",
+    });
+  }
+});
+
+app.patch("/api/v1/applications/:id/status", async (req, res) => {
+  try {
+    await getAuthenticatedUser(req);
+
+    const { status, message } = req.body;
+
+    if (!status) {
+      return res.status(400).json({
+        error: "Missing application status",
+      });
+    }
+
+    await updateApplicationStatus(
+      req.params.id,
+      status,
+      message
+    );
+
+    res.json({
+      status: "success",
+    });
+  } catch (err: any) {
+    console.error(
+      "PATCH /api/v1/applications/:id/status error:",
+      err
+    );
+
+    res.status(500).json({
+      error: err.message || "Internal Server Error",
+    });
+  }
+});
+
+app.post("/api/v1/applications/:id/retry", async (req, res) => {
+  try {
+    await getAuthenticatedUser(req);
+
+    await retryApplication(req.params.id);
+
+    res.json({
+      status: "success",
+    });
+  } catch (err: any) {
+    console.error(
+      "POST /api/v1/applications/:id/retry error:",
+      err
+    );
+
+    res.status(500).json({
+      error: err.message || "Internal Server Error",
+    });
+  }
+});
+// --- Application Tracker API ---
+
+// Get authenticated user's applications
+app.get("/api/v1/applications", async (req, res) => {
+  try {
+    const user = await getAuthenticatedUser(req);
+
+    const status = req.query.status as string | undefined;
+    const opportunityId = req.query.opportunityId as string | undefined;
+
+    const applications = await getApplicationHistory(user.uid, {
+      status: status as any,
+      opportunityId,
+    });
+
+    res.json({
+      status: "success",
+      applications,
+    });
+  } catch (err: any) {
+    console.error("GET /api/v1/applications error:", err);
+
+    res
+      .status(err.message?.startsWith("Unauthorized") ? 401 : 500)
+      .json({
+        error: err.message || "Internal Server Error",
+      });
+  }
+});
+
+
+// Create an application tracker entry
+app.post("/api/v1/applications", async (req, res) => {
+  try {
+    const user = await getAuthenticatedUser(req);
+
+    if (!dbQuery) {
+      return res.status(503).json({
+        error: "Database not available",
+      });
+    }
+
+    const {
+      opportunityId,
+      status,
+      notes,
+    } = req.body;
+
+    if (!opportunityId) {
+      return res.status(400).json({
+        error: "Missing opportunityId",
+      });
+    }
+
+    // Validate the opportunity exists
+    const { ObjectId } = await import("mongodb");
+
+    let opportunityQuery: any;
+
+    try {
+      opportunityQuery = {
+        _id: new ObjectId(opportunityId),
+      };
+    } catch {
+      opportunityQuery = {
+        id: opportunityId,
+      };
+    }
+
+    const opportunity = await dbQuery
+      .collection("opportunities")
+      .findOne(opportunityQuery);
+
+    if (!opportunity) {
+      return res.status(404).json({
+        error: "Opportunity not found",
+      });
+    }
+
+    const application = await createApplication({
+      userId: user.uid,
+      opportunityId,
+      opportunity: {
+        title: opportunity.title || "Untitled Opportunity",
+        organization:
+          opportunity.company ||
+          opportunity.organization,
+        platform:
+          opportunity.sourceName ||
+          opportunity.source_name,
+        applyUrl:
+          opportunity.apply_link ||
+          opportunity.url,
+      },
+      platform:
+        opportunity.sourceName ||
+        opportunity.source_name ||
+        "unknown",
+      status: status || "interested",
+      notes: notes || "",
+      deadline:
+        opportunity.deadlineDate ||
+        opportunity.deadline,
+      userConfirmed: false,
+    });
+
+    res.status(201).json({
+      status: "success",
+      application,
+    });
+  } catch (err: any) {
+    console.error("POST /api/v1/applications error:", err);
+
+    res
+      .status(err.message?.startsWith("Unauthorized") ? 401 : 500)
+      .json({
+        error: err.message || "Internal Server Error",
+      });
+  }
+});
+
+
+// Update application tracker details
+app.patch("/api/v1/applications/:id", async (req, res) => {
+  try {
+    const user = await getAuthenticatedUser(req);
+
+    const { id } = req.params;
+
+    const {
+      status,
+      notes,
+      deadline,
+    } = req.body;
+
+    if (
+      status === undefined &&
+      notes === undefined &&
+      deadline === undefined
+    ) {
+      return res.status(400).json({
+        error: "No fields to update",
+      });
+    }
+
+    await updateApplicationTracker(
+      id,
+      user.uid,
+      {
+        status,
+        notes,
+        deadline,
+      }
+    );
+
+    res.json({
+      status: "success",
+      message: "Application updated successfully",
+    });
+  } catch (err: any) {
+    console.error(
+      "PATCH /api/v1/applications/:id error:",
+      err
+    );
+
+    const statusCode =
+      err.message === "Application not found"
+        ? 404
+        : err.message?.startsWith("Unauthorized")
+          ? 401
+          : 500;
+
+    res.status(statusCode).json({
+      error:
+        err.message || "Internal Server Error",
+    });
+  }
+});
+
+
+// Delete application tracker entry
+app.delete("/api/v1/applications/:id", async (req, res) => {
+  try {
+    const user = await getAuthenticatedUser(req);
+
+    if (!dbQuery) {
+      return res.status(503).json({
+        error: "Database not available",
+      });
+    }
+
+    const { id } = req.params;
+
+    const result = await dbQuery
+      .collection("applications")
+      .deleteOne({
+        _id: id as any,
+        userId: user.uid,
+      });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({
+        error: "Application not found",
+      });
+    }
+
+    res.json({
+      status: "success",
+      message: "Application removed successfully",
+    });
+  } catch (err: any) {
+    console.error(
+      "DELETE /api/v1/applications/:id error:",
+      err
+    );
+
+    res
+      .status(err.message?.startsWith("Unauthorized") ? 401 : 500)
+      .json({
+        error: err.message || "Internal Server Error",
+      });
+  }
+});
 const chatRateLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 30,

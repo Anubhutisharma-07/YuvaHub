@@ -19,7 +19,7 @@ export default function Community() {
   const [postError, setPostError] = useState<string | null>(null);
   
   const observer = useRef<IntersectionObserver | null>(null);
-
+const feedRequestId = useRef(0);
   const lastPostRef = useCallback((node: HTMLDivElement) => {
     if (loadingMore) return;
     if (observer.current) observer.current.disconnect();
@@ -33,20 +33,43 @@ export default function Community() {
     if (node) observer.current.observe(node);
   }, [loadingMore, posts.length, pageSize]);
 
-  useEffect(() => {
-    if (!user) return;
-    const q = query(collection(db, 'community_posts'), orderBy('timestamp', 'desc'), limit(pageSize));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const p = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+ useEffect(() => {
+  if (!user) return;
+
+  const requestId = ++feedRequestId.current;
+
+  const q = query(
+    collection(db, 'community_posts'),
+    orderBy('timestamp', 'desc'),
+    limit(pageSize)
+  );
+
+  const unsubscribe = onSnapshot(
+    q,
+    (snapshot) => {
+      if (requestId !== feedRequestId.current) return;
+
+      const p = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
       setPosts(p);
       setFeedError(null);
       setInitialLoading(false);
-    }, () => {
+    },
+    () => {
+      if (requestId !== feedRequestId.current) return;
+
       setFeedError('Unable to load community posts. Please try again.');
       setInitialLoading(false);
-    });
-    return () => unsubscribe();
-  }, [user, pageSize]);
+    }
+  );
+
+  return () => {
+    unsubscribe();
+  };
+}, [user, pageSize]);
 
   const handlePost = async () => {
     if (!postContent.trim() || !user || posting) return;
