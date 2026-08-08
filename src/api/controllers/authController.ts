@@ -362,3 +362,95 @@ export const logout = async (req: Request, res: Response) => {
     return sendError(res, "Internal server error", 500);
   }
 };
+
+export const login = async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return sendUnauthorized(res, "Invalid email or password");
+    }
+
+    const firebaseApiKey = process.env.VITE_FIREBASE_API_KEY || "";
+    if (!firebaseApiKey) {
+      return sendServiceUnavailable(res, "Authentication service not configured");
+    }
+
+    const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${firebaseApiKey}`;
+    const verifyRes = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, returnSecureToken: true })
+    });
+
+    if (!verifyRes.ok) {
+      return sendUnauthorized(res, "Invalid email or password");
+    }
+
+    const data = await verifyRes.json();
+    return sendSuccess(res, { message: "Login successful", token: data.idToken });
+  } catch (error) {
+    console.error("[Auth] Login error:", error);
+    return sendUnauthorized(res, "Invalid email or password");
+  }
+};
+
+export const signup = async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return sendBadRequest(res, "Email and password are required");
+    }
+
+    const firebaseApiKey = process.env.VITE_FIREBASE_API_KEY || "";
+    if (!firebaseApiKey) {
+      return sendServiceUnavailable(res, "Authentication service not configured");
+    }
+
+    const url = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${firebaseApiKey}`;
+    const verifyRes = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, returnSecureToken: true })
+    });
+
+    if (!verifyRes.ok) {
+      const errData = await verifyRes.json().catch(() => ({}));
+      const errMsg = errData?.error?.message || "";
+      if (errMsg === "EMAIL_EXISTS") {
+        return sendSuccess(res, { message: "Account creation initiated. Check your email for further instructions." });
+      }
+      return sendBadRequest(res, "Registration failed. Please try again.");
+    }
+
+    return sendSuccess(res, { message: "Account creation initiated. Check your email for further instructions." });
+  } catch (error) {
+    console.error("[Auth] Signup error:", error);
+    return sendBadRequest(res, "Registration failed. Please try again.");
+  }
+};
+
+export const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return sendSuccess(res, { message: "If that email is registered, a password reset link has been sent." });
+    }
+
+    const firebaseApiKey = process.env.VITE_FIREBASE_API_KEY || "";
+    if (!firebaseApiKey) {
+      return sendServiceUnavailable(res, "Authentication service not configured");
+    }
+
+    const url = `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${firebaseApiKey}`;
+    const verifyRes = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ requestType: "PASSWORD_RESET", email })
+    });
+
+    return sendSuccess(res, { message: "If that email is registered, a password reset link has been sent." });
+  } catch (error) {
+    console.error("[Auth] Forgot password error:", error);
+    return sendSuccess(res, { message: "If that email is registered, a password reset link has been sent." });
+  }
+};
