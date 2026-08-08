@@ -693,7 +693,7 @@ function App() {
            </div>
         </div>
 
-        <div className="flex-1 p-4 lg:p-8 overflow-y-auto no-scrollbar pb-24">
+        <div className="flex-1 p-4 lg:p-6 overflow-y-auto no-scrollbar pb-24">
           <Suspense fallback={<LoadingScreen />}>
             {selectedOppId ? (
               <OpportunityDetail />

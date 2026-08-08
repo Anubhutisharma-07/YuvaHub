@@ -294,7 +294,7 @@ export default function Opportunities() {
   );
 
   return (
-    <div className="max-w-7xl mx-auto font-sans pb-16 px-4 sm:px-6 space-y-6">
+    <div className="w-full max-w-[1400px] mx-auto font-sans pb-16 px-2 sm:px-4 space-y-6">
 
       {/* Clean Professional Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-[#e8ded1] dark:border-slate-800 pb-6 pt-2">
