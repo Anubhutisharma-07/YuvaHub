@@ -6,6 +6,8 @@ import crypto from "crypto";
 import { generateOpportunityEmbedding } from "../services/embedding.js";
 import { scrapeOpportunity } from "../services/scrapers/realScraper.js";
 
+import { sendAdminAlert } from "../services/adminAlertService.js";
+
 dotenv.config();
 
 const uri = process.env.MONGODB_URI || "mongodb://localhost:27017";
@@ -21,6 +23,37 @@ export const scraperWorker = new Worker(
   "scraper-jobs",
   async (job: Job) => {
     const { domain, url, type } = job.data;
+
+    console.log(`[ScraperWorker] Processing job ${job.id} for domain: ${domain}, url: ${url}`);
+
+    // MOCK extraction logic (In a real scenario, you'd use Axios/Puppeteer here)
+    // Simulating delay for network request
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // Simulate finding a new opportunity based on the job data
+    const title = `Mock Opportunity from ${domain}`;
+    const organization = `Mock Org ${domain}`;
+    
+    const dedupeHash = crypto
+      .createHash("sha256")
+      .update(`${domain}:${title}:${organization}`)
+      .digest("hex");
+
+    const opportunity = {
+      url,
+      title,
+      company: organization,
+      description: "This is a mock description extracted by the worker.",
+      sourceName: domain,
+      tags: ["Scraped", type],
+      opportunityType: type,
+      deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+      location: "Online",
+      dedupe_hash: dedupeHash,
+      createdAt: new Date().toISOString(),
+      embedding: null as number[] | null,
+    };
+
 
     console.log(
       `[ScraperWorker] Processing job ${job.id} for domain: ${domain}, url: ${url}`
@@ -56,6 +89,13 @@ export const scraperWorker = new Worker(
         embedding: null as number[] | null,
       };
 
+    const result = await db.collection("opportunities").updateOne(
+      { dedupe_hash: opportunity.dedupe_hash },
+      { $set: opportunity },
+      { upsert: true }
+    );
+
+
       const embeddingText = [
         item.title,
         item.company,
@@ -88,12 +128,16 @@ export const scraperWorker = new Worker(
       });
     }
 
+
     return {
       status: "success",
       source: domain,
       count: results.length,
       results,
     };
+
+    return { status: "success", dedupe_hash: opportunity.dedupe_hash };
+
   },
   {
     connection: connection as any,
@@ -110,6 +154,7 @@ scraperWorker.on("completed", (job) => {
 });
 
 scraperWorker.on("failed", (job, err) => {
+
   console.error(
     `[ScraperWorker] Job ${job?.id} failed with error: ${err.message}`
   );
@@ -122,5 +167,22 @@ scraperWorker.on("failed", (job, err) => {
     console.error(
       `[ALERT] Scraper Job ${job.id} for domain ${job.data.domain} failed ${job.attemptsMade} times in a row!`
     );
+
+  console.error(`[ScraperWorker] Job ${job?.id} failed with error: ${err.message}`);
+
+  // Alerting mechanism: Check if this was the final attempt
+  if (job && job.opts.attempts && job.attemptsMade === job.opts.attempts) {
+    console.error(`[ALERT] Scraper Job ${job.id} for domain ${job.data.domain} failed ${job.attemptsMade} times in a row! Maintenance required.`);
+
+    sendAdminAlert("ScraperWorker", job, err);
+  }
+});
+
+let scraperWorkerErrorLogged = false;
+scraperWorker.on("error", (err) => {
+  if (!scraperWorkerErrorLogged) {
+    console.warn('[ScraperWorker] Redis connection offline. Worker listening paused.');
+    scraperWorkerErrorLogged = true;
+
   }
 });
