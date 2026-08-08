@@ -31,19 +31,108 @@ const robustParseJSON = (text: string): any => {
   }
 };
 
-async function generatedContentProxy(prompt: string, expectJson: boolean = false) {
-  try {
-    const res = await fetch("/api/v1/ai/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt, expectJson })
-    });
-    const data = await res.json();
-    return data.text || "";
-  } catch (e) {
-    console.error("AI Proxy Error:", e);
-    return "";
+export interface AIRequestOptions {
+  maxRetries?: number;
+  onRetry?: (attempt: number, error: string) => void;
+}
+
+export interface AIRequestResult {
+  text: string;
+  success: boolean;
+  error?: string;
+  isRetryable?: boolean;
+  attemptsUsed?: number;
+}
+
+export async function generatedContentProxyWithRetry(
+  prompt: string,
+  expectJson: boolean = false,
+  options: AIRequestOptions = {}
+): Promise<AIRequestResult> {
+  const maxRetries = options.maxRetries ?? 2;
+  let attempt = 0;
+  let lastError = "";
+  let isRetryable = false;
+
+  while (attempt <= maxRetries) {
+    attempt++;
+    try {
+      const res = await fetch("/api/v1/ai/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, expectJson })
+      });
+
+      if (!res.ok) {
+        isRetryable = res.status === 503 || res.status === 429 || res.status >= 500;
+        lastError = `AI Service temporary issue (${res.status} ${res.statusText})`;
+        if (isRetryable && attempt <= maxRetries) {
+          if (options.onRetry) options.onRetry(attempt, lastError);
+          await new Promise((resolve) => setTimeout(resolve, 600 * attempt));
+          continue;
+        }
+        return {
+          text: "",
+          success: false,
+          error: lastError,
+          isRetryable,
+          attemptsUsed: attempt
+        };
+      }
+
+      const data = await res.json();
+      if (data.error) {
+        lastError = data.error;
+        isRetryable = true;
+        if (attempt <= maxRetries) {
+          if (options.onRetry) options.onRetry(attempt, lastError);
+          await new Promise((resolve) => setTimeout(resolve, 600 * attempt));
+          continue;
+        }
+        return {
+          text: "",
+          success: false,
+          error: lastError,
+          isRetryable: true,
+          attemptsUsed: attempt
+        };
+      }
+
+      return {
+        text: data.text || "",
+        success: true,
+        attemptsUsed: attempt
+      };
+    } catch (e: any) {
+      lastError = e?.message || "Network error communicating with AI endpoint";
+      isRetryable = true;
+      if (attempt <= maxRetries) {
+        if (options.onRetry) options.onRetry(attempt, lastError);
+        await new Promise((resolve) => setTimeout(resolve, 600 * attempt));
+        continue;
+      }
+      return {
+        text: "",
+        success: false,
+        error: lastError,
+        isRetryable: true,
+        attemptsUsed: attempt
+      };
+    }
   }
+
+  return {
+    text: "",
+    success: false,
+    error: lastError || "AI service temporarily unavailable",
+    isRetryable: true,
+    attemptsUsed: attempt
+  };
+}
+
+async function generatedContentProxy(prompt: string, expectJson: boolean = false) {
+  const result = await generatedContentProxyWithRetry(prompt, expectJson, { maxRetries: 2 });
+  return result.text;
 }
 
 export async function generateSmartFeed(profile: any, page: number = 1) {
@@ -87,6 +176,20 @@ export async function checkScholarshipEligibility(scholarship: any, profile: any
   const prompt = `Can this student apply for this scholarship?\nProfile: ${JSON.stringify(profile)}\nScholarship: ${JSON.stringify(scholarship)}\nReturn JSON ONLY: { eligible: boolean, reasons: string[] }`;
   const text = await generatedContentProxy(prompt, true);
   return robustParseJSON(text) || { eligible: false, reasons: ["Could not verify."] };
+}
+
+export async function extractResumeData(resumeText: string) {
+  const prompt = `Extract structured data from the following resume text. Return JSON ONLY with this schema:
+  {
+    "education": [{"degree": "...", "institution": "...", "dates": "...", "gpa": "..."}],
+    "workExperience": [{"company": "...", "role": "...", "dates": "...", "impact": "..."}],
+    "rawSkills": ["skill1", "skill2"]
+  }
+  
+  Resume Text:
+  ${resumeText}`;
+  const text = await generatedContentProxy(prompt, true);
+  return robustParseJSON(text) || { education: [], workExperience: [], rawSkills: [] };
 }
 
 export async function chatWithMentor(messages: {role: string, content: string}[], message: string) {
@@ -195,7 +298,7 @@ function mockCareerAdvice(message: string): string {
 
   // General Fallback
   return JSON.stringify({
-    text: "I am Yuva, your dedicated AI Career Mentor. I'm here to help you navigate your academic focus, map out high-signal technical skills, refine your resume, and discover pristine student opportunities.\n\nWhat specifically can I help you build or explore today?",
+    text: "I am Yuva, your dedicated AI Career Mentor. I'm here to help you navigate your academic focus, map out high-signal technical skills, refine your resume, and discover pristine student opportunities.\n\n*(Note: This response was provided by a local fallback system because our AI service is currently experiencing high traffic.)*\n\nWhat specifically can I help you build or explore today?",
     options: [
       "How do I get into GSoC?",
       "Review my LinkedIn summary",

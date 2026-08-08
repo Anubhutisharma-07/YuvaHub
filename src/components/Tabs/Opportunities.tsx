@@ -34,7 +34,9 @@ export default function Opportunities() {
     minSalary: 0,
     deadlineType: 'All', // 'All' | 'Soon' | 'Active' | 'Custom'
     startDate: '',
-    endDate: ''
+    endDate: '',
+    isFree: false,
+    verifiedOnly: false
   });
 
   const [sortBy, setSortBy] = useState('Most relevant');
@@ -52,6 +54,8 @@ export default function Opportunities() {
       if (activeLocs.length > 0) filterPayload.locationTypes = activeLocs;
       if (filters.stipend !== 'All') filterPayload.stipend = filters.stipend;
       if (filters.minSalary > 0) filterPayload.minSalary = filters.minSalary;
+      if (filters.isFree) filterPayload.isFree = true;
+      if (filters.verifiedOnly) filterPayload.verifiedOnly = true;
       if (filters.deadlineType !== 'All') {
         filterPayload.deadlineType = filters.deadlineType;
         if (filters.deadlineType === 'Custom') {
@@ -60,7 +64,12 @@ export default function Opportunities() {
         }
       }
 
-      const results = await searchOpportunities(q || "", filterPayload, undefined);
+      const results = await searchOpportunities(
+  q || "",
+  filterPayload,
+  undefined,
+  sortBy
+);
       setSearchData(results);
     } catch (err) {
       console.error("[Opportunities] Failed to load:", err);
@@ -77,7 +86,7 @@ export default function Opportunities() {
     }, 350);
 
     return () => clearTimeout(handler);
-  }, [qVal, filters]);
+  }, [qVal, filters, sortBy]);
 
   const clearFilters = () => {
     setFilters({
@@ -87,7 +96,9 @@ export default function Opportunities() {
       minSalary: 0,
       deadlineType: 'All',
       startDate: '',
-      endDate: ''
+      endDate: '',
+      isFree: false,
+      verifiedOnly: false
     });
     setSortBy('Most relevant');
   };
@@ -98,28 +109,7 @@ export default function Opportunities() {
     await toggleBookmark(id);
   };
 
-  const filteredResults = React.useMemo(() => {
-    if (!searchData || !searchData.results) return [];
-    let results = searchData.results;
-
-    // Client-side sorting
-    results = [...results].sort((a: any, b: any) => {
-      if (sortBy === 'Newest') {
-        return new Date(b.createdAt || b.created_at || 0).getTime() - new Date(a.createdAt || a.created_at || 0).getTime();
-      }
-      if (sortBy === 'Recently updated') {
-        return new Date(b.updatedAt || b.updated_at || 0).getTime() - new Date(a.updatedAt || a.updated_at || 0).getTime();
-      }
-      if (sortBy === 'Deadline') {
-        if (!a.deadline) return 1;
-        if (!b.deadline) return -1;
-        return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
-      }
-      return 0; // Most relevant
-    });
-
-    return results;
-  }, [searchData, sortBy]);
+const filteredResults = searchData?.results ?? [];
 
   const getThumbStyle = (type: string) => {
     const t = (type || '').toLowerCase();
@@ -163,6 +153,36 @@ export default function Opportunities() {
               <span className="text-[13px] text-[#0F172A] group-hover:text-[#2563EB] transition-colors">{k}</span>
             </label>
           ))}
+        </div>
+      </div>
+
+      {/* Trust & Application Fee */}
+      <div>
+        <h3 className="text-[11px] font-bold text-gray-500 uppercase tracking-[0.1em] mb-4">Trust & Fee Filters</h3>
+        <div className="space-y-2.5">
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={filters.isFree}
+              onChange={(e) => setFilters(f => ({ ...f, isFree: e.target.checked }))}
+              className="w-4 h-4 rounded border-gray-300 text-[#2563EB] focus:ring-[#2563EB]"
+            />
+            <span className="text-[13px] text-[#0F172A] group-hover:text-[#2563EB] transition-colors font-semibold">
+              Free to Apply Only
+            </span>
+          </label>
+
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={filters.verifiedOnly}
+              onChange={(e) => setFilters(f => ({ ...f, verifiedOnly: e.target.checked }))}
+              className="w-4 h-4 rounded border-gray-300 text-[#2563EB] focus:ring-[#2563EB]"
+            />
+            <span className="text-[13px] text-[#0F172A] group-hover:text-[#2563EB] transition-colors font-semibold">
+              Verified Audit Only
+            </span>
+          </label>
         </div>
       </div>
 
