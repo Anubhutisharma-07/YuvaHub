@@ -6,6 +6,7 @@ import crypto from "crypto";
 import { generateOpportunityEmbedding } from "../services/embedding.js";
 
 import { sendAdminAlert } from "../services/adminAlertService.js";
+import { scrapeRealURL } from "../scrapers/realScrapers.js";
 
 dotenv.config();
 
@@ -24,29 +25,28 @@ export const scraperWorker = new Worker(
     const { domain, url, type } = job.data;
     console.log(`[ScraperWorker] Processing job ${job.id} for domain: ${domain}, url: ${url}`);
 
-    // MOCK extraction logic (In a real scenario, you'd use Axios/Puppeteer here)
-    // Simulating delay for network request
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    const realData = url ? await scrapeRealURL(url, domain, type) : null;
 
-    // Simulate finding a new opportunity based on the job data
-    const title = `Mock Opportunity from ${domain}`;
-    const organization = `Mock Org ${domain}`;
-    
+    const title = realData?.title || `Opportunity from ${domain}`;
+    const organization = realData?.organization || domain;
+    const description = realData?.description || `Live opportunity scraped from ${domain}.`;
+    const deadline = realData?.deadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
     const dedupeHash = crypto
       .createHash("sha256")
       .update(`${domain}:${title}:${organization}`)
       .digest("hex");
 
     const opportunity = {
-      url,
+      url: url || "https://yuvahub.xyz",
       title,
       company: organization,
-      description: "This is a mock description extracted by the worker.",
+      description,
       sourceName: domain,
-      tags: ["Scraped", type],
-      opportunityType: type,
-      deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
-      location: "Online",
+      tags: realData?.tags || ["Scraped", type],
+      opportunityType: type || "hackathon",
+      deadline,
+      location: realData?.location || "Online",
       dedupe_hash: dedupeHash,
       createdAt: new Date().toISOString(),
       embedding: null as number[] | null,
