@@ -3,7 +3,10 @@ import { z } from 'zod';
 export const EventType = z.enum([
   'OpportunityScraped',
   'UserRegistered',
-  'ApplicationSubmitted'
+  'ApplicationSubmitted',
+  'SessionBooked',
+  'SessionCompleted',
+  'MentorApplicationSubmitted'
 ]);
 
 export const BaseEventSchema = z.object({
@@ -31,4 +34,46 @@ export const OpportunityScrapedEventSchema = BaseEventSchema.extend({
 });
 
 export type OpportunityScrapedEvent = z.infer<typeof OpportunityScrapedEventSchema>;
-export type EventPayloads = OpportunityScrapedEvent;
+
+export const SessionBookedPayloadSchema = z.object({
+  sessionId: z.string(),
+  mentorUid: z.string(),
+  studentUid: z.string(),
+  topic: z.string(),
+  slotDateTime: z.string(),
+});
+
+export const SessionBookedEventSchema = BaseEventSchema.extend({
+  eventType: z.literal(EventType.enum.SessionBooked),
+  payload: SessionBookedPayloadSchema,
+});
+
+export type SessionBookedEvent = z.infer<typeof SessionBookedEventSchema>;
+
+export const SessionCompletedPayloadSchema = SessionBookedPayloadSchema;
+
+export const SessionCompletedEventSchema = BaseEventSchema.extend({
+  eventType: z.literal(EventType.enum.SessionCompleted),
+  payload: SessionCompletedPayloadSchema,
+});
+
+export type SessionCompletedEvent = z.infer<typeof SessionCompletedEventSchema>;
+
+export const MentorApplicationSubmittedPayloadSchema = z.object({
+  applicationId: z.string(),
+  applicantUid: z.string(),
+  name: z.string(),
+});
+
+export const MentorApplicationSubmittedEventSchema = BaseEventSchema.extend({
+  eventType: z.literal(EventType.enum.MentorApplicationSubmitted),
+  payload: MentorApplicationSubmittedPayloadSchema,
+});
+
+export type MentorApplicationSubmittedEvent = z.infer<typeof MentorApplicationSubmittedEventSchema>;
+
+export type EventPayloads =
+  | OpportunityScrapedEvent
+  | SessionBookedEvent
+  | SessionCompletedEvent
+  | MentorApplicationSubmittedEvent;

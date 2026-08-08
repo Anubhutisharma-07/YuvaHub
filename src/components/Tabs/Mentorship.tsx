@@ -7,6 +7,7 @@ import { db } from '../../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ChatMessage } from '../../types';
 import { chatWithAIMentorBackend } from '../../services/apiClient';
+import { fetchMySessions, updateSessionStatus } from '../../services/mentorshipApi';
 import { EmptyState, ErrorState, LoadingState } from '../ui/states';
 import { useAppContext } from '../../context/AppContext';
 
@@ -39,7 +40,7 @@ const DUMMY_MENTORS: Mentor[] = [
 ];
 
 export default function Mentorship() {
-  const { user } = useAppContext();
+  const { user, setActiveTab } = useAppContext();
   const [view, setView] = useState<'ai' | 'human' | 'bookings'>('human');
 
   return (
@@ -55,7 +56,14 @@ export default function Mentorship() {
           </p>
         </div>
         
-        <div className="flex bg-gray-100 p-1 rounded-xl shrink-0">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setActiveTab('mentorship_advisory')}
+            className="px-4 py-2 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-xl transition-all"
+          >
+            Open Mentorship Studio
+          </button>
+          <div className="flex bg-gray-100 p-1 rounded-xl shrink-0">
           <button 
             onClick={() => setView('human')}
             className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${view === 'human' ? 'bg-white text-gray-900 shadow-2xs' : 'text-gray-600 hover:text-gray-900'}`}
@@ -74,6 +82,7 @@ export default function Mentorship() {
           >
             <span className="flex items-center gap-1.5"><Bot className="w-3.5 h-3.5 text-purple-600" /> AI Mentor</span>
           </button>
+          </div>
         </div>
       </header>
 
@@ -296,11 +305,8 @@ function MyBookingsMain({ user }: { user: any }) {
   const fetchSessions = async () => {
     setError(null);
     try {
-      const res = await fetch(`/api/v1/mentorship/sessions?uid=${user?.uid || 'user_default'}`);
-      if (!res.ok) throw new Error('Failed to load your bookings');
-      const data = await res.json();
-      const sessionList = Array.isArray(data) ? data : (data.items ?? data.data ?? []);
-      setSessions(sessionList);
+      const { sessions } = await fetchMySessions();
+      setSessions(sessions);
     } catch (err) {
       console.error('Error fetching sessions:', err);
       setError(err instanceof Error ? err.message : 'Failed to load your bookings');
@@ -314,14 +320,11 @@ function MyBookingsMain({ user }: { user: any }) {
   }, [user]);
 
   const handleUpdateStatus = async (sessionId: string, status: string) => {
-    setSessions(prev => prev.map(s => s.sessionId === sessionId ? { ...s, status } : s));
+    const normalized = status === 'Confirmed' ? 'confirmed' : status === 'Declined' ? 'cancelled' : status.toLowerCase();
+    setSessions(prev => prev.map(s => s.sessionId === sessionId ? { ...s, status: normalized } : s));
 
     try {
-      await fetch('/api/v1/mentorship/status', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, status })
-      });
+      await updateSessionStatus(sessionId, normalized as any);
     } catch (err) {
       console.error('Error updating status:', err);
     }

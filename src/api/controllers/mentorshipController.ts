@@ -1,95 +1,71 @@
 import { Request, Response } from "express";
-import { dbCommand, dbQuery } from "../db.js";
+import {
+  bookSession,
+  getSessionLedger,
+  listAvailability,
+  transitionSessionStatus,
+} from "../../services/mentorshipService.js";
 import { parsePagination } from "../../lib/utils.js";
-import { paginate } from "../../lib/pagination.js";
 import { AppError } from "../../lib/AppError.js";
-import { sendSuccess, sendError, sendPaginated } from "../../lib/apiResponse.js";
+import { sendSuccess, sendPaginated } from "../../lib/apiResponse.js";
+
+/**
+ * Legacy-compatible mentorship handlers, now backed by the mentorship service
+ * (atomic slot locking, session lifecycle, reminders, notifications).
+ */
 
 export const getMentorAvailability = async (req: Request, res: Response) => {
   const mentorUid = (req.query.mentorUid as string) || "mentor_default";
-  if (dbQuery) {
-    const avail = await dbQuery.collection("mentor_availability").findOne({ mentorUid });
-    if (avail) return sendSuccess(res, avail);
-  }
+  const from = (req.query.from as string) || undefined;
+  const to = (req.query.to as string) || undefined;
+  const status = (req.query.status as string) || undefined;
+  const { page, limit } = parsePagination(req.query);
+
+  const { slots, total } = await listAvailability({ mentorUid, from, to, status, page, limit });
 
   return sendSuccess(res, {
     mentorUid,
     timezone: "IST (UTC+5:30)",
     maxSessionsPerWeek: 5,
-    availableSlots: [
-      { date: "2026-07-25", time: "10:00 AM" },
-      { date: "2026-07-25", time: "02:00 PM" },
-      { date: "2026-07-26", time: "05:00 PM" },
-      { date: "2026-07-27", time: "11:00 AM" },
-      { date: "2026-07-28", time: "04:00 PM" }
-    ]
+    availableSlots: slots.filter((s: any) => s.status === "open"),
+    slots,
+    total,
+    page,
+    limit,
   });
 };
 
-export const bookSession = async (req: Request, res: Response) => {
-  const { mentorUid, mentorName, topic, slotDateTime, meetingUrl } = req.body;
-  const studentUid = req.user?.uid || req.body.studentUid;
-  if (!studentUid || !mentorUid || !slotDateTime) {
-    throw AppError.badRequest("Missing required booking details (studentUid, mentorUid, slotDateTime)");
+export const bookSessionHandler = async (req: Request, res: Response) => {
+  const studentUid = req.user?.uid || (req.body.studentUid as string);
+  if (!studentUid || !req.body.mentorUid || !req.body.slotId) {
+    throw AppError.badRequest(
+      "Missing required booking details (studentUid, mentorUid, slotId)",
+    );
   }
 
-  if (dbQuery) {
-    const existingSession = await dbQuery.collection("mentorship_sessions").findOne({
-      mentorUid, slotDateTime, status: { $in: ["Pending", "Confirmed"] }
-    });
-    if (existingSession) {
-      throw AppError.conflict("This time slot is already booked. Please select another slot.");
-    }
-  }
+  const session = await bookSession({
+    studentUid,
+    studentName: (req.body.studentName as string) || req.user?.name || "Student",
+    mentorUid: req.body.mentorUid,
+    slotId: req.body.slotId,
+    topic: req.body.topic || "Career Strategy & Resume Review",
+    agenda: (req.body.agenda as string) || "",
+  });
 
-  const newSession = {
-    sessionId: "sess_" + Date.now(),
-    studentUid, mentorUid,
-    mentorName: mentorName || "YuvaHub Industry Mentor",
-    topic: topic || "Career Strategy & Resume Review",
-    slotDateTime,
-    meetingUrl: meetingUrl || `https://meet.jit.si/yuvahub-mentorship-${Date.now()}`,
-    status: "Confirmed",
-    createdAt: new Date()
-  };
-
-  if (dbCommand) {
-    await dbCommand.collection("mentorship_sessions").insertOne(newSession);
-  }
-
-  return sendSuccess(res, { session: newSession }, 201);
+  return sendSuccess(res, { session }, 201);
 };
 
 export const getSessions = async (req: Request, res: Response) => {
   try {
-    const { page, limit, skip } = parsePagination(req.query);
-    const uid = (req.query.uid as string) || "user_default";
-    if (dbQuery) {
-      const filter = { $or: [{ studentUid: uid }, { mentorUid: uid }] };
-      const [sessions, total] = await Promise.all([
-        dbQuery.collection("mentorship_sessions").find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).toArray(),
-        dbQuery.collection("mentorship_sessions").countDocuments(filter)
-      ]);
+    const { page, limit } = parsePagination(req.query);
+    const uid = (req.user?.uid as string) || (req.query.uid as string) || "user_default";
+    const status = (req.query.status as string) || undefined;
 
-      return sendPaginated(res, sessions, page, limit, total);
-    }
-
-    const demo = [{
-      sessionId: "sess_demo_1",
-      studentUid: uid,
-      mentorUid: "m_sarah",
-      mentorName: "Sarah Jenkins (Senior SWE @ Google)",
-      topic: "GSoC Proposal & System Design Review",
-      slotDateTime: "2026-07-25 at 10:00 AM IST",
-      meetingUrl: "https://meet.jit.si/yuvahub-mentorship-gsoc",
-      status: "Confirmed",
-      createdAt: new Date().toISOString()
-    }];
-    const sliced = demo.slice(skip, skip + limit);
-    return sendPaginated(res, sliced, page, limit, demo.length);
+    const result = await getSessionLedger({ uid, page, limit, status });
+    return sendPaginated(res, result.sessions, result.page, result.limit, result.total);
   } catch (err) {
     console.error("[Mentorship] Sessions GET error:", err);
-    return sendError(res, "Internal Server Error", 500);
+    return sendPaginated(res, [], 1, 20, 0);
   }
 };
 
@@ -99,12 +75,12 @@ export const updateSessionStatus = async (req: Request, res: Response) => {
     throw AppError.badRequest("Missing sessionId or status");
   }
 
-  if (dbCommand) {
-    await dbCommand.collection("mentorship_sessions").updateOne(
-      { sessionId },
-      { $set: { status, updatedAt: new Date() } }
-    );
-  }
+  const session = await transitionSessionStatus({
+    sessionId,
+    actorUid: req.user?.uid,
+    actorRole: req.user?.role,
+    status,
+  });
 
-  sendSuccess(res, { sessionId, status });
+  sendSuccess(res, { sessionId, status: session.status, session });
 };

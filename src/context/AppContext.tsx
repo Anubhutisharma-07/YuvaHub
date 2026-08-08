@@ -236,7 +236,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
            setActiveTab('dashboard');
          } else {
            const tabName = path.substring(1);
-           const allTabs = ['opportunities', 'about', 'privacy', 'terms', 'cookies', 'guidelines', 'security', 'support', 'legal', 'dashboard', 'bookmarks', 'submit', 'mentorship', 'community', 'profile', 'settings', 'admin', 'ai_assistant'];
+           const allTabs = ['opportunities', 'about', 'privacy', 'terms', 'cookies', 'guidelines', 'security', 'support', 'legal', 'dashboard', 'bookmarks', 'submit', 'mentorship', 'mentorship_advisory', 'community', 'profile', 'settings', 'admin', 'ai_assistant'];
            if (allTabs.includes(tabName)) {
              setActiveTab(tabName);
            }
