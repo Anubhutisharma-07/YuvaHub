@@ -2472,16 +2472,60 @@ Return JSON strictly in this format:
         
         Job Description:
         ${jobDescription}
-        
-        Evaluate the compatibility score (0-100), identify key missing keywords, list strengths, list weaknesses, and provide layout/structural optimization suggestions.
-        Return ONLY a JSON object matching this schema:
-        {
-          "score": number,
-          "missingKeywords": string[],
-          "strengths": string[],
-          "weaknesses": string[],
-          "suggestions": string[]
-        }
+       Evaluate the compatibility score (0-100), identify key missing keywords,
+list strengths, list weaknesses, provide layout/structural optimization
+suggestions, and create a personalized skill-gap learning roadmap.
+
+Also identify:
+- Skills already present in the resume
+- Missing technical skills
+- Missing soft skills
+- Priority of each missing skill
+- Why each skill is needed for the target role
+- Recommended learning resources
+- A practical project for important missing skills
+- Estimated learning time
+- Overall skill match percentage
+
+Return ONLY a JSON object matching this schema:
+
+{
+  "score": number,
+  "skillMatchPercentage": number,
+  "missingKeywords": string[],
+  "existingSkills": string[],
+  "strengths": string[],
+  "weaknesses": string[],
+  "suggestions": string[],
+  "missingSkills": [
+    {
+      "skill": string,
+      "category": "technical" | "soft",
+      "priority": "high" | "medium" | "low",
+      "reason": string,
+      "completed": false
+    }
+  ],
+  "roadmap": [
+    {
+      "skill": string,
+      "priority": "high" | "medium" | "low",
+      "estimatedWeeks": number,
+      "resources": string[],
+      "project": string,
+      "completed": false
+    }
+  ]
+}
+
+Rules:
+- skillMatchPercentage must be between 0 and 100.
+- score and skillMatchPercentage should represent the resume's compatibility with the target role.
+- Do not mark a skill as missing if it is clearly present in the resume.
+- Prioritize skills explicitly required by the job description.
+- Include both technical and soft skills when applicable.
+- Keep the roadmap practical for a student.
+- Do not invent certifications or courses.
         `
       });
 
