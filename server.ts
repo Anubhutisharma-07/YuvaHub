@@ -2181,6 +2181,7 @@ Return JSON strictly in this format:
   const searchHandler = async (req: express.Request, res: express.Response) => {
     try {
       const q = (req.query.q as string) || "";
+      const sortBy = (req.query.sortBy as string) || "Most relevant";
       const typesStr = req.query.types as string;
       const locationTypesStr = req.query.locationTypes as string;
       const stipend = req.query.stipend as string;
@@ -2336,19 +2337,61 @@ Return JSON strictly in this format:
             source_quality_score: 1,
             created_at: 1,
             highlights: { $meta: "searchHighlights" },
-            score: { $meta: "searchScore" }
+            score: { $meta: "searchScore" },
+            updated_at: 1
           }
         });
+        if (sortBy === "Newest") {
+  pipeline.push({
+    $sort: {
+      created_at: -1,
+    },
+  });
+} else if (sortBy === "Recently updated") {
+  pipeline.push({
+    $sort: {
+      updated_at: -1,
+    },
+  });
+} else if (sortBy === "Deadline") {
+  pipeline.push({
+    $sort: {
+      deadlineDate: 1,
+    },
+  });
+} else {
+  pipeline.push({
+    $sort: {
+      score: -1,
+    },
+  });
+}
+
+
 
         pipeline.push({ $limit: 50 });
         items = await dbQuery.collection("opportunities").aggregate(pipeline).toArray();
       } else {
-        const filter: any = {};
-        if (andConditions.length > 0) {
-          filter.$and = andConditions;
-        }
-        items = await dbQuery.collection("opportunities").find(filter).limit(50).toArray();
-      }
+  const filter: any = {};
+
+  if (andConditions.length > 0) {
+    filter.$and = andConditions;
+  }
+
+  let cursor = dbQuery.collection("opportunities").find(filter);
+
+  if (sortBy === "Newest") {
+    cursor = cursor.sort({ created_at: -1 });
+  } else if (sortBy === "Recently updated") {
+    cursor = cursor.sort({ updated_at: -1 });
+  } else if (sortBy === "Deadline") {
+    cursor = cursor.sort({ deadlineDate: 1 });
+  } else {
+    cursor = cursor.sort({ created_at: -1 });
+  }
+
+  items = await cursor.limit(50).toArray();
+}
 
       let mapped = items.map((doc: any) => {
         const docId = doc._id ? doc._id.toString() : (doc.id ? doc.id.toString() : "");

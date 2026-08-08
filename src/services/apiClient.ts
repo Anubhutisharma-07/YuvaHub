@@ -365,7 +365,7 @@ export async function fetchExploreFeed(cursor?: string, limit: number = 20) {
 }
 
 export async function searchOpportunities(
-  query: string, 
+  query: string,
   filters?: {
     types?: string[];
     locationTypes?: string[];
@@ -374,13 +374,15 @@ export async function searchOpportunities(
     deadlineType?: string;
     startDate?: string;
     endDate?: string;
-  }, 
-  cursor?: string
+  },
+  cursor?: string,
+  sortBy: string = 'Most relevant'
 ) {
-  const cacheKey = `search_${query.toLowerCase().replace(/\s+/g, '_')}_${JSON.stringify(filters || {})}`;
+  const cacheKey = `search_${query.toLowerCase().replace(/\s+/g, '_')}_${JSON.stringify(filters || {})}_${sortBy}`;
   try {
     const searchParams = new URLSearchParams();
     searchParams.append('q', query);
+    searchParams.append('sortBy', sortBy);
 
     if (filters) {
       if (filters.types && filters.types.length > 0) {
