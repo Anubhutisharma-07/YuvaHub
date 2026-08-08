@@ -39,6 +39,7 @@
     "@vitejs/plugin-react": "^5.0.4",
     "amqplib": "^2.0.1",
     "bullmq": "^5.80.2",
+    "cheerio": "^1.2.0",
     "cloudinary": "^2.10.0",
     "clsx": "^2.1.1",
     "concurrently": "^9.2.1",
