@@ -152,7 +152,13 @@ export async function fetchLatestFeed() {
 }
 
 export async function fetchSmartFeed(profile: any, cursor?: string) {
-  const cacheKey = "smart_feed";
+  const userId = auth.currentUser?.uid;
+
+  // Personalized feeds must never share cache entries between users.
+  // Anonymous requests use a non-personalized cache key.
+  const cacheKey = userId
+    ? `smart_feed_user_${userId}`
+    : "smart_feed_anonymous";
   try {
     const searchParams = new URLSearchParams();
     if (cursor) searchParams.append('cursor', cursor);
@@ -214,8 +220,12 @@ export async function fetchSmartFeed(profile: any, cursor?: string) {
     return data;
   } catch (error) {
     console.warn("Backend feed failed, using fallback", error);
+if (userId) {
     const cached = getFromCache(cacheKey);
-    if (cached) return { ...cached, isFallback: true };
+    if (cached) {
+        return { ...cached, isFallback: true };
+    }
+}
     
     try {
         const geminiItems = await geminiService.generateSmartFeed(profile, 1);
@@ -339,11 +349,18 @@ export async function fetchExploreFeed(cursor?: string, limit: number = 20) {
       }
     }
 
-    if (!cursor && data.items && data.items.length > 0) saveToCache(cacheKey, data);
+    if (userId && !cursor && data.items && data.items.length > 0) {
+    saveToCache(cacheKey, data);
+}
     return data;
   } catch (error) {
+    
+   if (userId) {
     const cached = getFromCache(cacheKey);
-    if (cached) return { ...cached, isFallback: true };
+    if (cached) {
+        return { ...cached, isFallback: true };
+    }
+}
     
     try {
         const geminiItems = await geminiService.generateExploreFeed(1);
