@@ -11,6 +11,16 @@ export const resumeRateLimiter = rateLimit({
   message: { error: "Too many resume review requests. Please try again later." }
 });
 
+export const authRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: true,
+  validate: false,
+  store: createFailOpenStore('rate-limit:auth:'),
+  message: { error: "Too many authentication attempts. Please try again later." }
+});
+
 export const chatRateLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 30,

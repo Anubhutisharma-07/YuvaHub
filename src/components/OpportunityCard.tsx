@@ -1,6 +1,7 @@
-import React, { KeyboardEvent, MouseEvent, useState } from "react";
+import React, { KeyboardEvent, MouseEvent, useState, useRef, useCallback } from "react";
 import { Bookmark, Shield, ExternalLink, X, CheckCircle, DollarSign, Coins, Users } from "lucide-react";
 import { TypeBadge, Badge } from "./Badge";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 export interface Opportunity {
     id: string;
@@ -60,6 +61,9 @@ export function OpportunityCard({
     isBookmarked = false,
 }: OpportunityCardProps) {
     const [showAuditModal, setShowAuditModal] = useState(false);
+    const auditModalRef = useRef<HTMLDivElement>(null);
+    const closeAuditModal = useCallback(() => setShowAuditModal(false), []);
+    useFocusTrap(auditModalRef, showAuditModal, closeAuditModal);
 
     const orgName = opp.source_name || opp.sourceName || opp.org || opp.organization || "Company not specified";
     const title = opp.title || "Untitled opportunity";
@@ -252,23 +256,29 @@ export function OpportunityCard({
                 <div
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4"
                     onClick={(e) => {
-                        e.stopPropagation();
-                        setShowAuditModal(false);
+                        if (e.target === e.currentTarget) {
+                            e.stopPropagation();
+                            closeAuditModal();
+                        }
                     }}
                 >
                     <div
+                        ref={auditModalRef}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="audit-modal-title"
                         className="bg-white rounded-2xl p-6 max-w-md w-full border border-emerald-200 shadow-2xl space-y-4 animate-scale-up"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex justify-between items-center border-b border-gray-100 pb-3">
                             <div className="flex items-center gap-2">
-                                <Shield className="w-5 h-5 text-emerald-600 fill-emerald-100" />
-                                <h3 className="font-bold text-base text-gray-900">Verified Opportunity Audit Trail</h3>
+                                <Shield className="w-5 h-5 text-emerald-600 fill-emerald-100" aria-hidden="true" />
+                                <h3 id="audit-modal-title" className="font-bold text-base text-gray-900">Verified Opportunity Audit Trail</h3>
                             </div>
                             <button
-                                onClick={() => setShowAuditModal(false)}
+                                onClick={closeAuditModal}
                                 className="text-gray-400 hover:text-gray-700 p-1"
-                                aria-label="Close audit trail modal"
+                                aria-label="Close audit trail dialog"
                             >
                                 <X className="w-4 h-4" aria-hidden="true" />
                             </button>
