@@ -555,15 +555,24 @@ export async function searchOpportunities(
     deadlineType?: string;
     startDate?: string;
     endDate?: string;
+
+  },
+  cursor?: string,
+  sortBy: string = 'Most relevant'
+) {
+  const cacheKey = `search_${query.toLowerCase().replace(/\s+/g, '_')}_${JSON.stringify(filters || {})}_${sortBy}`;
+
     isFree?: boolean;
     verifiedOnly?: boolean;
   },
   cursor?: string
 ) {
   const cacheKey = generateCacheKey('search', { query: query.toLowerCase().trim(), ...filters, cursor });
+
   try {
     const searchParams = new URLSearchParams();
     searchParams.append('q', query);
+    searchParams.append('sortBy', sortBy);
 
     if (filters) {
       if (filters.types && filters.types.length > 0) {
