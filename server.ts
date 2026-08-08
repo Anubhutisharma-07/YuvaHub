@@ -2,6 +2,7 @@ import { addApplicationJob } from "./src/queues/applicationQueue";
 import { generateApplicationDraft } from "./src/services/applicationGenerator";
 import express from "express";
 import http from "http";
+import { predictEligibility } from "./src/services/eligibilityService.js";
 import { eventBus } from "./src/events/eventBus";
 import { createOpportunityScrapedConsumer } from "./src/consumers/opportunityScrapedConsumer";
 import { createNotificationConsumer } from "./src/consumers/notificationConsumer";
@@ -157,6 +158,49 @@ app.post("/api/v1/applications", async (req, res) => {
       err.message?.startsWith("Unauthorized") ? 401 : 500
     ).json({
       error: err.message || "Internal Server Error",
+    });
+  }
+});
+app.post("/api/v1/eligibility/predict", async (req, res) => {
+  try {
+    const user = await getAuthenticatedUser(req);
+
+    const { opportunityId, profile, opportunity } = req.body;
+
+    if (!opportunityId) {
+      return res.status(400).json({
+        error: "opportunityId is required",
+      });
+    }
+
+    if (!profile || !opportunity) {
+      return res.status(400).json({
+        error: "profile and opportunity are required",
+      });
+    }
+
+    const prediction = await predictEligibility(
+      user.uid,
+      opportunityId,
+      profile,
+      opportunity
+    );
+
+    return res.json({
+      success: true,
+      prediction,
+    });
+  } catch (error: any) {
+    console.error("Eligibility prediction error:", error);
+
+    if (error.message?.startsWith("Unauthorized")) {
+      return res.status(401).json({
+        error: "Unauthorized",
+      });
+    }
+
+    return res.status(500).json({
+      error: error.message || "Failed to generate eligibility prediction",
     });
   }
 });

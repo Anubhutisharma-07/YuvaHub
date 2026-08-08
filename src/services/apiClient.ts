@@ -728,6 +728,35 @@ export async function updateTrackedApplicationStatus(
 
   return response.json();
 }
+export async function predictEligibility(
+  opportunityId: string,
+  profile: any,
+  opportunity: any
+) {
+  const response = await fetchWithRetry(
+    `${API_BASE_URL}/eligibility/predict`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        opportunityId,
+        profile,
+        opportunity,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(
+      error.error || "Failed to generate eligibility prediction"
+    );
+  }
+
+  return response.json();
+}
 
 export async function retryTrackedApplication(
   applicationId: string
