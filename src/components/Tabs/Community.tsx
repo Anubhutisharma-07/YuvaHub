@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Trophy, Megaphone, HelpCircle, Link as LinkIcon, Send, Heart, 
   MessageSquare, Loader2, Sparkles, Trash2, ChevronDown, ChevronUp, 
@@ -45,17 +45,7 @@ export default function Community() {
   const [posting, setPosting] = useState(false);
   const [postError, setPostError] = useState<string | null>(null);
 
-  
-  const observer = useRef<IntersectionObserver | null>(null);
-const feedRequestId = useRef(0);
-  const lastPostRef = useCallback((node: HTMLDivElement) => {
-    if (loadingMore) return;
-    if (observer.current) observer.current.disconnect();
-    
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && posts.length >= pageSize) {
-        setPageSize(prev => prev + 10);
-
+  const feedRequestId = useRef(0);
 
   // General Feed State
   const [initialLoading, setInitialLoading] = useState(true);
@@ -92,43 +82,6 @@ const feedRequestId = useRef(0);
     }
   };
 
- useEffect(() => {
-  if (!user) return;
-
-  const requestId = ++feedRequestId.current;
-
-  const q = query(
-    collection(db, 'community_posts'),
-    orderBy('timestamp', 'desc'),
-    limit(pageSize)
-  );
-
-  const unsubscribe = onSnapshot(
-    q,
-    (snapshot) => {
-      if (requestId !== feedRequestId.current) return;
-
-      const p = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-
-      setPosts(p);
-      setFeedError(null);
-      setInitialLoading(false);
-    },
-    () => {
-      if (requestId !== feedRequestId.current) return;
-
-      setFeedError('Unable to load community posts. Please try again.');
-      setInitialLoading(false);
-    }
-  );
-
-  return () => {
-    unsubscribe();
-  };
-}, [user, pageSize]);
   useEffect(() => {
     fetchPosts(sortOption);
   }, [sortOption]);

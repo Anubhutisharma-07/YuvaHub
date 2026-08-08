@@ -10,31 +10,6 @@ import { db } from '../../lib/firebase';
 import ShareCalendarActions from '../ui/ShareCalendarActions';
 import { ErrorState, LoadingState } from '../ui/states';
 import { useAppContext } from '../../context/AppContext';
-const [eligibilityLoading, setEligibilityLoading] = useState(false);
-const [eligibility, setEligibility] = useState<any>(null);
-const [eligibilityError, setEligibilityError] = useState<string | null>(null);
-const handleEligibilityCheck = async () => {
-  if (!opportunity?.id) return;
-
-  try {
-    setEligibilityLoading(true);
-    setEligibilityError(null);
-
-    const result = await predictEligibility(
-      opportunity.id,
-      profile,
-      opportunity
-    );
-
-    setEligibility(result.prediction);
-  } catch (error: any) {
-    setEligibilityError(
-      error.message || "Unable to calculate eligibility."
-    );
-  } finally {
-    setEligibilityLoading(false);
-  }
-};
 export default function OpportunityDetail() {
   const { selectedOppId, clearSelectedOpportunity: onBack, profile, setProfile, viewOpportunity } = useAppContext();
   const id = selectedOppId || '';
@@ -43,6 +18,34 @@ export default function OpportunityDetail() {
   const [error, setError] = useState<string | null>(null);
   const [relatedOpps, setRelatedOpps] = useState<any[]>([]);
   const [shareOpp, setShareOpp] = useState<{title: string, link: string} | null>(null);
+
+  const [eligibilityLoading, setEligibilityLoading] = useState(false);
+  const [eligibility, setEligibility] = useState<any>(null);
+  const [eligibilityError, setEligibilityError] = useState<string | null>(null);
+
+  const handleEligibilityCheck = async () => {
+    if (!opp) return;
+    const oppId = opp.id || opp._id;
+
+    try {
+      setEligibilityLoading(true);
+      setEligibilityError(null);
+
+      const result = await predictEligibility(
+        oppId,
+        profile,
+        opp
+      );
+
+      setEligibility(result.prediction);
+    } catch (error: any) {
+      setEligibilityError(
+        error.message || "Unable to calculate eligibility."
+      );
+    } finally {
+      setEligibilityLoading(false);
+    }
+  };
   
   const isBookmarked = profile?.bookmarks?.includes(id);
 

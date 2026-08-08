@@ -80,6 +80,7 @@ const AdminDashboard = () => {
       'Content-Type': 'application/json'
     };
 
+    try {
       const [statsRes, scrapersRes, modRes, healthRes] = await Promise.all([
         fetch('/api/v1/admin/scraper-stats', { headers }).then(r => r.json()).catch(() => null),
         fetch('/api/v1/admin/scrapers', { headers }).then(r => r.json()).catch(() => null),
