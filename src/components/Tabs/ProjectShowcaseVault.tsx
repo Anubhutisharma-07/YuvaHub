@@ -25,24 +25,12 @@ import {
   Users
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
-import { EmptyState } from '../ui/states';
 
-/**
- * ProjectShowcaseVault Component
- * 
- * Interactive Hackathon Project Showcase & Video Pitch Vault for YuvaHub.
- * Features:
- * 1. Global Student Project Gallery with Video Demos & Live Links
- * 2. Community Upvoting & Peer Feedback Engine
- * 3. Project Submission Console (Video Pitch, Architecture & Repo)
- * 4. Recruiter & Employer Spotlight Radar
- * 5. Project Portfolio JSON Manifest Exporter
- */
 export default function ProjectShowcaseVault() {
-  const { user } = useAppContext();
+  const { user, profile } = useAppContext();
 
   // Navigation & UI State
-  const [activeTab, setActiveTab] = useState<'gallery' | 'submit' | 'spotlight' | 'export'>('gallery');
+  const [activeTab, setActiveTab] = useState<'gallery' | 'submit' | 'export'>('gallery');
   const [notification, setNotification] = useState<{ type: string; message: string }>({ type: '', message: '' });
 
   // Search & Filter State
@@ -59,11 +47,10 @@ export default function ProjectShowcaseVault() {
       upvotes: 342,
       views: 1850,
       hasUpvoted: true,
-      repoUrl: 'https://github.com/dipanshubatra/YuvaHub',
+      repoUrl: 'https://github.com/Chirag1724/YuvaHub',
       demoUrl: 'https://yuvahub.dev',
-      videoPitch: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
       description: 'Unified career discovery, AI ATS optimizer, hackathon studio, and open source bounty platform.',
-      tags: ['React 19', 'TypeScript', 'Tailwind', 'Gemini AI']
+      tags: ['React', 'TypeScript', 'Tailwind', 'Gemini AI']
     },
     {
       id: 'proj_vault_2',
@@ -75,396 +62,314 @@ export default function ProjectShowcaseVault() {
       hasUpvoted: false,
       repoUrl: 'https://github.com/cronvault/dag-scheduler',
       demoUrl: 'https://cronvault.io',
-      videoPitch: '',
       description: 'Distributed workflow engine supporting cron expressions, retry backoff, and webhook triggers.',
-      tags: ['Spring Boot', 'PostgreSQL', 'Docker', 'Redis']
+      tags: ['Node.js', 'PostgreSQL', 'Docker', 'Redis']
     },
     {
       id: 'proj_vault_3',
-      title: 'Zero-Knowledge Electronic Health Ledger',
-      teamName: 'MedTrack Security',
-      category: 'Healthcare & Web3',
+      title: 'Decentralized Zero-Knowledge Identity Protocol',
+      teamName: 'ZK-Shield',
+      category: 'Web3 & Security',
       upvotes: 215,
       views: 980,
       hasUpvoted: false,
-      repoUrl: 'https://github.com/medtrack/zk-ledger',
-      demoUrl: 'https://medtrack.health',
-      videoPitch: '',
-      description: 'Zero-trust equipment tracking and encrypted patient medical history audit logs.',
-      tags: ['Java 21', 'JPA', 'SecurityGuard', 'React']
+      repoUrl: 'https://github.com/zk-shield/protocol',
+      demoUrl: 'https://zkshield.app',
+      description: 'Zero-knowledge proof credential verification for student hackathon eligibility.',
+      tags: ['Solidity', 'Circom', 'TypeScript', 'Next.js']
     }
   ]);
 
-  // Project Submission Form State
-  const [newProject, setNewProject] = useState({
-    title: '',
-    teamName: '',
-    category: 'AI & Full Stack',
-    repoUrl: '',
-    demoUrl: '',
-    videoPitch: '',
-    description: '',
-    tags: ''
-  });
+  // Submission Form State
+  const [newTitle, setNewTitle] = useState('');
+  const [newTeam, setNewTeam] = useState('');
+  const [newCat, setNewCat] = useState('AI & Full Stack');
+  const [newRepo, setNewRepo] = useState('');
+  const [newDemo, setNewDemo] = useState('');
+  const [newDesc, setNewDesc] = useState('');
+  const [newTags, setNewTags] = useState('React, TypeScript, Node.js');
 
-  // Toggle Upvote
-  const handleToggleUpvote = (projectId: string) => {
+  // Toggle Upvote Counter dynamically
+  const toggleUpvote = (projId: string) => {
     setProjects(projects.map(p => {
-      if (p.id === projectId) {
-        const nextUpvoted = !p.hasUpvoted;
-        return {
-          ...p,
-          hasUpvoted: nextUpvoted,
-          upvotes: nextUpvoted ? p.upvotes + 1 : p.upvotes - 1
-        };
+      if (p.id === projId) {
+        const hasUpvoted = !p.hasUpvoted;
+        const upvotes = hasUpvoted ? p.upvotes + 1 : p.upvotes - 1;
+        return { ...p, hasUpvoted, upvotes };
       }
       return p;
     }));
   };
 
-  // Submit New Showcase Project
+  // Submit Project Form
   const handleSubmitProject = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newProject.title || !newProject.repoUrl) return;
+    if (!newTitle.trim() || !newRepo.trim()) return;
 
-    const createdProject = {
+    const newProject = {
       id: `proj_vault_${Date.now()}`,
-      title: newProject.title,
-      teamName: newProject.teamName || user?.displayName || 'Student Team',
-      category: newProject.category,
+      title: newTitle.trim(),
+      teamName: newTeam.trim() || (profile?.name || user?.displayName || 'Student Team'),
+      category: newCat,
       upvotes: 1,
       views: 12,
       hasUpvoted: true,
-      repoUrl: newProject.repoUrl,
-      demoUrl: newProject.demoUrl || 'https://yuvahub.dev',
-      videoPitch: newProject.videoPitch,
-      description: newProject.description,
-      tags: newProject.tags ? newProject.tags.split(',').map(t => t.trim()) : ['React', 'TypeScript']
+      repoUrl: newRepo.trim(),
+      demoUrl: newDemo.trim() || newRepo.trim(),
+      description: newDesc.trim() || 'Innovative student project showcased on YuvaHub Global Vault.',
+      tags: newTags.split(',').map(t => t.trim()).filter(Boolean)
     };
 
-    setProjects([createdProject, ...projects]);
-    setNewProject({ title: '', teamName: '', category: 'AI & Full Stack', repoUrl: '', demoUrl: '', videoPitch: '', description: '', tags: '' });
-    setNotification({ type: 'success', message: 'Published project to Global Showcase Vault!' });
+    setProjects([newProject, ...projects]);
+    setNewTitle('');
+    setNewTeam('');
+    setNewRepo('');
+    setNewDemo('');
+    setNewDesc('');
     setActiveTab('gallery');
+    setNotification({ type: 'success', message: 'Successfully published project to YuvaHub Showcase Vault!' });
   };
 
-  // Export Manifest JSON
+  // Export Projects Manifest JSON
   const handleExportManifest = () => {
-    const manifest = {
-      platform: 'YuvaHub Global Project Vault',
-      user: user?.displayName || 'Student Developer',
-      totalProjectsCount: projects.length,
-      topProjects: projects,
-      timestamp: new Date().toISOString()
-    };
-
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(manifest, null, 2));
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(projects, null, 2));
     const anchor = document.createElement('a');
     anchor.setAttribute("href", dataStr);
-    anchor.setAttribute("download", `YuvaHub_Project_Showcase_${new Date().toISOString().slice(0,10)}.json`);
+    anchor.setAttribute("download", `YuvaHub_Project_Vault_${new Date().toISOString().slice(0,10)}.json`);
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
+    setNotification({ type: 'success', message: 'Exported Project Vault JSON Manifest!' });
   };
 
-  // Filtered Projects
   const filteredProjects = projects.filter(p => {
     const matchesSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          p.teamName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          p.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCat = selectedCategory === 'all' || p.category === selectedCategory;
-    return matchesSearch && matchesCat;
+                          p.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          p.tags.some(t => t.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
+    return matchesSearch && matchesCategory;
   });
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-16">
+    <div className="w-full max-w-[1400px] mx-auto space-y-8 font-sans pb-16 px-2 sm:px-4">
       
-      {/* Top Banner Header */}
-      <div className="bg-gradient-to-r from-indigo-950 via-slate-900 to-slate-950 border border-indigo-800/40 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden text-white">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-
+      {/* Top Banner Header - YuvaHub Brand Theme */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#f6efe2] via-[#fcf9f2] to-[#f6efe2] dark:from-slate-900 dark:to-slate-950 border border-[#e8ded1] dark:border-slate-800 p-6 md:p-8 shadow-sm">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <span className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-indigo-400 bg-indigo-500/20 border border-indigo-500/30 rounded-full flex items-center gap-1.5">
-                <FolderGit2 size={13} /> Global Hackathon Showcase Vault
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#f3e4bd] bg-[#603620] rounded-full flex items-center gap-1.5 shadow-xs">
+                <FolderGit2 className="w-3.5 h-3.5 text-[#f3e4bd]" /> Project Vault & Showcase
               </span>
-              <span className="px-3 py-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/20 border border-emerald-500/30 rounded-full">
-                Peer Upvoted Projects
+              <span className="px-3 py-1 text-xs font-bold text-[#63703d] bg-[#63703d]/15 border border-[#63703d]/30 rounded-full">
+                Verified Repositories
               </span>
             </div>
 
-            <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
-              Hackathon Project Showcase & Video Pitch Vault
+            <h1 className="text-2xl md:text-3xl font-serif font-bold text-[#231f20] dark:text-white tracking-tight">
+              Project Showcase <span className="text-[#b56b37] italic">Vault</span>
             </h1>
-            <p className="text-slate-400 text-xs md:text-sm max-w-2xl leading-relaxed">
-              Explore standout student hackathon submissions, watch video pitches, and showcase your repository to recruiters.
+            <p className="text-[#603620] dark:text-slate-400 text-xs md:text-sm max-w-2xl font-medium">
+              Explore global student hackathon projects, open source tools, live demo links, and peer upvotes.
             </p>
           </div>
 
-          {/* Upvote Counter Meter */}
-          <div className="flex items-center gap-4 bg-slate-900/90 border border-indigo-700/60 p-4 rounded-2xl w-full lg:w-auto shadow-lg">
-            <div className="relative flex items-center justify-center w-16 h-16 rounded-full border-4 border-indigo-400 bg-slate-950 font-black text-xl text-indigo-400">
-              {projects.reduce((acc, p) => acc + p.upvotes, 0)}
+          <div className="flex items-center gap-4 bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 p-4 rounded-2xl w-full lg:w-auto shadow-xs">
+            <div className="relative flex items-center justify-center w-14 h-14 rounded-full border-4 border-[#b56b37] bg-[#fcf9f2] font-serif font-bold text-base text-[#b56b37]">
+              {projects.length}
             </div>
             <div>
-              <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wide">Community Upvotes</div>
-              <div className="text-xs font-extrabold text-emerald-400">{projects.length} Verified Repositories</div>
-              <div className="text-[11px] text-slate-400">Recruiter Spotlight Enabled</div>
+              <div className="text-[10px] uppercase font-bold text-[#8c7569] tracking-wider">Showcased Projects</div>
+              <div className="text-xs font-extrabold text-[#231f20] dark:text-white">Global Student Vault</div>
+              <div className="text-[11px] text-[#63703d] font-semibold">100% Peer Reviewed</div>
             </div>
           </div>
         </div>
-
-        {/* Global Notifications */}
-        {notification.message && (
-          <div className={`mt-6 p-4 rounded-xl text-xs font-semibold flex items-center justify-between border ${
-            notification.type === 'error'
-              ? 'bg-red-500/20 border-red-500/40 text-red-300'
-              : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
-          }`}>
-            <div className="flex items-center gap-2">
-              {notification.type === 'error' ? <AlertTriangle size={16} /> : <CheckCircle2 size={16} />}
-              <span>{notification.message}</span>
-            </div>
-            <button onClick={() => setNotification({ type: '', message: '' })} className="text-slate-400 hover:text-white">
-              <X size={14} />
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-gray-200 dark:border-gray-800 scrollbar-none">
+      {/* Navigation Sub-Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar border-b border-[#e8ded1] dark:border-slate-800 pb-3">
         {[
-          { id: 'gallery', label: `Project Gallery (${projects.length})`, icon: FolderGit2 },
-          { id: 'submit', label: 'Publish Project Showcase', icon: Plus },
-          { id: 'spotlight', label: 'Recruiter Spotlight', icon: Star },
-          { id: 'export', label: 'Portfolio JSON Manifest', icon: Download }
-        ].map((tab) => {
-          const Icon = tab.icon;
+          { id: 'gallery', label: 'Project Vault Gallery', icon: FolderGit2 },
+          { id: 'submit', label: 'Submit Project', icon: Plus },
+          { id: 'export', label: 'Export Manifest', icon: Download }
+        ].map(tab => {
+          const IconComponent = tab.icon;
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer border ${
                 isActive
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
-                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-700'
+                  ? 'bg-[#b56b37] border-[#b56b37] text-white shadow-sm scale-[1.02]'
+                  : 'bg-white dark:bg-slate-900 border-[#e8ded1] dark:border-slate-800 text-[#603620] dark:text-slate-300 hover:bg-[#f6efe2]'
               }`}
             >
-              <Icon size={14} />
-              {tab.label}
+              <IconComponent className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-[#b56b37]'}`} />
+              <span>{tab.label}</span>
             </button>
           );
         })}
       </div>
 
-      {/* TAB CONTENT */}
-
-      {/* TAB 1: GALLERY */}
-      {activeTab === 'gallery' && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-6 shadow-sm">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">Featured Project Gallery</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Discover and upvote high-impact student projects.</p>
-            </div>
-
-            <div className="relative w-full sm:w-64">
-              <Search size={14} className="absolute left-3 top-3 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search project or stack..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-xs text-gray-900 dark:text-white outline-none"
-              />
-            </div>
+      {/* Notification Banner */}
+      {notification.message && (
+        <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#63703d]/15 text-[#63703d] border border-[#63703d]/30 text-xs font-bold animate-fade-in">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>{notification.message}</span>
           </div>
-
-          {filteredProjects.length === 0 ? (
-            <EmptyState
-              title="No projects found"
-              description="No projects match your current search. Try a different keyword or filter."
-              icon={<FolderGit2 className="h-6 w-6" aria-hidden="true" />}
-            />
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {filteredProjects.map((p) => (
-              <div key={p.id} className="p-5 bg-gray-50 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3 text-xs flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-indigo-600 dark:text-indigo-400">{p.teamName}</span>
-                    <button
-                      onClick={() => handleToggleUpvote(p.id)}
-                      className={`px-2.5 py-1 font-bold rounded-lg flex items-center gap-1 transition ${
-                        p.hasUpvoted
-                          ? 'bg-indigo-600 text-white'
-                          : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-indigo-100'
-                      }`}
-                    >
-                      <ThumbsUp size={12} /> {p.upvotes}
-                    </button>
-                  </div>
-                  <h4 className="font-bold text-gray-900 dark:text-white text-sm mt-2">{p.title}</h4>
-                  <p className="text-gray-500 dark:text-gray-400 mt-1">{p.description}</p>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex flex-wrap gap-1">
-                    {p.tags.map(t => (
-                      <span key={t} className="px-2 py-0.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-[10px] font-semibold rounded-md">
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center gap-2 pt-2 border-t border-gray-200 dark:border-gray-700 text-indigo-600 dark:text-indigo-400 font-bold">
-                    <a href={p.repoUrl} target="_blank" rel="noreferrer" className="hover:underline flex items-center gap-1">
-                      GitHub <ExternalLink size={12} />
-                    </a>
-                  </div>
-                </div>
-              </div>
-            ))}
-            </div>
-          )}
+          <button onClick={() => setNotification({ type: '', message: '' })}>
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
-      {/* TAB 2: SUBMIT */}
+      {/* Tab 1: Project Vault Gallery */}
+      {activeTab === 'gallery' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 p-4 rounded-2xl shadow-2xs">
+            <div className="relative flex-1 w-full sm:w-auto max-w-md">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8c7569]" />
+              <input
+                type="text"
+                placeholder="Search projects by title, description, or tech tag..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-xs text-[#231f20] dark:text-white outline-none focus:border-[#b56b37]"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              {['all', 'AI & Full Stack', 'Distributed Systems', 'Web3 & Security'].map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                    selectedCategory === cat
+                      ? 'bg-[#231f20] text-white border-[#231f20]'
+                      : 'bg-white border-[#e8ded1] text-[#603620] hover:bg-[#f6efe2]'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredProjects.map(proj => (
+              <div key={proj.id} className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-6 shadow-2xs space-y-4 flex flex-col justify-between hover:border-[#b56b37] transition-all">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-[10px] font-bold text-[#8c7569] uppercase tracking-wider">{proj.teamName}</span>
+                      <h3 className="font-serif font-bold text-lg text-[#231f20] dark:text-white mt-0.5">{proj.title}</h3>
+                    </div>
+                    <button
+                      onClick={() => toggleUpvote(proj.id)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 cursor-pointer border transition-all ${
+                        proj.hasUpvoted
+                          ? 'bg-[#b56b37] text-white border-[#b56b37]'
+                          : 'bg-[#fcf9f2] text-[#603620] border-[#e8ded1] hover:border-[#b56b37]'
+                      }`}
+                    >
+                      <ThumbsUp className="w-3.5 h-3.5" />
+                      <span>{proj.upvotes}</span>
+                    </button>
+                  </div>
+
+                  <p className="text-xs text-[#603620] dark:text-slate-400 font-medium leading-relaxed">{proj.description}</p>
+
+                  <div className="flex flex-wrap gap-1.5">
+                    {proj.tags.map(t => (
+                      <span key={t} className="px-2 py-0.5 bg-[#f6efe2] text-[#603620] border border-[#e8ded1] text-[10px] font-bold rounded-md">
+                        #{t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-[#e8ded1] dark:border-slate-800 flex items-center justify-between gap-2">
+                  <a href={proj.repoUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs font-bold text-[#603620] hover:text-[#b56b37]">
+                    <Code2 className="w-4 h-4" /> GitHub Repo
+                  </a>
+                  {proj.demoUrl && (
+                    <a href={proj.demoUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs font-bold text-[#b56b37] hover:underline">
+                      <Globe className="w-4 h-4" /> Live Demo <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Tab 2: Submit Project Form */}
       {activeTab === 'submit' && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-6 shadow-sm">
-          <div>
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">Publish Project to Global Vault</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Share repository links, video pitches, and technical architecture.</p>
+        <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xs max-w-2xl mx-auto">
+          <div className="border-b border-[#e8ded1] dark:border-slate-800 pb-4">
+            <h2 className="text-xl font-serif font-bold text-[#231f20] dark:text-white">Submit Project to Global Vault</h2>
+            <p className="text-xs text-[#603620] dark:text-slate-400 font-medium mt-1">Showcase your project to peer developers, recruiters, and open-source maintainers.</p>
           </div>
 
           <form onSubmit={handleSubmitProject} className="space-y-4 text-xs">
-            <div>
-              <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Project Title</label>
-              <input
-                type="text"
-                placeholder="e.g. Agentic Workflow Engine"
-                value={newProject.title}
-                onChange={(e) => setNewProject({ ...newProject, title: e.target.value })}
-                className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white outline-none"
-                required
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="font-bold text-[#603620] uppercase">Project Title</label>
+                <input required type="text" placeholder="e.g. Distributed Task Queue" value={newTitle} onChange={e => setNewTitle(e.target.value)} className="w-full bg-[#fcf9f2] border border-[#e8ded1] rounded-xl p-3 text-xs text-[#231f20] outline-none" />
+              </div>
+              <div className="space-y-1">
+                <label className="font-bold text-[#603620] uppercase">Team / Author Name</label>
+                <input type="text" placeholder="e.g. Team Antigravity" value={newTeam} onChange={e => setNewTeam(e.target.value)} className="w-full bg-[#fcf9f2] border border-[#e8ded1] rounded-xl p-3 text-xs text-[#231f20] outline-none" />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">GitHub Repository URL</label>
-                <input
-                  type="url"
-                  placeholder="https://github.com/username/repo"
-                  value={newProject.repoUrl}
-                  onChange={(e) => setNewProject({ ...newProject, repoUrl: e.target.value })}
-                  className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white outline-none"
-                  required
-                />
+              <div className="space-y-1">
+                <label className="font-bold text-[#603620] uppercase">GitHub Repo URL</label>
+                <input required type="url" placeholder="https://github.com/..." value={newRepo} onChange={e => setNewRepo(e.target.value)} className="w-full bg-[#fcf9f2] border border-[#e8ded1] rounded-xl p-3 text-xs text-[#231f20] outline-none" />
               </div>
-
-              <div>
-                <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Live Demo / Deployment Link</label>
-                <input
-                  type="url"
-                  placeholder="https://myproject.dev"
-                  value={newProject.demoUrl}
-                  onChange={(e) => setNewProject({ ...newProject, demoUrl: e.target.value })}
-                  className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white outline-none"
-                />
+              <div className="space-y-1">
+                <label className="font-bold text-[#603620] uppercase">Live Demo URL</label>
+                <input type="url" placeholder="https://myproject.dev" value={newDemo} onChange={e => setNewDemo(e.target.value)} className="w-full bg-[#fcf9f2] border border-[#e8ded1] rounded-xl p-3 text-xs text-[#231f20] outline-none" />
               </div>
             </div>
 
-            <div>
-              <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Project Abstract & Features</label>
-              <textarea
-                rows={3}
-                placeholder="Briefly describe what your project builds and key features..."
-                value={newProject.description}
-                onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
-                className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white outline-none"
-              />
+            <div className="space-y-1">
+              <label className="font-bold text-[#603620] uppercase">Project Description</label>
+              <textarea rows={3} placeholder="Briefly describe what your project does and technologies used..." value={newDesc} onChange={e => setNewDesc(e.target.value)} className="w-full bg-[#fcf9f2] border border-[#e8ded1] rounded-xl p-3 text-xs text-[#231f20] outline-none resize-none" />
             </div>
 
-            <div>
-              <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Tech Stack Tags (Comma Separated)</label>
-              <input
-                type="text"
-                placeholder="React 19, TypeScript, PyTorch, Go"
-                value={newProject.tags}
-                onChange={(e) => setNewProject({ ...newProject, tags: e.target.value })}
-                className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white outline-none"
-              />
+            <div className="space-y-1">
+              <label className="font-bold text-[#603620] uppercase">Tech Tags (comma separated)</label>
+              <input type="text" placeholder="React, TypeScript, Node.js" value={newTags} onChange={e => setNewTags(e.target.value)} className="w-full bg-[#fcf9f2] border border-[#e8ded1] rounded-xl p-3 text-xs text-[#231f20] outline-none" />
             </div>
 
-            <button type="submit" className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition">
-              Publish Project to Showcase Vault
+            <button type="submit" className="w-full py-3.5 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-xs rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-2">
+              <Plus className="w-4 h-4" /> Publish Project to Showcase Vault
             </button>
           </form>
         </div>
       )}
 
-      {/* TAB 3: SPOTLIGHT */}
-      {activeTab === 'spotlight' && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-6 shadow-sm">
-          <div>
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">Recruiter & Employer Spotlight</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Top-rated repositories flagged for engineering recruitment teams.</p>
-          </div>
-
-          <div className="space-y-3 text-xs">
-            {projects.slice(0, 2).map((p, idx) => (
-              <div key={p.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-3">
-                  <span className="font-black text-indigo-600 text-sm">#{idx + 1}</span>
-                  <div>
-                    <div className="font-bold text-gray-900 dark:text-white">{p.title}</div>
-                    <div className="text-gray-500 text-[11px]">{p.teamName} • {p.upvotes} Upvotes</div>
-                  </div>
-                </div>
-
-                <span className="px-2.5 py-1 text-[10px] font-extrabold bg-emerald-100 text-emerald-700 rounded-md">
-                  VERIFIED TOP 1%
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* TAB 4: EXPORT */}
+      {/* Tab 3: Export */}
       {activeTab === 'export' && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">Project Portfolio Manifest JSON</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Complete summary of published projects and community upvote metrics.</p>
-            </div>
-
-            <button
-              onClick={handleExportManifest}
-              className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5"
-            >
-              <Download size={14} /> Download Manifest JSON
-            </button>
+        <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-2xs max-w-xl mx-auto">
+          <div className="w-16 h-16 bg-[#f6efe2] text-[#b56b37] flex items-center justify-center rounded-full mx-auto border border-[#e8ded1]">
+            <Download className="w-8 h-8 text-[#b56b37]" />
           </div>
-
-          <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 font-mono text-xs text-indigo-300 overflow-x-auto">
-            <pre>{JSON.stringify({
-              platform: 'YuvaHub Global Project Vault',
-              user: user?.displayName || 'Student Developer',
-              totalProjectsCount: projects.length,
-              topProjects: projects,
-              timestamp: new Date().toISOString()
-            }, null, 2)}</pre>
-          </div>
+          <h2 className="text-2xl font-serif font-bold text-[#231f20] dark:text-white">Export Project Vault Manifest</h2>
+          <p className="text-xs text-[#603620] dark:text-slate-400 font-medium">
+            Download full global project showcase directory and upvote telemetry in JSON format.
+          </p>
+          <button onClick={handleExportManifest} className="px-6 py-3 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-xs rounded-xl shadow-md cursor-pointer inline-flex items-center gap-2">
+            <Download className="w-4 h-4" /> Download Project Vault JSON Manifest
+          </button>
         </div>
       )}
-
     </div>
   );
 }
