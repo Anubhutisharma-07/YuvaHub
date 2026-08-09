@@ -26,10 +26,12 @@ import {
   X,
   UserCheck,
   Clock,
-  TrendingUp
+  TrendingUp,
+  CalendarPlus,
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { EmptyState } from '../ui/states';
+import { downloadICS } from '../../lib/icsExport';
 
 /**
  * CampusAlumniHub Component
@@ -183,6 +185,22 @@ export default function CampusAlumniHub() {
       return e;
     }));
     setNotification({ type: 'success', message: 'Updated event RSVP status!' });
+  };
+
+  // Download .ics calendar file for a confirmed event
+  const handleAddToCalendar = (eventId: string) => {
+    const evt = events.find(e => e.id === eventId);
+    if (!evt) return;
+    downloadICS({
+      title: evt.title,
+      startDate: evt.date,
+      startTime: evt.time,
+      durationMinutes: 90,
+      location: evt.location,
+      description: `Hosted by ${evt.chapter}. RSVP confirmed via YuvaHub.`,
+      url: `${window.location.origin}/events/${evt.id}`,
+    });
+    setNotification({ type: 'success', message: `📅 "${evt.title}" added to your calendar!` });
   };
 
   // Submit Referral Request
@@ -519,16 +537,32 @@ export default function CampusAlumniHub() {
                   </p>
                 </div>
 
-                <button
-                  onClick={() => handleToggleRsvp(e.id)}
-                  className={`px-4 py-2 font-bold rounded-xl transition ${
-                    e.userRsvp
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                  }`}
-                >
-                  {e.userRsvp ? '✓ RSVP Confirmed' : 'RSVP Spot'}
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => handleToggleRsvp(e.id)}
+                    className={`px-4 py-2 font-bold rounded-xl transition ${
+                      e.userRsvp
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                    }`}
+                    aria-label={e.userRsvp ? `Cancel RSVP for ${e.title}` : `RSVP for ${e.title}`}
+                  >
+                    {e.userRsvp ? '✓ RSVP Confirmed' : 'RSVP Spot'}
+                  </button>
+
+                  {/* Add to Calendar — visible only after RSVP is confirmed */}
+                  {e.userRsvp && (
+                    <button
+                      onClick={() => handleAddToCalendar(e.id)}
+                      className="flex items-center gap-1.5 px-3 py-2 font-bold rounded-xl transition bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60"
+                      aria-label={`Download .ics calendar file for ${e.title}`}
+                      title="Download .ics — works with Google Calendar, Outlook & Apple Calendar"
+                    >
+                      <CalendarPlus size={13} />
+                      <span className="hidden sm:inline">Add to Calendar</span>
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
