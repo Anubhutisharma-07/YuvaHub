@@ -28,6 +28,7 @@ export async function runDeadlineChecks(db: any): Promise<void> {
       .toArray();
 
     const now = new Date();
+    const { ObjectId } = await import("mongodb");
 
     // Filter users who have deadline reminders enabled
     const activeUsers = users.filter((user) => {
@@ -122,6 +123,31 @@ export async function runDeadlineChecks(db: any): Promise<void> {
       };
 
       const bookmarks = user.bookmarks || [];
+      if (bookmarks.length === 0) continue;
+
+      const objectIds = [];
+      const stringIds = [];
+
+      for (const oppId of bookmarks) {
+        try {
+          objectIds.push(new ObjectId(oppId));
+        } catch {
+          stringIds.push(oppId);
+        }
+      }
+
+      const opportunities = await oppsCollection.find({
+        $or: [
+          { _id: { $in: objectIds } },
+          { id: { $in: stringIds } }
+        ]
+      }).toArray();
+      
+      const oppMap = new Map<string, any>();
+      for (const o of opportunities) {
+        if (o._id) oppMap.set(o._id.toString(), o);
+        if (o.id) oppMap.set(String(o.id), o);
+      }
 
       for (const oppId of bookmarks) {
         const oppIdStr = String(oppId);
@@ -258,8 +284,9 @@ export async function runWeeklyDigest(db: any): Promise<void> {
 
     const now = new Date();
     const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const { ObjectId } = await import("mongodb");
 
-    const activeUsers = users.filter((user) => {
+    const activeUsers = users.filter((user: any) => {
       if (!user.email) return false;
       const prefs = user.notificationPreferences || { emailEnabled: true };
       return prefs.emailEnabled !== false;

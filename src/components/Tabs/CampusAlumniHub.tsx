@@ -154,20 +154,6 @@ export default function CampusAlumniHub() {
     setNotification({ type: 'success', message: 'Updated your event RSVP status!' });
   };
 
-  // Download .ics calendar file for a confirmed event (Issue #629)
-  const handleAddToCalendar = (eventId: string) => {
-    const evt = events.find(e => e.id === eventId);
-    if (!evt) return;
-    downloadICS({
-      title: evt.title,
-      startDate: evt.date,
-      durationMinutes: 90,
-      description: `Hosted by ${evt.chapter}. RSVP confirmed via YuvaHub.`,
-      url: `${window.location.origin}/events/${evt.id}`,
-    });
-    setNotification({ type: 'success', message: `📅 "${evt.title}" added to your calendar!` });
-  };
-
   // Submit Referral Request
   const handleRequestReferral = (e: React.FormEvent) => {
     e.preventDefault();
@@ -220,7 +206,7 @@ export default function CampusAlumniHub() {
 
   return (
     <div className="w-full max-w-[1400px] mx-auto space-y-8 font-sans pb-16 px-2 sm:px-4">
-
+      
       {/* Top Banner Header - YuvaHub Brand Theme */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#f6efe2] via-[#fcf9f2] to-[#f6efe2] dark:from-slate-900 dark:to-slate-950 border border-[#e8ded1] dark:border-slate-800 p-6 md:p-8 shadow-sm">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
@@ -408,33 +394,16 @@ export default function CampusAlumniHub() {
                 <p className="text-xs text-[#603620] font-semibold mt-1">Date: {evt.date} • {evt.rsvps} Student RSVPs</p>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
-                {/* RSVP toggle button */}
-                <button
-                  onClick={() => handleToggleRsvp(evt.id)}
-                  className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-                    evt.userRsvped
-                      ? 'bg-[#63703d] text-white'
-                      : 'bg-[#b56b37] hover:bg-[#96552a] text-white shadow-xs'
-                  }`}
-                  aria-label={evt.userRsvped ? `Cancel RSVP for ${evt.title}` : `RSVP for ${evt.title}`}
-                >
-                  {evt.userRsvped ? '✓ RSVP Confirmed' : 'RSVP for Event'}
-                </button>
-
-                {/* Add to Calendar — only shown after RSVP confirmed (Issue #629) */}
-                {evt.userRsvped && (
-                  <button
-                    onClick={() => handleAddToCalendar(evt.id)}
-                    className="flex items-center gap-1.5 px-3.5 py-2.5 font-bold rounded-xl transition-all cursor-pointer bg-[#f6efe2] text-[#603620] border border-[#e8ded1] hover:bg-[#e8ded1] hover:border-[#b56b37]"
-                    aria-label={`Download .ics calendar file for ${evt.title}`}
-                    title="Download .ics — works with Google Calendar, Outlook & Apple Calendar"
-                  >
-                    <CalendarPlus className="w-3.5 h-3.5 text-[#b56b37]" />
-                    <span className="hidden sm:inline text-xs">Add to Calendar</span>
-                  </button>
-                )}
-              </div>
+              <button
+                onClick={() => handleToggleRsvp(evt.id)}
+                className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                  evt.userRsvped
+                    ? 'bg-[#63703d] text-white'
+                    : 'bg-[#b56b37] hover:bg-[#96552a] text-white shadow-xs'
+                }`}
+              >
+                {evt.userRsvped ? '✓ RSVP Confirmed' : 'RSVP for Event'}
+              </button>
             </div>
           ))}
         </div>

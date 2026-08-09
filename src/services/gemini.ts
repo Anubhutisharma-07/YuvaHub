@@ -64,18 +64,12 @@ export async function generatedContentProxyWithRetry(
       });
 
       if (!res.ok) {
-        isRetryable = res.status === 503 || res.status === 429 || res.status >= 500;
         lastError = `AI Service temporary issue (${res.status} ${res.statusText})`;
-        if (isRetryable && attempt <= maxRetries) {
-          if (options.onRetry) options.onRetry(attempt, lastError);
-          await new Promise((resolve) => setTimeout(resolve, 600 * attempt));
-          continue;
-        }
         return {
-          text: "",
+          text: expectJson ? "[]" : "AI assistant is preparing data. Using curated fallbacks.",
           success: false,
           error: lastError,
-          isRetryable,
+          isRetryable: false,
           attemptsUsed: attempt
         };
       }
@@ -308,3 +302,71 @@ function mockCareerAdvice(message: string): string {
   });
 }
 
+export async function analyzeSkillGap(
+  resumeText: string,
+  jobDescription: string
+) {
+  const prompt = `
+You are an AI Career Skill Gap Analyzer.
+
+Compare the student's resume against the target job description.
+
+Student Resume:
+${resumeText}
+
+Target Job Description:
+${jobDescription}
+
+Identify:
+1. Skills already present in the resume.
+2. Missing technical skills.
+3. Missing soft skills.
+4. A prioritized learning roadmap.
+5. Relevant courses/resources.
+6. A practical project for each major missing skill.
+7. An overall skill match percentage.
+
+Return JSON ONLY using exactly this structure:
+
+{
+  "matchPercentage": 0,
+  "existingSkills": [],
+  "missingSkills": [
+    {
+      "skill": "",
+      "category": "technical",
+      "priority": "high",
+      "reason": "",
+      "completed": false
+    }
+  ],
+  "roadmap": [
+    {
+      "skill": "",
+      "priority": "high",
+      "estimatedWeeks": 2,
+      "resources": [],
+      "project": "",
+      "completed": false
+    }
+  ]
+}
+
+Rules:
+- matchPercentage must be between 0 and 100.
+- category must be "technical" or "soft".
+- priority must be "high", "medium", or "low".
+- Do not invent skills already clearly present in the resume.
+- Prioritize skills that are explicitly required by the job.
+- Keep the roadmap practical for a student.
+`;
+
+  const text = await generatedContentProxy(prompt, true);
+
+  return robustParseJSON(text) || {
+    matchPercentage: 0,
+    existingSkills: [],
+    missingSkills: [],
+    roadmap: [],
+  };
+}

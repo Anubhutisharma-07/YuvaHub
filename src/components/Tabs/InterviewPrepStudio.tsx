@@ -28,25 +28,12 @@ import {
   BarChart3
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
-import { EmptyState } from '../ui/states';
 
-/**
- * InterviewPrepStudio Component
- * 
- * Interactive 550+ line AI Technical & System Design Mock Interview Simulator for YuvaHub.
- * Features:
- * 1. Question Vault (Data Structures, System Design, Web Security, React Core)
- * 2. Live AI Code & System Design Evaluator with Complexity Scoring
- * 3. 30-Minute Timed Mock Interview Session Simulator
- * 4. STAR Framework Behavioral Question Practice Tool
- * 5. Performance Analytics & Metric Breakdown
- * 6. Session Transcript & Evaluation Report Exporter
- */
 export default function InterviewPrepStudio() {
-  const { user } = useAppContext();
+  const { user, profile } = useAppContext();
 
   // Navigation State
-  const [activeTab, setActiveTab] = useState<'vault' | 'simulator' | 'star' | 'analytics' | 'export'>('vault');
+  const [activeTab, setActiveTab] = useState<'vault' | 'simulator' | 'star' | 'export'>('vault');
   const [notification, setNotification] = useState<{ type: string; message: string }>({ type: '', message: '' });
 
   // Filter & Search
@@ -62,8 +49,9 @@ export default function InterviewPrepStudio() {
       difficulty: 'HARD',
       company: 'Google / Cloudflare',
       prompt: 'Describe how you would design a sliding window rate limiter serving 100k req/sec across global regions using Redis and Token Bucket algorithms.',
-      idealAnswer: 'Use Redis cluster with lua scripts to perform atomic key counter increments and timestamps.',
-      solved: false
+      idealAnswer: 'Use Redis cluster with Lua scripts to perform atomic key counter increments and timestamp pruning in O(1) time.',
+      solved: false,
+      userAnswer: ''
     },
     {
       id: 'q_2',
@@ -72,71 +60,81 @@ export default function InterviewPrepStudio() {
       difficulty: 'MEDIUM',
       company: 'Meta / Amazon',
       prompt: 'Implement a Least Recently Used (LRU) cache supporting get(key) and put(key, value) in O(1) time complexity.',
-      idealAnswer: 'Combine a HashMap for O(1) lookup with a Doubly LinkedList for O(1) node eviction and insertion.',
-      solved: true
+      idealAnswer: 'Combine a HashMap for O(1) key-node lookup with a Doubly LinkedList for O(1) head insertion and tail eviction.',
+      solved: true,
+      userAnswer: 'Used a HashMap and Doubly LinkedList structure.'
     },
     {
       id: 'q_3',
-      title: 'React Fiber Architecture & Reconciliation Engine',
-      category: 'Frontend Engineering',
-      difficulty: 'HARD',
-      company: 'Meta / Stripe',
-      prompt: 'Explain how React Fiber enables incremental rendering and work prioritization compared to the legacy stack reconciler.',
-      idealAnswer: 'Fiber breaks work into units (fibers) processed during browser idle periods via requestIdleCallback/MessageChannel.',
-      solved: true
+      title: 'React Reconciliation Engine & Virtual DOM Diffing',
+      category: 'Frontend Core',
+      difficulty: 'MEDIUM',
+      company: 'Stripe / Vercel',
+      prompt: 'Explain how React Fiber handles asynchronous work slicing, concurrent rendering priorities, and component tree diffing.',
+      idealAnswer: 'Fiber splits rendering into incremental units of work executed during browser idle periods using requestIdleCallback.',
+      solved: false,
+      userAnswer: ''
     }
   ]);
 
-  // Simulator Session State
-  const [activeQuestionId, setActiveQuestionId] = useState<string>('q_1');
-  const [userResponse, setUserResponse] = useState('');
-  const [timerSeconds, setTimerSeconds] = useState(1800); // 30 mins
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [aiFeedback, setAiFeedback] = useState<any>(null);
+  // Active Revealer State
+  const [revealedIds, setRevealedIds] = useState<string[]>([]);
 
-  // STAR Framework State
-  const [starData, setStarData] = useState({
-    situation: 'Led backend migration to microservices architecture.',
-    task: 'Reduce database lock contention during high-concurrency peak hours.',
-    action: 'Implemented Redis caching layer and optimistic concurrency control in Spring Boot.',
-    result: 'Reduced database p99 latency from 450ms to 32ms and eliminated deadlock errors.'
-  });
+  // Timed Session Simulator State
+  const [sessionActive, setSessionActive] = useState(false);
+  const [sessionTimer, setSessionTimer] = useState(1800); // 30 mins
+  const [currentSimIndex, setCurrentSimIndex] = useState(0);
+  const [simAnswer, setSimAnswer] = useState('');
 
-  const activeQuestion = useMemo(() => {
-    return questions.find(q => q.id === activeQuestionId) || questions[0];
-  }, [questions, activeQuestionId]);
+  // STAR Behavioral Stories State
+  const [starStories, setStarStories] = useState([
+    {
+      id: 'st_1',
+      situation: 'Database bottleneck during 50,000 user hackathon submission spike.',
+      task: 'Reduce query latency from 3.2s to under 150ms.',
+      action: 'Implemented Redis caching layer and optimized MongoDB compound indexes on dedupe_hash.',
+      result: 'API latency dropped to 42ms with 99.9% uptime.'
+    }
+  ]);
+  const [newSit, setNewSit] = useState('');
+  const [newTask, setNewTask] = useState('');
+  const [newAct, setNewAct] = useState('');
+  const [newRes, setNewRes] = useState('');
 
-  // Evaluator Readiness Calculation
-  const readinessScore = useMemo(() => {
-    const solvedCount = questions.filter(q => q.solved).length;
-    return Math.min(Math.round((solvedCount / questions.length) * 100), 100);
-  }, [questions]);
-
-  // Evaluate Answer
-  const handleEvaluateAnswer = () => {
-    if (!userResponse.trim()) return;
-
-    setAiFeedback({
-      score: 92,
-      timeComplexity: 'O(1) Atomic Redis Lua Script',
-      clarity: 'EXCELLENT',
-      strengths: ['Addressed distributed locks', 'Mentioned atomic operations'],
-      improvements: ['Could specify fallback strategy during Redis node failover']
-    });
-
-    setQuestions(questions.map(q => q.id === activeQuestion.id ? { ...q, solved: true } : q));
-    setNotification({ type: 'success', message: 'Evaluation complete! Answer saved to scorecard.' });
+  // Toggle Reveal Answer
+  const toggleReveal = (qId: string) => {
+    setRevealedIds(prev =>
+      prev.includes(qId) ? prev.filter(id => id !== qId) : [...prev, qId]
+    );
   };
 
-  // Export Transcript JSON
-  const handleExportTranscript = () => {
+  // Add STAR Story
+  const handleAddStarStory = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSit.trim() || !newAct.trim()) return;
+
+    const newStory = {
+      id: `st_${Date.now()}`,
+      situation: newSit.trim(),
+      task: newTask.trim() || 'Achieve performance benchmark.',
+      action: newAct.trim(),
+      result: newRes.trim() || 'Successfully delivered expected target metrics.'
+    };
+
+    setStarStories([...starStories, newStory]);
+    setNewSit('');
+    setNewTask('');
+    setNewAct('');
+    setNewRes('');
+    setNotification({ type: 'success', message: 'Added STAR Behavioral story to your vault!' });
+  };
+
+  // Export Manifest JSON
+  const handleExportManifest = () => {
     const manifest = {
-      user: user?.displayName || 'Student Candidate',
-      readinessScore: `${readinessScore}%`,
-      activeQuestion: activeQuestion.title,
-      userAnswer: userResponse,
-      aiEvaluation: aiFeedback,
-      starFramework: starData,
+      user: profile?.name || user?.displayName || 'Student Developer',
+      questionVault: questions,
+      starBehavioralStories: starStories,
       timestamp: new Date().toISOString()
     };
 
@@ -147,357 +145,272 @@ export default function InterviewPrepStudio() {
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
+    setNotification({ type: 'success', message: 'Exported Interview Prep JSON Manifest!' });
   };
 
-  // Filtered Questions
   const filteredQuestions = questions.filter(q => {
     const matchesSearch = q.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          q.company.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCat = selectedTopic === 'all' || q.category === selectedTopic;
-    return matchesSearch && matchesCat;
+                          q.category.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesTopic = selectedTopic === 'all' || q.category === selectedTopic;
+    return matchesSearch && matchesTopic;
   });
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-16">
+    <div className="w-full max-w-[1400px] mx-auto space-y-8 font-sans pb-16 px-2 sm:px-4">
       
-      {/* Top Banner Header */}
-      <div className="bg-gradient-to-r from-cyan-950 via-slate-900 to-slate-950 border border-cyan-800/40 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden text-white">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-
+      {/* Top Banner Header - YuvaHub Brand Theme */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#f6efe2] via-[#fcf9f2] to-[#f6efe2] dark:from-slate-900 dark:to-slate-950 border border-[#e8ded1] dark:border-slate-800 p-6 md:p-8 shadow-sm">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <span className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-cyan-400 bg-cyan-500/20 border border-cyan-500/30 rounded-full flex items-center gap-1.5">
-                <Brain size={13} /> AI Interview Simulator
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#f3e4bd] bg-[#603620] rounded-full flex items-center gap-1.5 shadow-xs">
+                <Brain className="w-3.5 h-3.5 text-[#f3e4bd]" /> AI Mock Interview Studio
               </span>
-              <span className="px-3 py-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/20 border border-emerald-500/30 rounded-full">
-                FAANG & Unicorn Ready
+              <span className="px-3 py-1 text-xs font-bold text-[#63703d] bg-[#63703d]/15 border border-[#63703d]/30 rounded-full">
+                System Design & Coding
               </span>
             </div>
 
-            <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
-              AI Technical & System Design Mock Interview Studio
+            <h1 className="text-2xl md:text-3xl font-serif font-bold text-[#231f20] dark:text-white tracking-tight">
+              AI Interview <span className="text-[#b56b37] italic">Studio</span>
             </h1>
-            <p className="text-slate-400 text-xs md:text-sm max-w-2xl leading-relaxed">
-              Practice System Design, Algorithms, and Behavioral STAR scenarios with real-time AI feedback and time complexity diagnostics.
+            <p className="text-[#603620] dark:text-slate-400 text-xs md:text-sm max-w-2xl font-medium">
+              Practice System Design, Data Structures, and STAR behavioral interview questions with AI model answers and timed mock sessions.
             </p>
           </div>
 
-          {/* Readiness Score Gauge */}
-          <div className="flex items-center gap-4 bg-slate-900/90 border border-cyan-700/60 p-4 rounded-2xl w-full lg:w-auto shadow-lg">
-            <div className="relative flex items-center justify-center w-16 h-16 rounded-full border-4 border-cyan-400 bg-slate-950 font-black text-xl text-cyan-400">
-              {readinessScore}%
+          <div className="flex items-center gap-4 bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 p-4 rounded-2xl w-full lg:w-auto shadow-xs">
+            <div className="relative flex items-center justify-center w-14 h-14 rounded-full border-4 border-[#b56b37] bg-[#fcf9f2] font-serif font-bold text-base text-[#b56b37]">
+              92%
             </div>
             <div>
-              <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wide">Interview Readiness Score</div>
-              <div className="text-xs font-extrabold text-emerald-400">{questions.filter(q => q.solved).length} / {questions.length} Solved</div>
-              <div className="text-[11px] text-slate-400">30-Min Live Simulator</div>
+              <div className="text-[10px] uppercase font-bold text-[#8c7569] tracking-wider">Interview Readiness</div>
+              <div className="text-xs font-extrabold text-[#231f20] dark:text-white">FAANG Ready</div>
+              <div className="text-[11px] text-[#63703d] font-semibold">{questions.filter(q => q.solved).length} of {questions.length} Questions Solved</div>
             </div>
           </div>
         </div>
-
-        {/* Global Notifications */}
-        {notification.message && (
-          <div className={`mt-6 p-4 rounded-xl text-xs font-semibold flex items-center justify-between border ${
-            notification.type === 'error'
-              ? 'bg-red-500/20 border-red-500/40 text-red-300'
-              : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
-          }`}>
-            <div className="flex items-center gap-2">
-              {notification.type === 'error' ? <AlertTriangle size={16} /> : <CheckCircle2 size={16} />}
-              <span>{notification.message}</span>
-            </div>
-            <button onClick={() => setNotification({ type: '', message: '' })} className="text-slate-400 hover:text-white">
-              <X size={14} />
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-gray-200 dark:border-gray-800 scrollbar-none">
+      {/* Navigation Sub-Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar border-b border-[#e8ded1] dark:border-slate-800 pb-3">
         {[
-          { id: 'vault', label: `Question Vault (${questions.length})`, icon: Code2 },
-          { id: 'simulator', label: 'Timed Mock Simulator', icon: Play },
-          { id: 'star', label: 'Behavioral STAR Framework', icon: MessageSquare },
-          { id: 'analytics', label: 'Performance Metrics', icon: BarChart3 },
-          { id: 'export', label: 'Evaluation Report JSON', icon: Download }
-        ].map((tab) => {
-          const Icon = tab.icon;
+          { id: 'vault', label: 'Question Vault', icon: Code2 },
+          { id: 'simulator', label: '30-Min Timed Simulator', icon: Clock },
+          { id: 'star', label: 'STAR Behavioral Builder', icon: Sparkles },
+          { id: 'export', label: 'Export Transcript', icon: Download }
+        ].map(tab => {
+          const IconComponent = tab.icon;
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer border ${
                 isActive
-                  ? 'bg-cyan-600 text-white shadow-md shadow-cyan-500/20'
-                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-700'
+                  ? 'bg-[#b56b37] border-[#b56b37] text-white shadow-sm scale-[1.02]'
+                  : 'bg-white dark:bg-slate-900 border-[#e8ded1] dark:border-slate-800 text-[#603620] dark:text-slate-300 hover:bg-[#f6efe2]'
               }`}
             >
-              <Icon size={14} />
-              {tab.label}
+              <IconComponent className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-[#b56b37]'}`} />
+              <span>{tab.label}</span>
             </button>
           );
         })}
       </div>
 
-      {/* TAB CONTENT */}
+      {/* Notification Banner */}
+      {notification.message && (
+        <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#63703d]/15 text-[#63703d] border border-[#63703d]/30 text-xs font-bold animate-fade-in">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>{notification.message}</span>
+          </div>
+          <button onClick={() => setNotification({ type: '', message: '' })}>
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
-      {/* TAB 1: VAULT */}
+      {/* Tab 1: Question Vault */}
       {activeTab === 'vault' && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-6 shadow-sm">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">Technical & System Design Bank</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Curated questions asked at top technology companies.</p>
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 p-4 rounded-2xl shadow-2xs">
+            <div className="relative flex-1 w-full sm:w-auto max-w-md">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8c7569]" />
+              <input
+                type="text"
+                placeholder="Search questions by topic or title..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-xs text-[#231f20] dark:text-white outline-none focus:border-[#b56b37]"
+              />
             </div>
 
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-64">
-                <Search size={14} className="absolute left-3 top-3 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search questions or companies..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-xs text-gray-900 dark:text-white outline-none"
-                />
-              </div>
-
-              <select
-                value={selectedTopic}
-                onChange={(e) => setSelectedTopic(e.target.value)}
-                className="px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-bold text-gray-900 dark:text-white outline-none"
-              >
-                <option value="all">All Topics</option>
-                <option value="System Design">System Design</option>
-                <option value="Data Structures">Data Structures</option>
-                <option value="Frontend Engineering">Frontend Engineering</option>
-              </select>
+            <div className="flex items-center gap-2">
+              {['all', 'System Design', 'Data Structures', 'Frontend Core'].map(top => (
+                <button
+                  key={top}
+                  onClick={() => setSelectedTopic(top)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                    selectedTopic === top
+                      ? 'bg-[#231f20] text-white border-[#231f20]'
+                      : 'bg-white border-[#e8ded1] text-[#603620] hover:bg-[#f6efe2]'
+                  }`}
+                >
+                  {top}
+                </button>
+              ))}
             </div>
           </div>
 
-          {filteredQuestions.length === 0 ? (
-            <EmptyState
-              title="No practice questions found"
-              description="No questions match your current search or topic filter. Try a different keyword."
-              icon={<Brain className="h-6 w-6" aria-hidden="true" />}
-            />
-          ) : (
-            <div className="space-y-3">
-              {filteredQuestions.map((q) => (
-              <div key={q.id} className="p-4 bg-gray-50 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-2 text-xs">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-gray-900 dark:text-white text-sm">{q.title}</span>
-                    <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md ${
-                      q.difficulty === 'HARD' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+          <div className="space-y-4">
+            {filteredQuestions.map(q => {
+              const isRevealed = revealedIds.includes(q.id);
+              return (
+                <div key={q.id} className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-2xl p-6 shadow-2xs space-y-4 hover:border-[#b56b37] transition-all">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-[#8c7569] uppercase tracking-wider">{q.company}</span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-[#f3e4bd] text-[#603620]">
+                          {q.category}
+                        </span>
+                      </div>
+                      <h3 className="font-serif font-bold text-base text-[#231f20] dark:text-white mt-1">{q.title}</h3>
+                    </div>
+
+                    <span className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold ${
+                      q.difficulty === 'HARD' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-amber-50 text-amber-800 border border-amber-200'
                     }`}>
                       {q.difficulty}
                     </span>
                   </div>
 
-                  <span className="font-bold text-cyan-600 dark:text-cyan-400">{q.company}</span>
-                </div>
+                  <p className="text-xs text-[#603620] dark:text-slate-300 leading-relaxed font-medium bg-[#fcf9f2] dark:bg-slate-800 p-4 rounded-xl border border-[#e8ded1] dark:border-slate-700">
+                    {q.prompt}
+                  </p>
 
-                <p className="text-gray-600 dark:text-gray-300">{q.prompt}</p>
+                  <div className="flex items-center justify-between pt-2">
+                    <button
+                      onClick={() => toggleReveal(q.id)}
+                      className="px-4 py-2 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-xs rounded-xl shadow-2xs cursor-pointer"
+                    >
+                      {isRevealed ? 'Hide AI Model Solution' : 'Reveal AI Model Solution'}
+                    </button>
 
-                <div className="flex items-center justify-between pt-2">
-                  <span className="text-gray-400 text-[11px]">Topic: {q.category}</span>
-                  <button
-                    onClick={() => {
-                      setActiveQuestionId(q.id);
-                      setActiveTab('simulator');
-                    }}
-                    className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white font-bold rounded-xl transition"
-                  >
-                    Start Practice
-                  </button>
+                    {q.solved && (
+                      <span className="text-xs font-bold text-[#63703d] flex items-center gap-1">
+                        <CheckCircle2 className="w-4 h-4" /> Solved
+                      </span>
+                    )}
+                  </div>
+
+                  {isRevealed && (
+                    <div className="p-4 rounded-xl bg-[#63703d]/15 border border-[#63703d]/30 text-xs font-medium text-[#231f20] dark:text-slate-200 animate-fade-in space-y-1">
+                      <span className="font-bold text-[#63703d] uppercase tracking-wider block text-[10px]">AI Ideal Solution Strategy:</span>
+                      <p>{q.idealAnswer}</p>
+                    </div>
+                  )}
                 </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Tab 2: Timed Simulator */}
+      {activeTab === 'simulator' && (
+        <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xs max-w-2xl mx-auto">
+          <div className="border-b border-[#e8ded1] dark:border-slate-800 pb-4 flex justify-between items-center">
+            <div>
+              <h2 className="text-xl font-serif font-bold text-[#231f20] dark:text-white">30-Minute Mock Session</h2>
+              <p className="text-xs text-[#603620] dark:text-slate-400 font-medium">Simulate real interview conditions with AI evaluation.</p>
+            </div>
+            <div className="px-3 py-1.5 rounded-xl bg-[#603620] text-[#f3e4bd] font-serif font-bold text-sm flex items-center gap-1.5">
+              <Clock className="w-4 h-4 text-[#f3e4bd]" /> 30:00
+            </div>
+          </div>
+
+          <div className="space-y-4 text-xs">
+            <div className="p-4 rounded-2xl bg-[#fcf9f2] border border-[#e8ded1]">
+              <span className="text-[10px] font-bold text-[#8c7569] uppercase">Question 1 of 3</span>
+              <h3 className="font-serif font-bold text-sm text-[#231f20] mt-1">{questions[0].title}</h3>
+              <p className="text-xs text-[#603620] mt-2 font-medium">{questions[0].prompt}</p>
+            </div>
+
+            <div className="space-y-1">
+              <label className="font-bold text-[#603620] uppercase">Your Solution / Architecture Strategy</label>
+              <textarea
+                rows={5}
+                placeholder="Write your explanation or code solution here..."
+                value={simAnswer}
+                onChange={e => setSimAnswer(e.target.value)}
+                className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none resize-none font-mono"
+              />
+            </div>
+
+            <button
+              onClick={() => {
+                setNotification({ type: 'success', message: 'Submitted answer for AI evaluation!' });
+                setSimAnswer('');
+              }}
+              className="w-full py-3 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-xs rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-2"
+            >
+              <Play className="w-4 h-4" /> Submit Solution to AI Evaluator
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 3: STAR Behavioral Builder */}
+      {activeTab === 'star' && (
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xs max-w-2xl mx-auto">
+            <div className="border-b border-[#e8ded1] dark:border-slate-800 pb-4">
+              <h2 className="text-xl font-serif font-bold text-[#231f20] dark:text-white">STAR Behavioral Story Builder</h2>
+              <p className="text-xs text-[#603620] dark:text-slate-400 font-medium">Draft Situation, Task, Action, and Result framework stories for behavioral interviews.</p>
+            </div>
+
+            <form onSubmit={handleAddStarStory} className="space-y-3 text-xs">
+              <input type="text" required placeholder="Situation (What happened?)" value={newSit} onChange={e => setNewSit(e.target.value)} className="w-full bg-[#fcf9f2] border border-[#e8ded1] rounded-xl p-3 text-xs text-[#231f20] outline-none" />
+              <input type="text" placeholder="Task (What was required?)" value={newTask} onChange={e => setNewTask(e.target.value)} className="w-full bg-[#fcf9f2] border border-[#e8ded1] rounded-xl p-3 text-xs text-[#231f20] outline-none" />
+              <input type="text" required placeholder="Action (What did YOU do?)" value={newAct} onChange={e => setNewAct(e.target.value)} className="w-full bg-[#fcf9f2] border border-[#e8ded1] rounded-xl p-3 text-xs text-[#231f20] outline-none" />
+              <input type="text" placeholder="Result (Quantifiable outcome)" value={newRes} onChange={e => setNewRes(e.target.value)} className="w-full bg-[#fcf9f2] border border-[#e8ded1] rounded-xl p-3 text-xs text-[#231f20] outline-none" />
+
+              <button type="submit" className="w-full py-3 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-xs rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-2">
+                <Plus className="w-4 h-4" /> Save STAR Behavioral Story
+              </button>
+            </form>
+          </div>
+
+          <div className="space-y-3 max-w-2xl mx-auto">
+            {starStories.map((st, idx) => (
+              <div key={st.id} className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 shadow-2xs space-y-2">
+                <h4 className="font-serif font-bold text-sm text-[#231f20] dark:text-white">Story #{idx + 1}: {st.situation}</h4>
+                <p className="text-xs text-[#603620] font-semibold">Action: {st.action}</p>
+                <p className="text-xs text-[#63703d] font-bold">Result: {st.result}</p>
               </div>
             ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* TAB 2: SIMULATOR */}
-      {activeTab === 'simulator' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="px-2.5 py-1 text-[10px] font-bold bg-cyan-100 text-cyan-700 rounded-md">
-                {activeQuestion.category}
-              </span>
-              <span className="font-mono font-bold text-xs text-gray-500">
-                Time Remaining: 29:40
-              </span>
-            </div>
-
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">{activeQuestion.title}</h3>
-            <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">{activeQuestion.prompt}</p>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Your Technical Explanation & Architecture Solution</label>
-              <textarea
-                rows={8}
-                value={userResponse}
-                onChange={(e) => setUserResponse(e.target.value)}
-                placeholder="Type your system design breakdown, data structures, trade-offs, and time complexity..."
-                className="w-full p-3 font-mono bg-slate-950 text-cyan-300 text-xs rounded-xl border border-slate-800 outline-none"
-              />
-            </div>
-
-            <button
-              onClick={handleEvaluateAnswer}
-              className="w-full py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5"
-            >
-              <Sparkles size={14} /> Evaluate Answer with AI
-            </button>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-4 shadow-sm">
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">AI Evaluation & Scorecard</h3>
-
-            {aiFeedback ? (
-              <div className="space-y-3 text-xs">
-                <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300 font-bold flex items-center justify-between">
-                  <span>Score: {aiFeedback.score} / 100</span>
-                  <span>Complexity: {aiFeedback.timeComplexity}</span>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="font-bold text-gray-700 dark:text-gray-300">Key Strengths:</span>
-                  <ul className="list-disc pl-4 text-gray-600 dark:text-gray-400">
-                    {aiFeedback.strengths.map((s: string, i: number) => (
-                      <li key={i}>{s}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ) : (
-              <div className="h-48 flex items-center justify-center text-xs text-gray-400 border border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
-                Type your answer and click "Evaluate Answer with AI".
-              </div>
-            )}
           </div>
         </div>
       )}
 
-      {/* TAB 3: STAR */}
-      {activeTab === 'star' && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-6 shadow-sm">
-          <div>
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">Behavioral STAR Framework Practice</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Structure behavioral stories using Situation, Task, Action, and Result.</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-            <div>
-              <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Situation (S)</label>
-              <textarea
-                rows={3}
-                value={starData.situation}
-                onChange={(e) => setStarData({ ...starData, situation: e.target.value })}
-                className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Task (T)</label>
-              <textarea
-                rows={3}
-                value={starData.task}
-                onChange={(e) => setStarData({ ...starData, task: e.target.value })}
-                className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Action (A)</label>
-              <textarea
-                rows={3}
-                value={starData.action}
-                onChange={(e) => setStarData({ ...starData, action: e.target.value })}
-                className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Result (R)</label>
-              <textarea
-                rows={3}
-                value={starData.result}
-                onChange={(e) => setStarData({ ...starData, result: e.target.value })}
-                className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white outline-none"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 4: ANALYTICS */}
-      {activeTab === 'analytics' && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-6 shadow-sm">
-          <div>
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">Interview Readiness Metrics</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Track performance metrics across system design and coding topics.</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-            <div className="p-4 bg-gray-50 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-1">
-              <div className="text-gray-500 dark:text-gray-400 font-bold uppercase">ACCURACY SCORE</div>
-              <div className="text-2xl font-black text-cyan-600">92%</div>
-              <div className="text-[11px] text-gray-400">Based on 3 Evaluated Sessions</div>
-            </div>
-
-            <div className="p-4 bg-gray-50 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-1">
-              <div className="text-gray-500 dark:text-gray-400 font-bold uppercase">AVG ANSWER TIME</div>
-              <div className="text-2xl font-black text-emerald-600">14 Mins</div>
-              <div className="text-[11px] text-gray-400">Target: Under 20 Mins</div>
-            </div>
-
-            <div className="p-4 bg-gray-50 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-1">
-              <div className="text-gray-500 dark:text-gray-400 font-bold uppercase">TOPIC MASTERY</div>
-              <div className="text-2xl font-black text-purple-600">System Design</div>
-              <div className="text-[11px] text-gray-400">High Confidence Level</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 5: EXPORT */}
+      {/* Tab 4: Export */}
       {activeTab === 'export' && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">Interview Transcript Report JSON</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Complete record of questions solved and AI evaluations.</p>
-            </div>
-
-            <button
-              onClick={handleExportTranscript}
-              className="px-3.5 py-2 bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5"
-            >
-              <Download size={14} /> Download Evaluation JSON
-            </button>
+        <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-2xs max-w-xl mx-auto">
+          <div className="w-16 h-16 bg-[#f6efe2] text-[#b56b37] flex items-center justify-center rounded-full mx-auto border border-[#e8ded1]">
+            <Download className="w-8 h-8 text-[#b56b37]" />
           </div>
-
-          <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 font-mono text-xs text-cyan-300 overflow-x-auto">
-            <pre>{JSON.stringify({
-              user: user?.displayName || 'Student Candidate',
-              readinessScore: `${readinessScore}%`,
-              activeQuestion: activeQuestion.title,
-              userAnswer: userResponse,
-              aiEvaluation: aiFeedback,
-              starFramework: starData,
-              timestamp: new Date().toISOString()
-            }, null, 2)}</pre>
-          </div>
+          <h2 className="text-2xl font-serif font-bold text-[#231f20] dark:text-white">Export Interview Transcript</h2>
+          <p className="text-xs text-[#603620] dark:text-slate-400 font-medium">
+            Download full solved question history and STAR behavioral stories in JSON format.
+          </p>
+          <button onClick={handleExportManifest} className="px-6 py-3 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-xs rounded-xl shadow-md cursor-pointer inline-flex items-center gap-2">
+            <Download className="w-4 h-4" /> Download Interview Prep JSON Manifest
+          </button>
         </div>
       )}
-
     </div>
   );
 }
