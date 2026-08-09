@@ -395,6 +395,13 @@ export async function initializeDatabase(): Promise<void> {
         .then(() => console.log(`[Database] Created compound index on opportunities`))
         .catch((err: any) => console.error(`[Database] Failed to create index:`, err));
 
+      dbCommand.collection("opportunities").createIndex(
+        { dedupe_hash: 1 },
+        { unique: true, partialFilterExpression: { dedupe_hash: { $exists: true } } }
+      )
+        .then(() => console.log(`[Database] Created unique index on opportunities.dedupe_hash`))
+        .catch((err: any) => console.error(`[Database] Failed to create unique index on opportunities.dedupe_hash:`, err));
+
       dbQuery.collection("users").createIndex({ uid: 1 }, { unique: true, sparse: true })
         .then(() => console.log(`[Database] Created unique index on users.uid`))
         .catch((err: any) => console.error(`[Database] Failed to create index on users.uid:`, err));
