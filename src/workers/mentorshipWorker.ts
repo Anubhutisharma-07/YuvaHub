@@ -1,13 +1,15 @@
 import { Worker, Job } from "bullmq";
 import { connection } from "../queues/connection";
 import { MentorshipReminderJobData } from "../queues/mentorshipQueue";
-import { getSession, notifyParticipant } from "../services/mentorshipService";
+import { getSession, getUserEmail, notifyParticipant } from "../services/mentorshipService";
 import { enqueueEmail } from "../queues/emailQueue";
 import { enqueuePushNotification } from "../queues/pushQueue";
 
-function emailForUser(uid: string): string {
-  // Resolved lazily inside processing so DB availability never blocks the worker.
-  return `${uid}@yuvahub.local`;
+function markerKeyFor(jobType: string, horizon?: string): "t24hSent" | "t1hSent" | "feedbackRequestSent" {
+  if (jobType === "session_reminder") {
+    return horizon === "t24h" ? "t24hSent" : "t1hSent";
+  }
+  return "feedbackRequestSent";
 }
 
 /**
@@ -26,6 +28,17 @@ export async function processMentorshipReminder(data: MentorshipReminderJobData)
     mentorName = "your mentor",
   } = data;
 
+  // Skip sessions that are no longer active and reminders already delivered.
+  const session = await getSession(sessionId);
+  if (!session) return;
+  if (jobType === "session_reminder") {
+    if (["cancelled", "completed", "no_show"].includes(session.status)) return;
+  } else if (session.status !== "completed") {
+    return;
+  }
+  const marker = (session.reminderTimestamps || {})[markerKeyFor(jobType, horizon)];
+  if (marker) return;
+
   if (jobType === "session_reminder") {
     const when = horizon === "t24h" ? "tomorrow" : "in about an hour";
     for (const uid of [mentorUid, studentUid]) {
@@ -40,11 +53,16 @@ export async function processMentorshipReminder(data: MentorshipReminderJobData)
         meetingUrl,
       });
       await enqueuePushNotification({ userId: uid, message });
-      await enqueueEmail({
-        to: emailForUser(uid),
-        subject: title,
-        body: `${message}\n\nSession link: ${meetingUrl}`,
-      });
+      const to = await getUserEmail(uid);
+      if (to) {
+        await enqueueEmail({
+          to,
+          subject: title,
+          body: `${message}\n\nSession link: ${meetingUrl}`,
+        });
+      } else {
+        console.warn(`[MentorshipWorker] No email address for ${uid}; skipping "${title}" email`);
+      }
     }
   } else if (jobType === "feedback_request") {
     const message = `Your session "${topic}" completed. Share your feedback to help ${mentorName} keep improving.`;
@@ -52,17 +70,20 @@ export async function processMentorshipReminder(data: MentorshipReminderJobData)
       sessionId,
     });
     await enqueuePushNotification({ userId: studentUid, message });
-    await enqueueEmail({
-      to: emailForUser(studentUid),
-      subject: "How was your mentorship session?",
-      body: `${message}\n\nSession link: ${meetingUrl}`,
-    });
+    const to = await getUserEmail(studentUid);
+    if (to) {
+      await enqueueEmail({
+        to,
+        subject: "How was your mentorship session?",
+        body: `${message}\n\nSession link: ${meetingUrl}`,
+      });
+    } else {
+      console.warn(`[MentorshipWorker] No email address for ${studentUid}; skipping feedback email`);
+    }
   }
 
   // Best-effort idempotency marker on the session doc.
   try {
-    const session = await getSession(sessionId);
-    if (!session) return;
     const key =
       jobType === "session_reminder"
         ? horizon === "t24h"

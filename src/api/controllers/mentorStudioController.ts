@@ -97,7 +97,11 @@ export const getSessionDetail = async (req: Request, res: Response) => {
   if (!uid) throw AppError.unauthorized("Not authenticated");
   const session = await getSession(req.params.id);
   if (!session) throw AppError.notFound("Session not found");
-  if (session.studentUid !== uid && session.mentorUid !== uid && req.user?.role !== "admin") {
+  if (
+    session.studentUid !== uid &&
+    session.mentorUid !== uid &&
+    !["admin", "superadmin"].includes(req.user?.role)
+  ) {
     throw AppError.forbidden("You are not a participant of this session");
   }
   return sendSuccess(res, { session });
@@ -210,11 +214,13 @@ export const listApplications = async (req: Request, res: Response) => {
 };
 
 export const reviewApplicationHandler = async (req: Request, res: Response) => {
+  const uid = getUid(req);
+  if (!uid) throw AppError.unauthorized("Not authenticated");
   const application = await reviewApplication({
     applicationId: req.params.applicationId,
     decision: req.body.decision,
     reviewNote: req.body.reviewNote,
-    reviewerUid: req.user?.uid,
+    reviewerUid: uid,
   });
   return sendSuccess(res, { application });
 };

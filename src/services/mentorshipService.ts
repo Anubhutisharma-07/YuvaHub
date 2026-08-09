@@ -45,6 +45,32 @@ function toSerializable<T extends { _id?: any }>(doc: T): Omit<T, "_id"> & { id?
 
 // ─── Notifications ─────────────────────────────────────────────────────────────
 
+/** Resolve a user's email address for direct email delivery. */
+export async function getUserEmail(uid: string): Promise<string | undefined> {
+  try {
+    if (!dbQuery) return undefined;
+    const user = await dbQuery
+      .collection("users")
+      .findOne({ $or: [{ uid }, { firebaseUid: uid }] });
+    const email = user && typeof user.email === "string" ? user.email.trim() : "";
+    return email || undefined;
+  } catch (err) {
+    console.error("[Mentorship] getUserEmail error:", err);
+    return undefined;
+  }
+}
+
+/** Best-effort invalidation of the cached `/mentors/:uid` detail response. */
+async function invalidateMentorDetailCache(mentorUid: string) {
+  try {
+    if (process.env.NODE_ENV === "test") return;
+    const { cacheDel } = await import("../api/redis.js");
+    await cacheDel(`mentor:${mentorUid}`);
+  } catch (err) {
+    console.warn("[Mentorship] Mentor detail cache invalidation skipped:", err);
+  }
+}
+
 export async function notifyParticipant(
   uid: string,
   type: string,
@@ -141,8 +167,9 @@ export async function upsertMentorProfile(mentorUid: string, input: Partial<Ment
   assertDb();
   const existing = await dbCommand.collection("mentor_profiles").findOne({ mentorUid });
   const now = new Date();
+  const { _id: _existingId, ...existingDoc } = existing || { mentorUid, createdAt: now };
   const doc = {
-    ...(existing || { mentorUid, createdAt: now }),
+    ...existingDoc,
     ...input,
     mentorUid,
     updatedAt: now,
@@ -232,6 +259,7 @@ export async function bulkCreateAvailability(params: {
   if (newSlots.length > 0) {
     await dbCommand.collection("mentor_availability").insertMany(newSlots);
   }
+  invalidateMentorDetailCache(mentorUid).catch(() => {});
   return { created: newSlots.length, conflicts };
 }
 
@@ -246,12 +274,16 @@ export async function updateAvailabilitySlot(params: {
     .collection("mentor_availability")
     .findOne({ _id: slotId, mentorUid });
   if (!slot) throw AppError.notFound("Availability slot not found");
-  if (slot.status === "booked" && patch.status && patch.status !== "booked") {
-    throw AppError.conflict("Cannot modify a booked slot. Cancel the session first.");
+  if (slot.status === "booked") {
+    const reschedules = Boolean(patch.date || patch.startTime || patch.endTime);
+    if (reschedules || (patch.status && patch.status !== "booked")) {
+      throw AppError.conflict("Cannot modify a booked slot. Cancel the session first.");
+    }
   }
   await dbCommand
     .collection("mentor_availability")
     .updateOne({ _id: slotId }, { $set: { ...patch, mentorUid } });
+  invalidateMentorDetailCache(mentorUid).catch(() => {});
   return toSerializable({ ...slot, ...patch });
 }
 
@@ -268,6 +300,7 @@ export async function deleteAvailabilitySlot(params: { slotId: string; mentorUid
   await dbCommand
     .collection("mentor_availability")
     .updateOne({ _id: slotId }, { $set: { status: "cancelled" } });
+  invalidateMentorDetailCache(mentorUid).catch(() => {});
   return { slotId, status: "cancelled" };
 }
 
@@ -337,6 +370,7 @@ export async function bookSession(params: {
 
   await dbCommand.collection("mentorship_sessions").insertOne({ ...sessionDoc, _id: undefined });
 
+  invalidateMentorDetailCache(mentorUid).catch(() => {});
   await notifyParticipant(
     mentorUid,
     "mentorship_booking",
@@ -451,7 +485,7 @@ export async function transitionSessionStatus(params: {
   const updated = await dbCommand
     .collection("mentorship_sessions")
     .findOneAndUpdate(
-      { sessionId },
+      { sessionId, status: session.status },
       {
         $set: { status, updatedAt: now },
         $push: { statusHistory: { status, at: now, by: actorUid } },
@@ -459,6 +493,11 @@ export async function transitionSessionStatus(params: {
       { returnDocument: "after" },
     );
   const updatedSession = updated && (updated.value !== undefined ? updated.value : updated);
+  if (!updatedSession) {
+    throw AppError.conflict(
+      `Session status changed concurrently; cannot transition from "${session.status}" to "${status}"`,
+    );
+  }
 
   if (status === "confirmed") {
     const other = session.studentUid === actorUid ? session.mentorUid : session.studentUid;
@@ -481,7 +520,7 @@ export async function transitionSessionStatus(params: {
     });
   }
 
-  return updatedSession ? toSerializable(updatedSession) : { ...session, status, updatedAt: now };
+  return toSerializable(updatedSession);
 }
 
 export async function cancelSessionBySlot(params: { slotId: string; actorUid: string }) {
@@ -499,6 +538,7 @@ export async function cancelSessionBySlot(params: { slotId: string; actorUid: st
   await dbCommand
     .collection("mentor_availability")
     .updateOne({ _id: params.slotId }, { $set: { status: "cancelled", sessionId: "" } });
+  invalidateMentorDetailCache(slot.mentorUid).catch(() => {});
   return { slotId: params.slotId, status: "cancelled" };
 }
 

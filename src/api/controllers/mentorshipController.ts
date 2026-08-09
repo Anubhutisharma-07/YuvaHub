@@ -21,13 +21,20 @@ export const getMentorAvailability = async (req: Request, res: Response) => {
   const status = (req.query.status as string) || undefined;
   const { page, limit } = parsePagination(req.query);
 
-  const { slots, total } = await listAvailability({ mentorUid, from, to, status, page, limit });
+  const { slots, total } = await listAvailability({
+    mentorUid,
+    from,
+    to,
+    status: status || "open",
+    page,
+    limit,
+  });
 
   return sendSuccess(res, {
     mentorUid,
     timezone: "IST (UTC+5:30)",
     maxSessionsPerWeek: 5,
-    availableSlots: slots.filter((s: any) => s.status === "open"),
+    availableSlots: slots,
     slots,
     total,
     page,
@@ -56,17 +63,12 @@ export const bookSessionHandler = async (req: Request, res: Response) => {
 };
 
 export const getSessions = async (req: Request, res: Response) => {
-  try {
-    const { page, limit } = parsePagination(req.query);
-    const uid = (req.user?.uid as string) || (req.query.uid as string) || "user_default";
-    const status = (req.query.status as string) || undefined;
+  const { page, limit } = parsePagination(req.query);
+  const uid = (req.user?.uid as string) || (req.query.uid as string) || "user_default";
+  const status = (req.query.status as string) || undefined;
 
-    const result = await getSessionLedger({ uid, page, limit, status });
-    return sendPaginated(res, result.sessions, result.page, result.limit, result.total);
-  } catch (err) {
-    console.error("[Mentorship] Sessions GET error:", err);
-    return sendPaginated(res, [], 1, 20, 0);
-  }
+  const result = await getSessionLedger({ uid, page, limit, status });
+  return sendPaginated(res, result.sessions, result.page, result.limit, result.total);
 };
 
 export const updateSessionStatus = async (req: Request, res: Response) => {
@@ -74,10 +76,12 @@ export const updateSessionStatus = async (req: Request, res: Response) => {
   if (!sessionId || !status) {
     throw AppError.badRequest("Missing sessionId or status");
   }
+  const actorUid = (req.user?.uid as string) || undefined;
+  if (!actorUid) throw AppError.unauthorized("Not authenticated");
 
   const session = await transitionSessionStatus({
     sessionId,
-    actorUid: req.user?.uid,
+    actorUid,
     actorRole: req.user?.role,
     status,
   });

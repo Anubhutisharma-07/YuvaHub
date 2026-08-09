@@ -26,6 +26,7 @@ vi.mock("../src/api/redis.js", () => ({
 }));
 
 import mentorshipRoutes from "../src/api/routes/mentorshipRoutes";
+import { adminOnly, authMiddleware } from "../src/api/middlewares/auth.js";
 
 function listRoutes(): { method: string; path: string }[] {
   const out: { method: string; path: string }[] = [];
@@ -36,6 +37,13 @@ function listRoutes(): { method: string; path: string }[] {
     }
   }
   return out;
+}
+
+function routeHandlers(method: string, path: string): any[] {
+  const layer = (mentorshipRoutes as any).stack.find(
+    (l: any) => l.route && l.route.path === path && l.route.methods[method.toLowerCase()],
+  );
+  return layer ? layer.route.stack.map((h: any) => h.handle) : [];
 }
 
 describe("mentorship routes", () => {
@@ -78,5 +86,30 @@ describe("mentorship routes", () => {
     expect(paths).toContain("GET /mentor-applications/me");
     expect(paths).toContain("GET /mentor-applications");
     expect(paths).toContain("PATCH /mentor-applications/:applicationId/review");
+  });
+
+  it("protects write and user-scoped endpoints with auth middleware", () => {
+    const protectedRoutes: [string, string][] = [
+      ["post", "/mentorship/book"],
+      ["get", "/mentorship/sessions"],
+      ["patch", "/mentorship/sessions/status"],
+      ["get", "/mentor-studio/profile"],
+      ["put", "/mentor-studio/profile"],
+      ["post", "/mentor-studio/availability"],
+      ["delete", "/mentor-studio/availability/:slotId"],
+      ["get", "/mentor-studio/sessions/:id"],
+      ["patch", "/mentor-studio/sessions/:id/status"],
+      ["post", "/mentor-applications"],
+      ["get", "/mentor-applications/me"],
+      ["patch", "/mentor-applications/:applicationId/review"],
+    ];
+    for (const [method, path] of protectedRoutes) {
+      expect(routeHandlers(method, path)).toContain(authMiddleware);
+    }
+  });
+
+  it("protects the mentor application review endpoint with admin auth", () => {
+    expect(routeHandlers("patch", "/mentor-applications/:applicationId/review")).toContain(adminOnly);
+    expect(routeHandlers("get", "/mentor-applications")).toContain(adminOnly);
   });
 });

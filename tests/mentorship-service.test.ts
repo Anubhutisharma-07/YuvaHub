@@ -4,13 +4,27 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 
 type Col = Map<string, any>;
 
+function getPath(obj: any, path: string): any {
+  return path.split(".").reduce((acc, k) => (acc == null ? acc : acc[k]), obj);
+}
+
+function setPath(obj: any, path: string, value: any): void {
+  const parts = path.split(".");
+  const last = parts.pop()!;
+  const target = parts.reduce((acc, k) => {
+    if (acc[k] == null || typeof acc[k] !== "object") acc[k] = {};
+    return acc[k];
+  }, obj);
+  target[last] = value;
+}
+
 function matches(filter: any, doc: any): boolean {
   for (const [key, cond] of Object.entries(filter)) {
     if (key === "$or") {
       if (!(cond as any[]).some((sub) => matches(sub, doc))) return false;
       continue;
     }
-    const value = doc[key];
+    const value = key.includes(".") ? getPath(doc, key) : doc[key];
     if (cond && typeof cond === "object" && !Array.isArray(cond) && !(cond instanceof RegExp)) {
       if ("$gte" in cond && !(value >= cond.$gte)) return false;
       if ("$lte" in cond && !(value <= cond.$lte)) return false;
@@ -24,6 +38,46 @@ function matches(filter: any, doc: any): boolean {
     if (value !== cond) return false;
   }
   return true;
+}
+
+/** Apply $set / $push / $pull updates (including positional "array.$" sets). */
+function applyUpdate(doc: any, update: any, filter: any): void {
+  if (update.$set && "_id" in update.$set) {
+    throw new Error("Performing an update on the path '_id' would modify the immutable field '_id'");
+  }
+  for (const [key, value] of Object.entries(update.$set || {})) {
+    if (key.includes(".$")) {
+      const [arrayPath, rest] = key.split(".$", 2);
+      const arr = getPath(doc, arrayPath);
+      if (!Array.isArray(arr)) continue;
+      let index = -1;
+      for (const [fk, fv] of Object.entries(filter)) {
+        if (fk.startsWith(`${arrayPath}.`) && fk.split(".").length === 2) {
+          const field = fk.split(".")[1];
+          index = arr.findIndex((it: any) => it[field] === fv);
+          if (index >= 0) break;
+        }
+      }
+      if (index < 0) continue;
+      if (rest === "") arr[index] = value;
+      else setPath(arr[index], rest, value);
+    } else {
+      setPath(doc, key, value);
+    }
+  }
+  for (const [k, v] of Object.entries(update.$push || {})) {
+    if (!Array.isArray(doc[k])) doc[k] = [];
+    doc[k].push(v);
+  }
+  for (const [k, v] of Object.entries(update.$pull || {})) {
+    if (!Array.isArray(doc[k])) continue;
+    doc[k] = doc[k].filter((item: any) => {
+      if (v && typeof v === "object" && !Array.isArray(v)) {
+        return !Object.entries(v).every(([fk, fv]) => item[fk] === fv);
+      }
+      return item !== v;
+    });
+  }
 }
 
 function createMemoryDb() {
@@ -49,10 +103,11 @@ function createMemoryDb() {
         },
         async findOneAndUpdate(filter: any, update: any, _opts?: any) {
           const existing = findOne(name, filter);
-          if (!existing) return { value: null };
+          if (!existing) return null;
           const doc = col(name).get(existing._id);
-          if (doc) Object.assign(doc, update.$set || {});
-          return { value: doc ? { ...doc } : null };
+          if (!doc) return null;
+          applyUpdate(doc, update, filter);
+          return { ...doc };
         },
         find(filter: any) {
           return {
@@ -77,13 +132,20 @@ function createMemoryDb() {
           return { insertedId: key };
         },
         async insertMany(docs: any[]) {
-          docs.forEach((d) => this.insertOne(d));
+          for (const d of docs) await this.insertOne(d);
           return { insertedCount: docs.length };
         },
         async updateOne(filter: any, update: any, _opts?: any) {
-          const doc = col(name).get(filter._id);
-          if (doc) Object.assign(doc, update.$set || {});
-          return { modifiedCount: doc ? 1 : 0 };
+          let doc: any = null;
+          for (const stored of col(name).values()) {
+            if (matches(filter, stored)) {
+              doc = stored;
+              break;
+            }
+          }
+          if (!doc) return { modifiedCount: 0 };
+          applyUpdate(doc, update, filter);
+          return { modifiedCount: 1 };
         },
         async deleteOne(filter: any) {
           for (const [k, v] of col(name)) {
@@ -125,13 +187,17 @@ vi.mock("../src/api/socketInstance.js", () => ({
 
 import {
   addActionItem,
+  addNote,
   bookSession,
   buildSlotDateTime,
+  deleteNote,
   getSessionLedger,
   localSlotDate,
   slotDurationHours,
   submitFeedback,
   transitionSessionStatus,
+  updateAvailabilitySlot,
+  upsertMentorProfile,
 } from "../src/services/mentorshipService";
 
 const openSlot = {
@@ -307,6 +373,74 @@ describe("mentorshipService status transitions", () => {
   });
 });
 
+describe("mentorshipService profile upsert", () => {
+  it("updates an existing profile without touching the immutable _id", async () => {
+    mem.col("mentor_profiles").set("p1", {
+      _id: "p1",
+      mentorUid: "mentor_1",
+      name: "Ananya Sharma",
+      email: "ananya@example.com",
+      createdAt: new Date("2026-01-01"),
+      updatedAt: new Date("2026-01-01"),
+    });
+
+    const profile = await upsertMentorProfile("mentor_1", {
+      company: "Google",
+      headline: "Staff SWE",
+    });
+
+    expect(profile.company).toBe("Google");
+    const stored = mem.col("mentor_profiles").get("p1");
+    expect(stored._id).toBe("p1");
+    expect(stored.company).toBe("Google");
+    expect(stored.headline).toBe("Staff SWE");
+  });
+});
+
+describe("mentorshipService availability updates", () => {
+  it("rejects rescheduling a booked slot", async () => {
+    mem.col("mentor_availability").set("slot_booked", {
+      _id: "slot_booked",
+      mentorUid: "mentor_1",
+      mentorName: "Ananya Sharma",
+      date: "2026-08-20",
+      startTime: "17:00",
+      endTime: "18:00",
+      timezone: "Asia/Kolkata",
+      status: "booked",
+      sessionId: "sess_1",
+    });
+
+    await expect(
+      updateAvailabilitySlot({
+        slotId: "slot_booked",
+        mentorUid: "mentor_1",
+        patch: { startTime: "18:00" },
+      }),
+    ).rejects.toMatchObject({ statusCode: 409 });
+  });
+
+  it("allows updating a non-booked slot", async () => {
+    mem.col("mentor_availability").set("slot_open", {
+      _id: "slot_open",
+      mentorUid: "mentor_1",
+      mentorName: "Ananya Sharma",
+      date: "2026-08-20",
+      startTime: "17:00",
+      endTime: "18:00",
+      timezone: "Asia/Kolkata",
+      status: "open",
+    });
+
+    const slot = await updateAvailabilitySlot({
+      slotId: "slot_open",
+      mentorUid: "mentor_1",
+      patch: { startTime: "18:00" },
+    });
+    expect(slot.startTime).toBe("18:00");
+  });
+});
+
 describe("mentorshipService ledger, action items & feedback", () => {
   it("returns only sessions the user participates in", async () => {
     seedSession("pending", { sessionId: "sess_1" });
@@ -341,6 +475,29 @@ describe("mentorshipService ledger, action items & feedback", () => {
     await expect(
       addActionItem({ sessionId: "sess_1", actorUid: "outsider", title: "Nope" }),
     ).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  it("persists notes and action items on the session document", async () => {
+    seedSession("pending");
+    const note = await addNote({
+      sessionId: "sess_1",
+      actorUid: "student_1",
+      content: "Fix the intro paragraph",
+    });
+    const item = await addActionItem({
+      sessionId: "sess_1",
+      actorUid: "student_1",
+      title: "Redo resume bullet points",
+    });
+
+    const stored = mem.col("mentorship_sessions").get("s1");
+    expect(stored.notes.map((n: any) => n.noteId)).toContain(note.noteId);
+    expect(stored.actionItems.map((i: any) => i.itemId)).toContain(item.itemId);
+
+    await deleteNote({ sessionId: "sess_1", actorUid: "student_1", noteId: note.noteId });
+    expect(mem.col("mentorship_sessions").get("s1").notes.map((n: any) => n.noteId)).not.toContain(
+      note.noteId,
+    );
   });
 
   it("allows feedback only after completion, by the student", async () => {
