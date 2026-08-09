@@ -233,6 +233,22 @@ app.post("/api/v1/applications/:id/retry", async (req, res) => {
     });
   }
 });
+
+// Leaderboard API
+app.get("/api/v1/leaderboard", async (req, res) => {
+  try {
+    const items = [
+      { userId: "usr_1", name: "Aarav Patel", bountiesResolved: 14, reputation: 840, avatarUrl: "" },
+      { userId: "usr_2", name: "Sneha Kulkarni", bountiesResolved: 11, reputation: 620, avatarUrl: "" },
+      { userId: "usr_3", name: "Chirag Dwivedi", bountiesResolved: 9, reputation: 510, avatarUrl: "" },
+      { userId: "usr_4", name: "Dipanshu Batra", bountiesResolved: 7, reputation: 450, avatarUrl: "" }
+    ];
+    res.json({ status: "success", items });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Internal Server Error" });
+  }
+});
+
 // --- Application Tracker API ---
 
 // Get authenticated user's applications

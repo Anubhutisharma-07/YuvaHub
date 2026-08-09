@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Trophy, Megaphone, HelpCircle, Link as LinkIcon, Send, Heart, 
   MessageSquare, Loader2, Sparkles, Trash2, ChevronDown, ChevronUp, 
-  AlertTriangle, Flame, Clock, Tag, UserCheck
+  AlertTriangle, Flame, Clock, Tag, UserCheck, Shield
 } from 'lucide-react';
 import { UserProfile } from '../../types';
 import { EmptyState, ErrorState, SkeletonCard } from '../ui/states';
@@ -51,14 +51,13 @@ export default function Community() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [feedError, setFeedError] = useState<string | null>(null);
 
-  // Comments State (map postId -> list of comments)
+  // Comments State
   const [activeCommentPostId, setActiveCommentPostId] = useState<string | null>(null);
   const [commentsMap, setCommentsMap] = useState<Record<string, PostComment[]>>({});
   const [commentInputMap, setCommentInputMap] = useState<Record<string, string>>({});
   const [loadingCommentsPostId, setLoadingCommentsPostId] = useState<string | null>(null);
   const [commentErrorMap, setCommentErrorMap] = useState<Record<string, string | null>>({});
 
-  // Profanity screening helper
   const containsProfanity = (text: string): boolean => {
     const profanityRegex = /\b(badword|abuse|hate|spam|scam|idiot|stupid|bastard)\b/i;
     return profanityRegex.test(text);
@@ -83,52 +82,47 @@ export default function Community() {
   };
 
   useEffect(() => {
-    fetchPosts(sortOption);
+    void fetchPosts(sortOption);
   }, [sortOption]);
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!postContent.trim() || !user || posting) return;
+    if (!postTitle.trim() || !postContent.trim() || !user || posting) return;
 
     if (containsProfanity(postTitle) || containsProfanity(postContent)) {
-      setPostError('Post contains inappropriate language or prohibited keywords.');
+      setPostError('Post contains inappropriate language.');
       return;
     }
 
     setPosting(true);
     setPostError(null);
 
-    const tagsArray = postTags
-      .split(',')
-      .map(t => t.trim().replace(/^#/, ''))
-      .filter(Boolean);
+    const authorName = profile?.name || user.displayName || user.email?.split('@')[0] || 'Student Peer';
+    const tagArray = postTags.split(',').map(t => t.trim()).filter(Boolean);
 
     try {
       const res = await fetch('/api/v1/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: postTitle || 'Community Discussion',
-          content: postContent,
-          author: profile?.name || user.displayName || 'Anonymous Operative',
-          uid: user.uid,
+          title: postTitle.trim(),
+          content: postContent.trim(),
           type: postType,
-          tags: tagsArray.length > 0 ? tagsArray : ['General']
+          tags: tagArray,
+          author: authorName,
+          authorUid: user.uid
         })
       });
 
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || 'Failed to create post');
-      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create post');
 
-      const newPost = await res.json();
-      setPosts(prev => [newPost, ...prev]);
+      setPosts(prev => [data.post || data, ...prev]);
       setPostTitle('');
       setPostContent('');
       setPostTags('');
     } catch (err: any) {
-      setPostError(err.message || 'Unable to publish post.');
+      setPostError(err.message || 'Error publishing post');
     } finally {
       setPosting(false);
     }
@@ -136,55 +130,38 @@ export default function Community() {
 
   const handleUpvote = async (postId: string) => {
     if (!user) return;
-
-    // Optimistic UI Update
-    setPosts(prev =>
-      prev.map(p => {
-        const id = p.id || p._id;
-        if (id === postId) {
-          const hasUpvoted = p.upvoted_by?.includes(user.uid);
-          if (hasUpvoted) return p;
-          return {
-            ...p,
-            upvotes: (p.upvotes || 0) + 1,
-            upvoted_by: [...(p.upvoted_by || []), user.uid]
-          };
-        }
-        return p;
-      })
-    );
+    setPosts(prev => prev.map(p => {
+      if ((p.id || p._id) === postId) {
+        const hasUpvoted = p.upvoted_by?.includes(user.uid);
+        const newCount = hasUpvoted ? p.upvotes - 1 : p.upvotes + 1;
+        const newUpvotedBy = hasUpvoted 
+          ? (p.upvoted_by || []).filter(u => u !== user.uid)
+          : [...(p.upvoted_by || []), user.uid];
+        return { ...p, upvotes: newCount, upvoted_by: newUpvotedBy };
+      }
+      return p;
+    }));
 
     try {
       await fetch(`/api/v1/posts/${postId}/upvote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.uid })
+        body: JSON.stringify({ userUid: user.uid })
       });
     } catch (err) {
-      console.error('Error upvoting post:', err);
+      console.error('Error toggling upvote:', err);
     }
   };
 
-  const handleDeletePost = async (postId: string) => {
-    setPosts(prev => prev.filter(p => (p.id || p._id) !== postId));
-    try {
-      await fetch(`/api/v1/posts/${postId}`, { method: 'DELETE' });
-    } catch (err) {
-      console.error('Error deleting post:', err);
-    }
-  };
-
-  const toggleCommentsView = async (postId: string) => {
+  const toggleComments = async (postId: string) => {
     if (activeCommentPostId === postId) {
       setActiveCommentPostId(null);
       return;
     }
 
     setActiveCommentPostId(postId);
-
     if (!commentsMap[postId]) {
       setLoadingCommentsPostId(postId);
-    }
       try {
         const res = await fetch(`/api/v1/posts/${postId}/comments`);
         if (res.ok) {
@@ -197,6 +174,7 @@ export default function Community() {
       } finally {
         setLoadingCommentsPostId(null);
       }
+    }
   };
 
   const handleAddComment = async (postId: string) => {
@@ -225,7 +203,6 @@ export default function Community() {
     }));
     setCommentInputMap(prev => ({ ...prev, [postId]: '' }));
 
-    // Increment reply count on post
     setPosts(prev =>
       prev.map(p => ((p.id || p._id) === postId ? { ...p, repliesCount: (p.repliesCount || 0) + 1 } : p))
     );
@@ -244,69 +221,50 @@ export default function Community() {
     }
   };
 
-  const getTypeStyles = (type: string) => {
-    switch (type) {
-      case 'Win': return 'border-l-4 border-l-amber-500';
-      case 'Update': return 'border-l-4 border-l-blue-600';
-      case 'Question': return 'border-l-4 border-l-purple-600';
-      case 'Resource': return 'border-l-4 border-l-emerald-600';
-      default: return 'border-l-4 border-l-gray-300';
-    }
-  };
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'Win': return <Trophy className="w-4 h-4 text-amber-500" />;
-      case 'Update': return <Megaphone className="w-4 h-4 text-blue-600" />;
-      case 'Question': return <HelpCircle className="w-4 h-4 text-purple-600" />;
-      case 'Resource': return <LinkIcon className="w-4 h-4 text-emerald-600" />;
-      default: return null;
-    }
-  };
-
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center bg-white rounded-2xl border border-gray-200 shadow-sm max-w-lg mx-auto my-12 space-y-4">
-        <MessageSquare className="w-16 h-16 text-blue-500" />
-        <h2 className="text-2xl font-bold text-gray-900">Community Access Restricted</h2>
-        <p className="text-gray-500 text-sm">Please sign in to participate in student discussions, upvote wins, and share learning resources.</p>
+      <div className="w-full max-w-[1400px] mx-auto py-16 flex flex-col items-center justify-center p-10 text-center bg-white dark:bg-slate-900 rounded-3xl border border-[#e8ded1] dark:border-slate-800 space-y-4">
+        <MessageSquare className="w-12 h-12 text-[#b56b37]" />
+        <h2 className="text-2xl font-serif font-bold text-[#231f20] dark:text-white">Community Access Restricted</h2>
+        <p className="text-xs text-[#603620] dark:text-slate-400 max-w-sm font-medium">Please sign in to participate in student discussions, upvote wins, and share learning roadmaps.</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 animate-fade-in">
+    <div className="w-full max-w-[1400px] mx-auto space-y-8 font-sans pb-16 px-2 sm:px-4">
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-[#e8ded1] dark:border-slate-800 shadow-2xs">
         <div>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-              <MessageSquare className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Community Discussion Forum</h2>
-              <p className="text-xs text-gray-500 font-medium">Connect with ambitious peers, ask questions, share hackathon wins, and exchange study roadmaps.</p>
-            </div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#603620] text-[#f3e4bd] text-xs font-bold uppercase tracking-wider mb-2">
+            <MessageSquare className="w-3.5 h-3.5 text-[#f3e4bd]" />
+            <span>Student Discussion Network</span>
           </div>
+          <h1 className="text-2xl font-serif font-bold text-[#231f20] dark:text-white tracking-tight">
+            Community <span className="text-[#b56b37] italic">Forum</span>
+          </h1>
+          <p className="text-xs text-[#603620] dark:text-slate-400 font-medium mt-1">
+            Connect with ambitious peers, ask technical questions, share hackathon wins, and exchange study roadmaps.
+          </p>
         </div>
 
         {/* Sorting Tabs */}
-        <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl text-xs font-semibold shrink-0">
+        <div className="flex items-center gap-1.5 bg-[#fcf9f2] dark:bg-slate-800 p-1.5 rounded-2xl border border-[#e8ded1] dark:border-slate-700 text-xs shrink-0">
           <button
             onClick={() => setSortOption('latest')}
-            className={`px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
-              sortOption === 'latest' ? 'bg-white text-gray-900 shadow-2xs font-bold' : 'text-gray-600 hover:text-gray-900'
+            className={`px-3.5 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              sortOption === 'latest' ? 'bg-[#b56b37] text-white shadow-2xs' : 'text-[#603620] dark:text-slate-300 hover:bg-[#f6efe2]'
             }`}
           >
-            <Clock className="w-3.5 h-3.5 text-blue-600" /> Latest
+            <Clock className="w-3.5 h-3.5" /> Latest
           </button>
           <button
             onClick={() => setSortOption('trending')}
-            className={`px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
-              sortOption === 'trending' ? 'bg-white text-amber-700 shadow-2xs font-bold' : 'text-gray-600 hover:text-gray-900'
+            className={`px-3.5 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              sortOption === 'trending' ? 'bg-[#b56b37] text-white shadow-2xs' : 'text-[#603620] dark:text-slate-300 hover:bg-[#f6efe2]'
             }`}
           >
-            <Flame className="w-3.5 h-3.5 text-amber-500" /> Trending
+            <Flame className="w-3.5 h-3.5" /> Trending
           </button>
         </div>
       </div>
@@ -315,9 +273,9 @@ export default function Community() {
         {/* Main Feed Column */}
         <div className="flex-1 space-y-6">
           {/* Post Creator Box */}
-          <form onSubmit={handleCreatePost} className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm space-y-4">
+          <form onSubmit={handleCreatePost} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-[#e8ded1] dark:border-slate-800 shadow-2xs space-y-4">
             <div className="flex gap-3 items-start">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-base shrink-0 shadow-sm">
+              <div className="w-10 h-10 rounded-2xl bg-[#603620] text-[#f3e4bd] flex items-center justify-center font-serif font-bold text-base shrink-0 shadow-2xs">
                 {profile?.name?.charAt(0) || user.email?.charAt(0).toUpperCase() || 'U'}
               </div>
               <div className="flex-1 space-y-3">
@@ -326,43 +284,34 @@ export default function Community() {
                   value={postTitle}
                   onChange={(e) => setPostTitle(e.target.value)}
                   placeholder="Post Title (e.g. Secured GSoC 2026! or How to prep for Amazon OA?)"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-semibold"
+                  className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl px-4 py-2.5 text-xs text-[#231f20] dark:text-white outline-none font-bold"
                 />
                 <textarea
+                  rows={3}
                   value={postContent}
                   onChange={(e) => setPostContent(e.target.value)}
-                  placeholder="Share details, questions, or resources with the student network..."
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 min-h-[90px] resize-none"
-                  required
-                ></textarea>
-                <input
-                  type="text"
-                  value={postTags}
-                  onChange={(e) => setPostTags(e.target.value)}
-                  placeholder="Tags (comma-separated, e.g. GSoC, DSA, Internship)"
-                  className="w-full px-4 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  placeholder="Share details, code snippets, or advice..."
+                  className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none font-medium resize-none"
                 />
               </div>
             </div>
 
             {postError && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-700 flex items-center gap-2 font-medium">
-                <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+              <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-xl flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-red-600" />
                 {postError}
               </div>
             )}
 
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100">
-              <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-3 border-t border-[#e8ded1] dark:border-slate-800 text-xs">
+              <div className="flex items-center gap-2">
                 {['Win', 'Update', 'Question', 'Resource'].map(t => (
                   <button
                     key={t}
                     type="button"
                     onClick={() => setPostType(t)}
-                    className={`px-3 py-1 text-xs font-semibold rounded-full transition-all border ${
-                      postType === t
-                        ? 'bg-gray-900 text-white border-gray-900 shadow-2xs'
-                        : 'bg-white text-gray-600 hover:bg-gray-100 border-gray-200'
+                    className={`px-3 py-1.5 rounded-xl font-bold border transition-all cursor-pointer ${
+                      postType === t ? 'bg-[#231f20] text-white border-[#231f20]' : 'bg-[#fcf9f2] text-[#603620] border-[#e8ded1] hover:bg-[#f6efe2]'
                     }`}
                   >
                     {t}
@@ -372,222 +321,110 @@ export default function Community() {
 
               <button
                 type="submit"
-                disabled={posting}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold px-6 py-2.5 rounded-xl shadow-md shadow-blue-500/20 flex items-center gap-2 text-xs transition-all disabled:opacity-50"
+                disabled={posting || !postTitle.trim() || !postContent.trim()}
+                className="w-full sm:w-auto px-6 py-2.5 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-xs rounded-xl shadow-xs transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
               >
-                {posting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                {posting ? 'Publishing...' : 'Publish Post'}
+                {posting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-3.5 h-3.5" /> Publish Post</>}
               </button>
             </div>
           </form>
 
-          {/* Posts List */}
-          <div className="space-y-4">
-            {initialLoading && <SkeletonCard count={3} />}
-
-            {!initialLoading && feedError && <ErrorState title="Notice" description={feedError} />}
-
-            {!initialLoading && posts.map((post) => {
-              const postId = (post.id || post._id) as string;
-              const hasUpvoted = post.upvoted_by?.includes(user.uid);
-              const isOwnPost = post.authorUid === user.uid || post.author === profile?.name;
-              const isCommentsOpen = activeCommentPostId === postId;
-              const comments = commentsMap[postId] || [];
-              const commentInput = commentInputMap[postId] || '';
+          {/* Posts List Feed */}
+          {initialLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
+            </div>
+          ) : posts.length === 0 ? (
+            <EmptyState title="No community posts yet" description="Be the first student to publish a post!" />
+          ) : (
+            posts.map(p => {
+              const pid = p.id || p._id || 'post_' + Math.random();
+              const isUpvoted = p.upvoted_by?.includes(user.uid);
+              const comments = commentsMap[pid] || [];
+              const isCommentsOpen = activeCommentPostId === pid;
 
               return (
-                <div
-                  key={postId}
-                  className={`bg-white rounded-2xl p-6 border border-gray-200/80 shadow-sm transition-all hover:shadow-md ${getTypeStyles(post.type)}`}
-                >
-                  <div className="flex gap-4 items-start">
-                    <div className="w-10 h-10 rounded-xl bg-gray-100 text-gray-700 font-bold flex items-center justify-center shrink-0 border border-gray-200 text-sm">
-                      {post.author?.charAt(0).toUpperCase() || 'A'}
+                <div key={pid} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-[#e8ded1] dark:border-slate-800 shadow-2xs space-y-4 hover:border-[#b56b37] transition-all">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-[#603620] text-[#f3e4bd] flex items-center justify-center font-serif font-bold text-xs">
+                        {p.author.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-xs text-[#231f20] dark:text-white">{p.author}</h4>
+                        <span className="text-[10px] text-[#8c7569] font-medium">{new Date(p.createdAt).toLocaleDateString()}</span>
+                      </div>
                     </div>
 
-                    <div className="flex-1 space-y-2">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-gray-900 text-sm">{post.author}</h4>
-                          {isOwnPost && (
-                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-600 flex items-center gap-0.5">
-                              <UserCheck className="w-3 h-3" /> You
-                            </span>
-                          )}
-                        </div>
+                    <span className="px-2.5 py-1 bg-[#603620] text-[#f3e4bd] text-[10px] font-extrabold rounded-lg uppercase">
+                      {p.type}
+                    </span>
+                  </div>
 
-                        <span className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 bg-gray-100 rounded-lg text-gray-700">
-                          {getTypeIcon(post.type)} {post.type}
-                        </span>
-                      </div>
+                  {p.title && <h3 className="text-base font-serif font-bold text-[#231f20] dark:text-white">{p.title}</h3>}
+                  <p className="text-xs text-[#603620] dark:text-slate-300 font-medium leading-relaxed whitespace-pre-line">{p.content}</p>
 
-                      <p className="text-[11px] text-gray-400 font-medium">
-                        {post.createdAt ? new Date(post.createdAt).toLocaleString() : 'Just now'}
-                      </p>
+                  <div className="flex items-center justify-between pt-3 border-t border-[#e8ded1] dark:border-slate-800 text-xs">
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={() => handleUpvote(pid)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold border transition-colors cursor-pointer ${
+                          isUpvoted 
+                            ? 'bg-[#b56b37] text-white border-[#b56b37]' 
+                            : 'bg-[#fcf9f2] text-[#603620] border-[#e8ded1] hover:bg-[#f6efe2]'
+                        }`}
+                      >
+                        <Heart className={`w-3.5 h-3.5 ${isUpvoted ? 'fill-current' : ''}`} />
+                        <span>{p.upvotes || 0} Upvotes</span>
+                      </button>
 
-                      {post.title && <h3 className="text-base font-bold text-gray-900 pt-1">{post.title}</h3>}
-
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{post.content}</p>
-
-                      {/* Tags */}
-                      {post.tags && post.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 pt-2">
-                          {post.tags.map((tag, i) => (
-                            <span key={i} className="px-2 py-0.5 bg-gray-100 rounded-md text-xs font-medium text-gray-600 flex items-center gap-1">
-                              <Tag className="w-2.5 h-2.5 text-gray-400" /> #{tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Post Action Footer */}
-                      <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-4">
-                          <button
-                            onClick={() => handleUpvote(postId)}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all ${
-                              hasUpvoted
-                                ? 'bg-red-50 text-red-600 shadow-2xs'
-                                : 'text-gray-500 hover:text-red-500 hover:bg-gray-50'
-                            }`}
-                          >
-                            <Heart className={`w-4 h-4 ${hasUpvoted ? 'fill-red-500 text-red-500' : ''}`} />
-                            {post.upvotes || 0} Upvotes
-                          </button>
-
-                          <button
-                            onClick={() => toggleCommentsView(postId)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-blue-50 font-semibold transition-colors"
-                          >
-                            <MessageSquare className="w-4 h-4 text-blue-500" />
-                            {post.repliesCount || comments.length || 0} Comments
-                            {isCommentsOpen ? <ChevronUp className="w-3.5 h-3.5 ml-1" /> : <ChevronDown className="w-3.5 h-3.5 ml-1" />}
-                          </button>
-                        </div>
-
-                        {isOwnPost && (
-                          <button
-                            onClick={() => handleDeletePost(postId)}
-                            className="text-gray-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
-                            title="Delete Post"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Comments Dropdown List Section */}
-                      {isCommentsOpen && (
-                        <div className="mt-4 pt-4 border-t border-gray-100 space-y-4 bg-gray-50/70 p-4 rounded-xl animate-fade-in">
-                          <h5 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Comments & Discussion</h5>
-
-                          {/* Comment Form */}
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              value={commentInput}
-                              onChange={(e) =>
-                                setCommentInputMap(prev => ({ ...prev, [postId]: e.target.value }))
-                              }
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  handleAddComment(postId);
-                                }
-                              }}
-                              placeholder="Write a comment or answer..."
-                              className="flex-1 px-3.5 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
-                            />
-                            <button
-                              onClick={() => handleAddComment(postId)}
-                              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl flex items-center gap-1 transition-colors"
-                            >
-                              <Send className="w-3.5 h-3.5" /> Comment
-                            </button>
-                          </div>
-
-                          {commentErrorMap[postId] && (
-                            <p className="text-xs text-red-600 font-medium">{commentErrorMap[postId]}</p>
-                          )}
-
-                          {/* Comments List */}
-                          {loadingCommentsPostId === postId ? (
-                            <div className="flex justify-center py-4 text-gray-400">
-                              <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
-                            </div>
-                          ) : comments.length === 0 ? (
-                            <p className="text-xs text-gray-400 font-medium py-2">No comments yet. Start the conversation!</p>
-                          ) : (
-                            <div className="space-y-3 pt-2">
-                              {comments.map((comment, i) => (
-                                <div key={comment._id || comment.id || i} className="bg-white p-3 rounded-xl border border-gray-200/60 text-xs space-y-1">
-                                  <div className="flex justify-between items-center">
-                                    <span className="font-bold text-gray-900">{comment.author}</span>
-                                    <span className="text-[10px] text-gray-400">
-                                      {comment.createdAt ? new Date(comment.createdAt).toLocaleTimeString() : 'Just now'}
-                                    </span>
-                                  </div>
-                                  <p className="text-gray-700 font-normal leading-relaxed">{comment.content}</p>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
+                      <button
+                        onClick={() => toggleComments(pid)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold bg-[#fcf9f2] text-[#603620] border border-[#e8ded1] hover:bg-[#f6efe2] transition-colors cursor-pointer"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>{p.repliesCount || comments.length || 0} Replies</span>
+                      </button>
                     </div>
                   </div>
+
+                  {/* Comments Thread Drawer */}
+                  {isCommentsOpen && (
+                    <div className="pt-4 border-t border-[#e8ded1] space-y-3 animate-fade-in text-xs">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Write a peer response..."
+                          value={commentInputMap[pid] || ''}
+                          onChange={e => setCommentInputMap({ ...commentInputMap, [pid]: e.target.value })}
+                          className="flex-1 bg-[#fcf9f2] border border-[#e8ded1] rounded-xl px-3 py-2 text-xs text-[#231f20] outline-none"
+                        />
+                        <button
+                          onClick={() => handleAddComment(pid)}
+                          className="px-4 py-2 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Send className="w-3.5 h-3.5" /> Reply
+                        </button>
+                      </div>
+
+                      {commentErrorMap[pid] && (
+                        <p className="text-xs text-red-600 font-semibold">{commentErrorMap[pid]}</p>
+                      )}
+
+                      <div className="space-y-2 pt-2">
+                        {comments.map((c, i) => (
+                          <div key={c._id || i} className="p-3 rounded-xl bg-[#fcf9f2] border border-[#e8ded1]">
+                            <span className="font-bold text-[#231f20]">{c.author}</span>
+                            <p className="text-xs text-[#603620] mt-0.5 font-medium">{c.content}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
-            })}
-
-            {!initialLoading && !feedError && posts.length === 0 && (
-              <EmptyState title="No community posts yet" description="Be the first to share a win, ask a question, or post a learning resource!" />
-            )}
-          </div>
-        </div>
-
-        {/* Sidebar Column */}
-        <div className="w-full lg:w-[320px] space-y-6 shrink-0">
-          <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm space-y-4">
-            <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-amber-500" /> Top Community Contributors
-            </h3>
-            <div className="space-y-3">
-              {[
-                { name: 'Aarav Sharma', score: 142, role: 'Mentor' },
-                { name: 'Priya Patel', score: 98, role: 'Student' },
-                { name: 'Rohan Verma', score: 86, role: 'GSoC Alum' },
-                { name: 'Ananya Gupta', score: 74, role: 'Student' },
-                { name: 'Dev Sharma', score: 62, role: 'Hackathon Lead' }
-              ].map((c, i) => (
-                <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-none">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 text-xs font-bold flex items-center justify-center">
-                      {c.name.charAt(0)}
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold text-gray-900 block">{c.name}</span>
-                      <span className="text-[10px] text-gray-400">{c.role}</span>
-                    </div>
-                  </div>
-                  <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
-                    ★ {c.score}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm space-y-3">
-            <h3 className="font-bold text-gray-900 text-base">Trending Topics</h3>
-            <div className="flex flex-wrap gap-2">
-              {['#GSoC2026', '#MLH', '#IndiaScholarships', '#OpenSource', '#SystemDesign', '#Hackathon'].map(tag => (
-                <span key={tag} className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-lg cursor-pointer hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
+            })
+          )}
         </div>
       </div>
     </div>

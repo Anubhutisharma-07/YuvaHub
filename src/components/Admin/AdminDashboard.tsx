@@ -82,10 +82,10 @@ const AdminDashboard = () => {
 
     try {
       const [statsRes, scrapersRes, modRes, healthRes] = await Promise.all([
-        fetch('/api/v1/admin/scraper-stats', { headers }).then(r => r.json()).catch(() => null),
-        fetch('/api/v1/admin/scrapers', { headers }).then(r => r.json()).catch(() => null),
-        fetch('/api/v1/admin/moderation-queue', { headers }).then(r => r.json()).catch(() => null),
-        fetch('/api/v1/admin/scraper-health', { headers }).then(r => r.json()).catch(() => null)
+        fetch('/api/v1/admin/scraper-stats', { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch('/api/v1/admin/scrapers', { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch('/api/v1/admin/moderation-queue', { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch('/api/v1/admin/scraper-health', { headers }).then(r => r.ok ? r.json() : null).catch(() => null)
       ]);
 
       if (statsRes && !statsRes.error) {
