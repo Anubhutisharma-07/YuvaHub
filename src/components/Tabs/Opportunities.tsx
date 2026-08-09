@@ -1,34 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Users, ChevronRight, Clock, Star, Share2, Copy, RefreshCw, X } from 'lucide-react';
-import { UserProfile } from '../../types';
-import { searchOpportunities, trackInteraction } from '../../services/apiClient';
+import { Search, Filter, RefreshCw, X, Sparkles, Shield, Trophy, Briefcase, GraduationCap, Code2, Globe, ChevronLeft, ChevronRight, SlidersHorizontal, ArrowUpDown, Coins, MapPin, Check } from 'lucide-react';
+import { searchOpportunities } from '../../services/apiClient';
 import { AsyncState } from '../ui/states';
 import { useAppContext } from '../../context/AppContext';
 import { OpportunityCard } from '../OpportunityCard';
 
 export default function Opportunities() {
   const {
-    user,
-    profile,
     viewOpportunity: onViewDetails,
     appSearchQuery: searchQuery,
     setAppSearchQuery: setSearchQuery,
-    // Bookmark actions from centralized context — no local Firestore logic needed
     toggleBookmark,
     isBookmarked,
   } = useAppContext();
-
-  const qVal = searchQuery;
-  const setQVal = setSearchQuery;
 
   const [searchData, setSearchData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [retrying, setRetrying] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Quick Category Pill selection
+  const [activeCategoryPill, setActiveCategoryPill] = useState<string>('All');
+
   // Advanced Filter States
   const [filters, setFilters] = useState({
-    types: { 'Jobs': false, 'Internships': true, 'Hackathons': true, 'Scholarships': false, 'Fellowships': false },
+    types: { 'Jobs': false, 'Internships': false, 'Hackathons': false, 'Scholarships': false, 'Fellowships': false },
     locationTypes: { 'Remote': false, 'Onsite': false, 'Hybrid': false },
     stipend: 'All', // 'All' | 'Paid' | 'Unpaid'
     minSalary: 0,
@@ -42,15 +38,25 @@ export default function Opportunities() {
   const [sortBy, setSortBy] = useState('Most relevant');
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 8;
+
   const fetchData = async (q: string, isRetry = false) => {
     isRetry ? setRetrying(true) : setLoading(true);
     setError(null);
     try {
-      const activeTypes = Object.keys(filters.types).filter(k => (filters.types as any)[k]);
+      const activeTypesFromCheckboxes = Object.keys(filters.types).filter(k => (filters.types as any)[k]);
+      let combinedTypes = [...activeTypesFromCheckboxes];
+      
+      if (activeCategoryPill !== 'All' && !combinedTypes.includes(activeCategoryPill)) {
+        combinedTypes.push(activeCategoryPill);
+      }
+
       const activeLocs = Object.keys(filters.locationTypes).filter(k => (filters.locationTypes as any)[k]);
 
       const filterPayload: any = {};
-      if (activeTypes.length > 0) filterPayload.types = activeTypes;
+      if (combinedTypes.length > 0) filterPayload.types = combinedTypes;
       if (activeLocs.length > 0) filterPayload.locationTypes = activeLocs;
       if (filters.stipend !== 'All') filterPayload.stipend = filters.stipend;
       if (filters.minSalary > 0) filterPayload.minSalary = filters.minSalary;
@@ -65,12 +71,13 @@ export default function Opportunities() {
       }
 
       const results = await searchOpportunities(
-  q || "",
-  filterPayload,
-  undefined,
-  sortBy
-);
+        q || "",
+        filterPayload,
+        undefined,
+        sortBy
+      );
       setSearchData(results);
+      setCurrentPage(1);
     } catch (err) {
       console.error("[Opportunities] Failed to load:", err);
       setError('Unable to load opportunities. Please try again.');
@@ -82,13 +89,14 @@ export default function Opportunities() {
 
   useEffect(() => {
     const handler = setTimeout(() => {
-      fetchData(qVal);
+      fetchData(searchQuery);
     }, 350);
 
     return () => clearTimeout(handler);
-  }, [qVal, filters, sortBy]);
+  }, [searchQuery, filters, sortBy, activeCategoryPill]);
 
   const clearFilters = () => {
+    setActiveCategoryPill('All');
     setFilters({
       types: { 'Jobs': false, 'Internships': false, 'Hackathons': false, 'Scholarships': false, 'Fellowships': false },
       locationTypes: { 'Remote': false, 'Onsite': false, 'Hybrid': false },
@@ -101,43 +109,62 @@ export default function Opportunities() {
       verifiedOnly: false
     });
     setSortBy('Most relevant');
+    setSearchQuery('');
   };
 
   const handleToggleBookmark = async (id: string) => {
-    // Delegates to the centralized toggleBookmark action in AppContext.
-    // Firestore update, optimistic state, and profile sync all happen there.
     await toggleBookmark(id);
   };
 
-const filteredResults = searchData?.results ?? [];
+  const filteredResults = searchData?.results ?? [];
+  const totalItems = filteredResults.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
+  const paginatedResults = filteredResults.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
-  const getThumbStyle = (type: string) => {
-    const t = (type || '').toLowerCase();
-    if (t.includes('hackathon')) return 'bg-gradient-to-br from-[#0F172A] to-[#1E3A8A] text-white';
-    if (t.includes('quiz')) return 'bg-[#F8F9FF] border-b border-[#E2E8F0]';
-    if (t.includes('course') || t.includes('coding')) return 'bg-[#F0FDF4] border-b border-[#E2E8F0]';
-    return 'bg-[#FFF7ED] border-b border-[#E2E8F0]';
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
-  const getBadgeStyle = (type: string) => {
-    const t = type.toUpperCase();
-    if (t.includes('HACKATHON')) return 'bg-blue-100 text-blue-700';
-    if (t.includes('LIVE')) return 'bg-green-100 text-green-700';
-    if (t.includes('QUIZ')) return 'bg-purple-100 text-purple-700';
-    if (t.includes('CODING')) return 'bg-green-100 text-green-700';
-    return 'bg-orange-100 text-orange-700';
-  };
+  const categoryPills = [
+    { label: 'All', val: 'All' },
+    { label: 'Internships', val: 'Internships' },
+    { label: 'Hackathons', val: 'Hackathons' },
+    { label: 'Jobs', val: 'Jobs' },
+    { label: 'Scholarships', val: 'Scholarships' },
+    { label: 'Fellowships', val: 'Fellowships' },
+  ];
+
+  // Calculate active filter count for badge
+  const activeFiltersCount = 
+    (activeCategoryPill !== 'All' ? 1 : 0) +
+    Object.values(filters.types).filter(Boolean).length +
+    Object.values(filters.locationTypes).filter(Boolean).length +
+    (filters.stipend !== 'All' ? 1 : 0) +
+    (filters.isFree ? 1 : 0) +
+    (filters.verifiedOnly ? 1 : 0) +
+    (filters.deadlineType !== 'All' ? 1 : 0);
 
   const renderFilterControls = () => (
-    <div className="space-y-8">
-      {/* Type */}
+    <div className="space-y-6 text-xs text-[#231f20] dark:text-slate-200">
+      {/* Opportunity Type */}
       <div>
-        <h3 className="text-[11px] font-bold text-gray-500 uppercase tracking-[0.1em] mb-4">Opportunity Type</h3>
-        <div className="space-y-2.5">
+        <h3 className="font-bold text-[#603620] dark:text-slate-400 uppercase tracking-wider mb-2.5">Category</h3>
+        <div className="space-y-2">
           {Object.keys(filters.types).map(k => (
-            <label key={k} className="flex items-center gap-3 cursor-pointer group">
-              <input type="checkbox" checked={(filters.types as any)[k]} onChange={(e) => setFilters(f => ({ ...f, types: { ...f.types, [k]: e.target.checked } }))} className="w-4 h-4 rounded border-gray-300 text-[#2563EB] focus:ring-[#2563EB]" />
-              <span className="text-[13px] text-[#0F172A] group-hover:text-[#2563EB] transition-colors">{k}</span>
+            <label key={k} className="flex items-center gap-2.5 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={(filters.types as any)[k]}
+                onChange={(e) => setFilters(f => ({ ...f, types: { ...f.types, [k]: e.target.checked } }))}
+                className="w-4 h-4 rounded border-[#e8ded1] text-[#b56b37] focus:ring-[#b56b37]"
+              />
+              <span className="font-medium text-[#231f20] dark:text-slate-300 group-hover:text-[#b56b37] transition-colors">{k}</span>
             </label>
           ))}
         </div>
@@ -145,12 +172,17 @@ const filteredResults = searchData?.results ?? [];
 
       {/* Location Type */}
       <div>
-        <h3 className="text-[11px] font-bold text-gray-500 uppercase tracking-[0.1em] mb-4">Location Type</h3>
-        <div className="space-y-2.5">
+        <h3 className="font-bold text-[#603620] dark:text-slate-400 uppercase tracking-wider mb-2.5">Workplace</h3>
+        <div className="space-y-2">
           {Object.keys(filters.locationTypes).map(k => (
-            <label key={k} className="flex items-center gap-3 cursor-pointer group">
-              <input type="checkbox" checked={(filters.locationTypes as any)[k]} onChange={(e) => setFilters(f => ({ ...f, locationTypes: { ...f.locationTypes, [k]: e.target.checked } }))} className="w-4 h-4 rounded border-gray-300 text-[#2563EB] focus:ring-[#2563EB]" />
-              <span className="text-[13px] text-[#0F172A] group-hover:text-[#2563EB] transition-colors">{k}</span>
+            <label key={k} className="flex items-center gap-2.5 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={(filters.locationTypes as any)[k]}
+                onChange={(e) => setFilters(f => ({ ...f, locationTypes: { ...f.locationTypes, [k]: e.target.checked } }))}
+                className="w-4 h-4 rounded border-[#e8ded1] text-[#b56b37] focus:ring-[#b56b37]"
+              />
+              <span className="font-medium text-[#231f20] dark:text-slate-300 group-hover:text-[#b56b37] transition-colors">{k}</span>
             </label>
           ))}
         </div>
@@ -158,54 +190,51 @@ const filteredResults = searchData?.results ?? [];
 
       {/* Trust & Application Fee */}
       <div>
-        <h3 className="text-[11px] font-bold text-gray-500 uppercase tracking-[0.1em] mb-4">Trust & Fee Filters</h3>
-        <div className="space-y-2.5">
-          <label className="flex items-center gap-3 cursor-pointer group">
+        <h3 className="font-bold text-[#603620] dark:text-slate-400 uppercase tracking-wider mb-2.5">Trust & Requirements</h3>
+        <div className="space-y-2">
+          <label className="flex items-center gap-2.5 cursor-pointer group">
             <input
               type="checkbox"
               checked={filters.isFree}
               onChange={(e) => setFilters(f => ({ ...f, isFree: e.target.checked }))}
-              className="w-4 h-4 rounded border-gray-300 text-[#2563EB] focus:ring-[#2563EB]"
+              className="w-4 h-4 rounded border-[#e8ded1] text-[#63703d] focus:ring-[#63703d]"
             />
-            <span className="text-[13px] text-[#0F172A] group-hover:text-[#2563EB] transition-colors font-semibold">
-              Free to Apply Only
-            </span>
+            <span className="font-semibold text-[#63703d]">Free to Apply Only</span>
           </label>
 
-          <label className="flex items-center gap-3 cursor-pointer group">
+          <label className="flex items-center gap-2.5 cursor-pointer group">
             <input
               type="checkbox"
               checked={filters.verifiedOnly}
               onChange={(e) => setFilters(f => ({ ...f, verifiedOnly: e.target.checked }))}
-              className="w-4 h-4 rounded border-gray-300 text-[#2563EB] focus:ring-[#2563EB]"
+              className="w-4 h-4 rounded border-[#e8ded1] text-[#b56b37] focus:ring-[#b56b37]"
             />
-            <span className="text-[13px] text-[#0F172A] group-hover:text-[#2563EB] transition-colors font-semibold">
-              Verified Audit Only
-            </span>
+            <span className="font-semibold text-[#b56b37]">Verified Audit Only</span>
           </label>
         </div>
       </div>
 
-      {/* Stipend / Salary */}
+      {/* Stipend */}
       <div>
-        <h3 className="text-[11px] font-bold text-gray-500 uppercase tracking-[0.1em] mb-4">Stipend / Salary</h3>
-        <div className="space-y-3">
-          <div className="flex gap-2">
+        <h3 className="font-bold text-[#603620] dark:text-slate-400 uppercase tracking-wider mb-2.5">Stipend</h3>
+        <div className="space-y-2.5">
+          <div className="grid grid-cols-3 gap-1 p-1 bg-[#f6efe2] dark:bg-slate-800 rounded-lg border border-[#e8ded1] dark:border-slate-700">
             {['All', 'Paid', 'Unpaid'].map(opt => (
               <button
                 key={opt}
                 onClick={() => setFilters(f => ({ ...f, stipend: opt }))}
-                className={`flex-1 py-1.5 text-[12px] font-semibold border rounded-lg transition-colors ${filters.stipend === opt ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                className={`py-1 text-xs font-semibold rounded transition-all ${filters.stipend === opt ? 'bg-white dark:bg-slate-700 text-[#231f20] dark:text-white shadow-xs' : 'text-[#603620] dark:text-slate-400'}`}
               >
                 {opt}
               </button>
             ))}
           </div>
+
           {filters.stipend === 'Paid' && (
-            <div className="pt-2 animate-fade-in">
-              <div className="flex justify-between items-center text-[11px] text-gray-500 mb-2">
-                <span>Min Stipend</span>
-                <span className="font-bold text-[#0F172A]">₹{filters.minSalary.toLocaleString()}</span>
+            <div className="pt-1 space-y-1.5">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-[#8c7569]">Min Stipend</span>
+                <span className="font-bold text-[#63703d]">₹{filters.minSalary.toLocaleString()}</span>
               </div>
               <input
                 type="range"
@@ -214,7 +243,7 @@ const filteredResults = searchData?.results ?? [];
                 step="2000"
                 value={filters.minSalary}
                 onChange={(e) => setFilters(f => ({ ...f, minSalary: parseInt(e.target.value, 10) }))}
-                className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                className="w-full h-1 bg-[#e8ded1] dark:bg-slate-700 rounded appearance-none cursor-pointer accent-[#b56b37]"
               />
             </div>
           )}
@@ -223,40 +252,39 @@ const filteredResults = searchData?.results ?? [];
 
       {/* Deadline */}
       <div>
-        <h3 className="text-[11px] font-bold text-gray-500 uppercase tracking-[0.1em] mb-4">Deadline</h3>
-        <div className="space-y-3">
+        <h3 className="font-bold text-[#603620] dark:text-slate-400 uppercase tracking-wider mb-2.5">Deadline</h3>
+        <div className="space-y-2">
           {[
             { label: 'Anytime', val: 'All' },
             { label: 'Expiring soon (< 48h)', val: 'Soon' },
             { label: 'Active / Open', val: 'Active' },
             { label: 'Custom Date Range', val: 'Custom' }
           ].map(opt => (
-            <label key={opt.val} className="flex items-center gap-3 cursor-pointer group">
+            <label key={opt.val} className="flex items-center gap-2.5 cursor-pointer group">
               <input
                 type="radio"
                 name="deadlineType"
                 checked={filters.deadlineType === opt.val}
                 onChange={() => setFilters(f => ({ ...f, deadlineType: opt.val }))}
-                className="w-4 h-4 border-gray-300 text-[#2563EB] focus:ring-[#2563EB]"
+                className="w-4 h-4 border-[#e8ded1] text-[#b56b37] focus:ring-[#b56b37]"
               />
-              <span className="text-[13px] text-[#0F172A] group-hover:text-[#2563EB] transition-colors">{opt.label}</span>
+              <span className="font-medium text-[#231f20] dark:text-slate-300 group-hover:text-[#b56b37] transition-colors">{opt.label}</span>
             </label>
           ))}
+
           {filters.deadlineType === 'Custom' && (
-            <div className="space-y-2 pt-2 animate-fade-in">
+            <div className="space-y-2 pt-2">
               <input
                 type="date"
                 value={filters.startDate}
                 onChange={(e) => setFilters(f => ({ ...f, startDate: e.target.value }))}
-                className="w-full text-[12px] p-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-gray-700 bg-white"
-                placeholder="Start date"
+                className="w-full text-xs p-2 bg-white dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-lg text-[#231f20] dark:text-slate-200"
               />
               <input
                 type="date"
                 value={filters.endDate}
                 onChange={(e) => setFilters(f => ({ ...f, endDate: e.target.value }))}
-                className="w-full text-[12px] p-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 text-gray-700 bg-white"
-                placeholder="End date"
+                className="w-full text-xs p-2 bg-white dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-lg text-[#231f20] dark:text-slate-200"
               />
             </div>
           )}
@@ -266,144 +294,243 @@ const filteredResults = searchData?.results ?? [];
   );
 
   return (
-    <div className="max-w-[1200px] mx-auto flex items-start gap-8 font-sans pb-12">
+    <div className="w-full max-w-[1400px] mx-auto font-sans pb-16 px-2 sm:px-4 space-y-6">
 
-      {/* Left Sidebar - Filters */}
-      <aside className="w-[220px] shrink-0 hidden md:block">
-        <div className="flex items-center gap-2 mb-6">
-          <Filter className="w-5 h-5 text-gray-700" />
-          <h2 className="text-[15px] font-[700] text-gray-900">Filters</h2>
+      {/* Clean Professional Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-[#e8ded1] dark:border-slate-800 pb-6 pt-2">
+        <div className="space-y-1">
+          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[#231f20] dark:text-white tracking-tight">
+            Opportunities
+          </h1>
+          <p className="text-xs sm:text-sm text-[#603620] dark:text-slate-400 font-medium">
+            Discover verified hackathons, internships, scholarships, and jobs tailored for students.
+          </p>
         </div>
 
-        {/* Filter Controls */}
-        {renderFilterControls()}
+        {/* Action Controls */}
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          {/* Refresh Button */}
+          <button
+            onClick={() => fetchData(searchQuery)}
+            disabled={loading}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 text-xs font-semibold text-[#603620] dark:text-slate-300 hover:bg-[#f6efe2] dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-[#b56b37]' : ''}`} />
+            <span>Refresh</span>
+          </button>
 
-        <button onClick={clearFilters} className="mt-10 w-full py-2.5 border-[1.5px] border-[#E2E8F0] text-[#2563EB] text-[13px] font-bold rounded-[8px] hover:bg-[#EFF6FF] transition-colors cursor-pointer">
-          Clear Filters
-        </button>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 min-w-0">
-
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
-          <div className="hidden md:block">
-            <h1 className="text-[24px] font-[800] tracking-tight text-gray-900 mb-1">Opportunities Explorer</h1>
-            <p className="text-[14px] text-[#64748B]">Browse and filter the complete live database.</p>
-          </div>
-
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <button
-              onClick={() => setIsMobileFilterOpen(true)}
-              className="md:hidden flex items-center justify-center gap-2 bg-white border border-[#E2E8F0] px-4 py-2 rounded-[8px] text-[13px] font-[600] text-[#0F172A] hover:bg-[#F8FAFC] transition-colors shadow-sm flex-1"
-            >
-              <Filter className="w-4 h-4 text-gray-500" />
-              <span>Filters</span>
-            </button>
-            {/* Sort Select */}
+          {/* Sort Dropdown */}
+          <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 text-xs font-semibold text-[#231f20] dark:text-slate-200">
+            <ArrowUpDown className="w-3.5 h-3.5 text-[#b56b37]" />
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="bg-white border border-[#E2E8F0] px-3 py-2 rounded-[8px] text-[13px] text-[#0F172A] outline-none focus:ring-2 focus:ring-[#2563EB] flex-1 md:flex-none"
+              className="bg-transparent text-xs font-semibold text-[#231f20] dark:text-slate-200 outline-none cursor-pointer"
             >
-              <option value="Most relevant">Most relevant</option>
-              <option value="Newest">Newest</option>
-              <option value="Deadline">Deadline</option>
-              <option value="Recently updated">Recently updated</option>
+              <option value="Most relevant" className="bg-white text-[#231f20]">Most Relevant</option>
+              <option value="Newest" className="bg-white text-[#231f20]">Newest First</option>
+              <option value="Deadline" className="bg-white text-[#231f20]">Expiring Soonest</option>
+              <option value="Recently updated" className="bg-white text-[#231f20]">Recently Updated</option>
             </select>
-
-            <button
-              onClick={() => fetchData(qVal)}
-              disabled={loading}
-              className="flex items-center gap-2 bg-white border border-[#E2E8F0] px-4 py-2 rounded-[8px] text-[13px] font-[600] text-[#0F172A] hover:bg-[#F8FAFC] transition-colors shadow-sm disabled:opacity-50"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Refresh</span>
-            </button>
           </div>
         </div>
+      </div>
 
-        {/* Search Header for Mobile */}
-        <div className="md:hidden relative mb-6">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+      {/* Search & Category Navigation */}
+      <div className="space-y-4">
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8c7569]" />
           <input
             type="text"
-            placeholder="Search standard competitions..."
-            className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-[8px] px-10 py-3 text-[14px]"
-            value={qVal}
-            onChange={e => setQVal(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && fetchData(qVal)}
+            placeholder="Search by title, skills, organization, or location..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-xl pl-11 pr-24 py-3 text-sm text-[#231f20] dark:text-white placeholder-[#8c7569] outline-none focus:border-[#b56b37] focus:ring-1 focus:ring-[#b56b37] transition-all shadow-2xs"
           />
+          {searchQuery ? (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#8c7569] hover:text-[#231f20]"
+            >
+              Clear
+            </button>
+          ) : null}
         </div>
 
-        <AsyncState
-          loading={loading}
-          error={error}
-          empty={filteredResults.length === 0}
-          onRetry={() => void fetchData(qVal, true)}
-          retrying={retrying}
-          skeletonCount={searchData?.results?.length || 4}
-          emptyTitle="No opportunities found"
-          emptyDescription="Try changing your search or filters, then search again."
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-[16px]">
-            {filteredResults.map((opp: any, i: number) => (
-              <OpportunityCard
-                key={opp.id || i}
-                opportunity={opp}
-                onViewDetails={onViewDetails}
-                onToggleBookmark={handleToggleBookmark}
-                isBookmarked={isBookmarked(opp.id)}
-              />
-            ))}
-          </div>
-        </AsyncState>
+        {/* Minimal Category Segmented Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+          {categoryPills.map((pill) => {
+            const isActive = activeCategoryPill === pill.val;
+            return (
+              <button
+                key={pill.val}
+                onClick={() => setActiveCategoryPill(pill.val)}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                  isActive
+                    ? 'bg-[#231f20] dark:bg-white text-white dark:text-[#231f20] font-bold'
+                    : 'bg-white dark:bg-slate-900 text-[#603620] dark:text-slate-400 border border-[#e8ded1] dark:border-slate-800 hover:bg-[#f6efe2] dark:hover:bg-slate-800'
+                }`}
+              >
+                {pill.label}
+              </button>
+            );
+          })}
+        </div>
 
-        {/* Pagination */}
-        {!loading && filteredResults?.length > 0 && (
-          <div className="flex items-center justify-center gap-[6px] mt-10">
-            <button className="w-[36px] h-[36px] rounded-[8px] bg-white border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:border-[#2563EB] hover:text-[#2563EB] transition-colors">‹</button>
-            <button className="w-[36px] h-[36px] rounded-[8px] bg-[#2563EB] text-white font-medium flex items-center justify-center">1</button>
-            <button className="w-[36px] h-[36px] rounded-[8px] bg-white border border-[#E2E8F0] flex items-center justify-center text-gray-700 hover:border-[#2563EB] hover:text-[#2563EB] transition-colors">2</button>
-            <button className="w-[36px] h-[36px] rounded-[8px] bg-white border border-[#E2E8F0] flex items-center justify-center text-[#64748B]">...</button>
-            <button className="w-[36px] h-[36px] rounded-[8px] bg-white border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:border-[#2563EB] hover:text-[#2563EB] transition-colors">›</button>
+        {/* Active Filter Chips Row */}
+        {activeFiltersCount > 0 && (
+          <div className="flex items-center gap-2 flex-wrap text-xs pt-1">
+            <span className="text-[#8c7569] font-medium">Active filters:</span>
+            {activeCategoryPill !== 'All' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-[#f6efe2] border border-[#e8ded1] text-[#603620] font-medium">
+                {activeCategoryPill}
+                <X className="w-3 h-3 cursor-pointer hover:text-[#b56b37]" onClick={() => setActiveCategoryPill('All')} />
+              </span>
+            )}
+            {filters.isFree && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-[#63703d]/10 border border-[#63703d]/20 text-[#63703d] font-medium">
+                Free to Apply
+                <X className="w-3 h-3 cursor-pointer hover:text-[#231f20]" onClick={() => setFilters(f => ({ ...f, isFree: false }))} />
+              </span>
+            )}
+            {filters.verifiedOnly && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-[#b56b37]/10 border border-[#b56b37]/20 text-[#b56b37] font-medium">
+                Verified Only
+                <X className="w-3 h-3 cursor-pointer hover:text-[#231f20]" onClick={() => setFilters(f => ({ ...f, verifiedOnly: false }))} />
+              </span>
+            )}
+            <button
+              onClick={clearFilters}
+              className="text-[#b56b37] hover:underline font-bold text-xs ml-1"
+            >
+              Clear all
+            </button>
           </div>
         )}
-      </main>
+      </div>
 
-      {/* Mobile slide-out filter drawer */}
-      {isMobileFilterOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end md:hidden bg-gray-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-xs h-full bg-white shadow-2xl flex flex-col relative p-6 overflow-y-auto animate-slide-in-right">
-            <div className="flex items-center justify-between border-b pb-4 mb-6">
-              <div className="flex items-center gap-2">
-                <Filter className="w-5 h-5 text-gray-700" />
-                <h2 className="text-[16px] font-[700] text-gray-900">Filters</h2>
-              </div>
-              <button
-                onClick={() => setIsMobileFilterOpen(false)}
-                className="p-1 rounded-full hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-900"
-              >
-                <X className="w-5 h-5" />
+      {/* Main Grid Layout */}
+      <div className="flex items-start gap-6">
+
+        {/* Minimal Left Filter Sidebar (Desktop) */}
+        <aside className="w-56 shrink-0 hidden md:block bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-xl p-4 shadow-2xs sticky top-6">
+          <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#e8ded1] dark:border-slate-800">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#231f20] dark:text-slate-200">Filters</span>
+            {activeFiltersCount > 0 && (
+              <button onClick={clearFilters} className="text-[11px] font-semibold text-[#b56b37] hover:underline">
+                Reset
               </button>
-            </div>
+            )}
+          </div>
+          {renderFilterControls()}
+        </aside>
 
-            <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+        {/* Opportunity List & Grid */}
+        <main className="flex-1 min-w-0 space-y-4">
+          <div className="flex justify-between items-center text-xs text-[#8c7569] dark:text-slate-400 font-medium">
+            <span>Showing <strong className="text-[#231f20] dark:text-slate-200">{totalItems}</strong> opportunities</span>
+            <button
+              onClick={() => setIsMobileFilterOpen(true)}
+              className="md:hidden flex items-center gap-1 font-bold text-[#b56b37]"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <span>Filters ({activeFiltersCount})</span>
+            </button>
+          </div>
+
+          <AsyncState
+            loading={loading}
+            error={error}
+            empty={filteredResults.length === 0}
+            onRetry={() => void fetchData(searchQuery, true)}
+            retrying={retrying}
+            skeletonCount={4}
+            emptyTitle="No opportunities found"
+            emptyDescription="Try clearing your filters or searching for a different term."
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {paginatedResults.map((opp: any, i: number) => (
+                <OpportunityCard
+                  key={opp.id || i}
+                  opportunity={opp}
+                  onViewDetails={onViewDetails}
+                  onToggleBookmark={handleToggleBookmark}
+                  isBookmarked={isBookmarked(opp.id)}
+                />
+              ))}
+            </div>
+          </AsyncState>
+
+          {/* Clean Pagination */}
+          {!loading && filteredResults.length > 0 && totalPages > 1 && (
+            <div className="flex items-center justify-between pt-6 border-t border-[#e8ded1] dark:border-slate-800 text-xs">
+              <span className="text-[#8c7569]">
+                Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
+              </span>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="p-1.5 rounded-lg border border-[#e8ded1] dark:border-slate-800 bg-white dark:bg-slate-900 disabled:opacity-40"
+                >
+                  <ChevronLeft className="w-4 h-4 text-[#231f20] dark:text-slate-300" />
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => handlePageChange(p)}
+                    className={`w-7 h-7 rounded-lg text-xs font-bold ${
+                      currentPage === p
+                        ? 'bg-[#231f20] text-white'
+                        : 'bg-white border border-[#e8ded1] text-[#603620] hover:bg-[#f6efe2]'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="p-1.5 rounded-lg border border-[#e8ded1] dark:border-slate-800 bg-white dark:bg-slate-900 disabled:opacity-40"
+                >
+                  <ChevronRight className="w-4 h-4 text-[#231f20] dark:text-slate-300" />
+                </button>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
+
+      {/* Mobile Drawer Filter */}
+      {isMobileFilterOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end md:hidden bg-[#231f20]/40 backdrop-blur-xs">
+          <div className="w-full max-w-xs h-full bg-white dark:bg-slate-900 border-l border-[#e8ded1] dark:border-slate-800 p-6 flex flex-col justify-between overflow-y-auto">
+            <div className="space-y-4">
+              <div className="flex justify-between items-center border-b border-[#e8ded1] pb-3">
+                <h3 className="font-bold text-sm text-[#231f20] dark:text-slate-100">Filter Opportunities</h3>
+                <button onClick={() => setIsMobileFilterOpen(false)}>
+                  <X className="w-4 h-4 text-[#8c7569]" />
+                </button>
+              </div>
               {renderFilterControls()}
             </div>
 
-            <div className="border-t pt-4 mt-6 flex gap-3">
+            <div className="flex gap-2 pt-4 border-t border-[#e8ded1]">
               <button
                 onClick={() => { clearFilters(); setIsMobileFilterOpen(false); }}
-                className="flex-1 py-3 border border-gray-200 rounded-xl text-[13px] font-bold text-gray-500 hover:bg-gray-50 transition-colors cursor-pointer"
+                className="flex-1 py-2 rounded-lg border border-[#e8ded1] text-xs font-bold text-[#603620]"
               >
-                Clear All
+                Reset
               </button>
               <button
                 onClick={() => setIsMobileFilterOpen(false)}
-                className="flex-1 py-3 bg-blue-600 rounded-xl text-[13px] font-bold text-white hover:bg-blue-700 transition-colors cursor-pointer shadow-md shadow-blue-500/10"
+                className="flex-1 py-2 rounded-lg bg-[#b56b37] text-xs font-bold text-white"
               >
-                Show Results
+                Apply
               </button>
             </div>
           </div>

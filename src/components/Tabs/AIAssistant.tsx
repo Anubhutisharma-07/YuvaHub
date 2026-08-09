@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 
-import { FileText, Bot, Briefcase, Target,
-BookOpen,
-CheckCircle,
-Circle,GraduationCap, Sparkles, ChevronRight, CheckCircle, Search, ScrollText, Send, Download } from 'lucide-react';
-import { FileText, Bot, Briefcase, GraduationCap, Sparkles, ChevronRight, CheckCircle, Search, ScrollText, Send, Download, Compass, Clock, Bookmark, Lightbulb } from 'lucide-react';
+import { 
+  FileText, Bot, Briefcase, Target, BookOpen, CheckCircle, Circle, 
+  GraduationCap, Sparkles, ChevronRight, Search, ScrollText, Send, 
+  Download, Compass, Clock, Bookmark, Lightbulb 
+} from 'lucide-react';
 
 import { UserProfile } from '../../types';
 import * as geminiService from '../../services/gemini';

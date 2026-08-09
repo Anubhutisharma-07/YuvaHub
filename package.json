@@ -24,7 +24,8 @@
     "verify:client-secrets": "node scripts/verify-client-secrets.mjs",
     "test:client-secrets": "vitest run tests/client-secret-boundary.test.ts",
     "audit": "npm audit --omit=dev",
-    "audit:fix": "npm install --package-lock-only && npm audit"
+    "audit:fix": "npm install --package-lock-only && npm audit",
+    "prepare": "git config core.hooksPath .githooks"
   },
   "dependencies": {
     "@bull-board/api": "^8.1.2",
