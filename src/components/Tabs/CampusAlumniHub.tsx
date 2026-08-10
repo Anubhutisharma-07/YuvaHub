@@ -26,10 +26,12 @@ import {
   X,
   UserCheck,
   Clock,
-  TrendingUp
+  TrendingUp,
+  CalendarPlus,
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { EmptyState } from '../ui/states';
+import { downloadICS } from '../../lib/icsExport';
 
 export default function CampusAlumniHub() {
   const { user, profile } = useAppContext();
