@@ -5,6 +5,7 @@ import { Bounty } from '../../types';
 import Leaderboard from '../ui/Leaderboard';
 import BountyChat from '../BountyChat';
 import { EmptyState, ErrorState } from '../ui/states';
+import { Coins, Plus, Sparkles, MessageSquare, CheckCircle, Clock, Award, X } from 'lucide-react';
 
 export default function BountyBoard() {
   const { profile, karmaBalance } = useAppContext();
@@ -42,7 +43,7 @@ export default function BountyBoard() {
     e.preventDefault();
     if (!auth.currentUser || !profile) return;
     if (karmaBalance < newReward) {
-      alert("Insufficient karma points.");
+      alert("Insufficient karma points balance.");
       return;
     }
     
@@ -97,17 +98,27 @@ export default function BountyBoard() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="w-full max-w-[1400px] mx-auto space-y-8 font-sans pb-16 px-2 sm:px-4">
+      {/* Header Banner - YuvaHub Brand Theme */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 p-6 rounded-3xl shadow-2xs">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Peer Mentorship Bounties</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Spend Karma to get help, or earn Karma by helping others.</p>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#603620] text-[#f3e4bd] text-xs font-bold uppercase tracking-wider mb-2">
+            <Coins className="w-3.5 h-3.5 text-[#f3e4bd]" />
+            <span>Peer Karma Exchange</span>
+          </div>
+          <h1 className="text-2xl font-serif font-bold text-[#231f20] dark:text-white tracking-tight">
+            Mentorship <span className="text-[#b56b37] italic">Bounty Board</span>
+          </h1>
+          <p className="text-xs text-[#603620] dark:text-slate-400 font-medium mt-1">
+            Spend Karma points to request 1-on-1 help, or complete student tasks to earn Karma points.
+          </p>
         </div>
+
         <button 
           onClick={() => setShowPostModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium transition shadow-sm shadow-blue-500/20 flex items-center gap-2"
+          className="bg-[#b56b37] hover:bg-[#96552a] text-white px-5 py-3 rounded-xl text-xs font-bold transition shadow-md flex items-center gap-2 cursor-pointer shrink-0"
         >
-          <span>➕</span> Post a Bounty
+          <Plus className="w-4 h-4" /> Post a Bounty
         </button>
       </div>
 
@@ -115,7 +126,7 @@ export default function BountyBoard() {
         <div className="lg:col-span-2 space-y-4">
           {loading ? (
             <div className="animate-pulse space-y-4">
-              {[1,2,3].map(i => <div key={i} className="h-32 bg-gray-100 dark:bg-gray-800 rounded-xl w-full" />)}
+              {[1,2,3].map(i => <div key={i} className="h-32 bg-[#f6efe2] dark:bg-slate-800 rounded-2xl w-full" />)}
             </div>
           ) : error ? (
             <ErrorState
@@ -129,37 +140,39 @@ export default function BountyBoard() {
           ) : bounties.length === 0 ? (
             <EmptyState
               title="No active bounties"
-              description="Be the first to ask for help from the community!"
+              description="Be the first to request mentorship help from the community!"
             />
           ) : bounties.map(bounty => (
-            <div key={bounty.id} className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition">
-              <div className="flex justify-between items-start mb-3">
-                <h3 className="font-bold text-lg text-gray-900 dark:text-white">{bounty.title}</h3>
-                <div className="inline-flex items-center gap-1.5 bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-500 px-3 py-1 rounded-full font-bold shadow-sm">
-                  <span>💠</span> {bounty.reward}
+            <div key={bounty.id} className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-[#e8ded1] dark:border-slate-800 shadow-2xs hover:border-[#b56b37] transition-all space-y-4">
+              <div className="flex justify-between items-start gap-4">
+                <h3 className="font-serif font-bold text-base text-[#231f20] dark:text-white leading-snug">{bounty.title}</h3>
+                <div className="inline-flex items-center gap-1.5 bg-[#f3e4bd] text-[#603620] px-3 py-1 rounded-full text-xs font-extrabold shadow-2xs border border-[#e8ded1] shrink-0">
+                  <Coins className="w-3.5 h-3.5 text-[#b56b37]" /> {bounty.reward} Karma
                 </div>
               </div>
-              <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2">{bounty.description}</p>
-              <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-50 dark:border-gray-700/50">
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs">
+
+              <p className="text-xs text-[#603620] dark:text-slate-300 font-medium leading-relaxed line-clamp-3">{bounty.description}</p>
+              
+              <div className="flex items-center justify-between pt-4 border-t border-[#e8ded1] dark:border-slate-800 text-xs">
+                <div className="flex items-center gap-2 text-[#8c7569]">
+                  <div className="w-7 h-7 rounded-full bg-[#603620] text-[#f3e4bd] flex items-center justify-center font-serif font-bold text-xs shadow-2xs">
                     {bounty.posterName?.charAt(0).toUpperCase()}
                   </div>
-                  <span>Posted by <span className="font-medium text-gray-700 dark:text-gray-300">{bounty.posterName}</span></span>
+                  <span className="font-semibold text-[#231f20] dark:text-slate-200">Posted by {bounty.posterName}</span>
                 </div>
                 
                 {bounty.status === 'open' && bounty.posterId !== profile?.uid && (
-                  <button onClick={() => handleAcceptBounty(bounty.id)} className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium text-sm">
+                  <button onClick={() => handleAcceptBounty(bounty.id)} className="bg-[#b56b37] hover:bg-[#96552a] text-white px-4 py-2 rounded-xl font-bold text-xs shadow-2xs transition-colors cursor-pointer">
                     Accept Bounty
                   </button>
                 )}
                 {bounty.status === 'accepted' && (bounty.posterId === profile?.uid || bounty.mentorId === profile?.uid) && (
-                  <button onClick={() => setActiveChatBounty(bounty)} className="bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-4 py-1.5 rounded-lg font-medium text-sm">
-                    Open Chat
+                  <button onClick={() => setActiveChatBounty(bounty)} className="bg-[#603620] hover:bg-[#482817] text-[#f3e4bd] px-4 py-2 rounded-xl font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer">
+                    <MessageSquare className="w-3.5 h-3.5" /> Open Chat
                   </button>
                 )}
                 {bounty.status === 'accepted' && bounty.posterId !== profile?.uid && bounty.mentorId !== profile?.uid && (
-                  <span className="text-sm text-gray-400">Accepted by {bounty.mentorName}</span>
+                  <span className="text-xs font-bold text-[#63703d]">Accepted by {bounty.mentorName}</span>
                 )}
               </div>
             </div>
@@ -172,26 +185,34 @@ export default function BountyBoard() {
       </div>
 
       {showPostModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6 shadow-xl border border-gray-100 dark:border-gray-700">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Post a Bounty</h3>
-            <form onSubmit={handlePostBounty} className="space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-[#e8ded1] dark:border-slate-800 space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-[#e8ded1]">
+              <h3 className="text-base font-serif font-bold text-[#231f20] dark:text-white flex items-center gap-2">
+                <Coins className="w-5 h-5 text-[#b56b37]" /> Post a Bounty
+              </h3>
+              <button onClick={() => setShowPostModal(false)} className="text-[#8c7569] hover:text-[#231f20] p-1">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handlePostBounty} className="space-y-4 text-xs">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
-                <input required type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)} className="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-4 py-2" placeholder="e.g. Need mock interview for Google" />
+                <label className="block font-bold text-[#603620] uppercase mb-1">Title</label>
+                <input required type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)} className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none" placeholder="e.g. Mock Interview for Google SWE" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-                <textarea required value={newDesc} onChange={e => setNewDesc(e.target.value)} rows={3} className="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-4 py-2" placeholder="Describe what you need help with..." />
+                <label className="block font-bold text-[#603620] uppercase mb-1">Description</label>
+                <textarea required value={newDesc} onChange={e => setNewDesc(e.target.value)} rows={3} className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none resize-none" placeholder="Describe what help you need..." />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Karma Reward</label>
-                <input required type="number" min={10} max={Math.max(10, karmaBalance)} value={newReward} onChange={e => setNewReward(parseInt(e.target.value)||0)} className="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-4 py-2" />
-                <p className="text-xs text-gray-500 mt-1">Available balance: {karmaBalance}</p>
+                <label className="block font-bold text-[#603620] uppercase mb-1">Karma Reward Points</label>
+                <input required type="number" min={10} max={Math.max(10, karmaBalance)} value={newReward} onChange={e => setNewReward(parseInt(e.target.value)||0)} className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none" />
+                <p className="text-[11px] text-[#8c7569] mt-1 font-semibold">Available Karma Balance: {karmaBalance}</p>
               </div>
-              <div className="flex justify-end gap-3 pt-4">
-                <button type="button" onClick={() => setShowPostModal(false)} className="px-4 py-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">Cancel</button>
-                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium">Post Bounty</button>
+              <div className="flex justify-end gap-3 pt-3 border-t border-[#e8ded1]">
+                <button type="button" onClick={() => setShowPostModal(false)} className="px-4 py-2 text-xs font-bold text-[#603620] bg-[#f6efe2] rounded-xl">Cancel</button>
+                <button type="submit" className="bg-[#b56b37] hover:bg-[#96552a] text-white px-5 py-2 text-xs font-bold rounded-xl shadow-xs cursor-pointer">Post Bounty</button>
               </div>
             </form>
           </div>
