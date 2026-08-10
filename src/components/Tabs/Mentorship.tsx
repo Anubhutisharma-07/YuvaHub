@@ -7,6 +7,7 @@ import { db } from '../../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ChatMessage } from '../../types';
 import { chatWithAIMentorBackend } from '../../services/apiClient';
+import { fetchMySessions, updateSessionStatus } from '../../services/mentorshipApi';
 import { EmptyState, ErrorState, LoadingState } from '../ui/states';
 import { useAppContext } from '../../context/AppContext';
 
@@ -39,7 +40,7 @@ const DUMMY_MENTORS: Mentor[] = [
 ];
 
 export default function Mentorship() {
-  const { user } = useAppContext();
+  const { user, setActiveTab } = useAppContext();
   const [view, setView] = useState<'ai' | 'human' | 'bookings'>('human');
 
   return (
@@ -90,6 +91,7 @@ export default function Mentorship() {
           >
             <span className="flex items-center gap-1.5"><Bot className="w-3.5 h-3.5" /> AI Mentor</span>
           </button>
+          </div>
         </div>
       </header>
 

@@ -330,7 +330,7 @@ function App() {
       case 'project_showcase': return <ProjectShowcaseVault />;
       case 'star_interview': return <StarInterviewStudio />;
       case 'submit': return <SubmitOpportunity />;
-      case 'mentorship': return <Mentorship />;
+      case 'mentorship': return <MentorshipAdvisoryStudio />;
       case 'bounty_board': return <BountyBoard />;
       case 'community': return <Community />;
       case 'profile': return <Profile />;
