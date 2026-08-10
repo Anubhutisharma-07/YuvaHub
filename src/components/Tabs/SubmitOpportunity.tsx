@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, Loader2 } from 'lucide-react';
+import { Check, Loader2, Send, PlusCircle, Shield, Sparkles } from 'lucide-react';
 import { submitOpportunity } from '../../services/apiClient';
 import { ErrorState } from '../ui/states';
 import { useAppContext } from '../../context/AppContext';
@@ -32,7 +32,7 @@ export default function SubmitOpportunity() {
     setLoading(true);
     setSubmitError(null);
     try {
-      if (!user) throw new Error("Must be logged in to submit.");
+      if (!user) throw new Error("Must be logged in to submit an opportunity.");
       
       const tagsArray = formData.tags.split(',').map(t => t.trim()).filter(Boolean);
       
@@ -65,22 +65,30 @@ export default function SubmitOpportunity() {
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Sign in to Submit</h2>
-        <p className="text-gray-500 max-w-md">You need to be signed in to submit an opportunity to the YuvaHub network.</p>
+      <div className="w-full max-w-[1400px] mx-auto py-16 flex flex-col items-center justify-center text-center">
+        <div className="p-4 rounded-full bg-[#f6efe2] border border-[#e8ded1] text-[#603620] mb-4">
+          <PlusCircle className="w-8 h-8 text-[#b56b37]" />
+        </div>
+        <h2 className="text-2xl font-serif font-bold text-[#231f20] mb-2">Sign in to Submit</h2>
+        <p className="text-sm text-[#603620] font-medium max-w-md">You need to be signed in to submit an opportunity to the YuvaHub network.</p>
       </div>
     );
   }
 
   if (success) {
     return (
-      <div className="max-w-2xl mx-auto mt-12 clean-card p-12 text-center flex flex-col items-center">
-        <div className="w-16 h-16 bg-green-100 text-green-600 flex items-center justify-center rounded-full mb-6">
-          <Check className="w-8 h-8" />
+      <div className="w-full max-w-2xl mx-auto mt-12 bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-10 text-center flex flex-col items-center shadow-md space-y-4">
+        <div className="w-16 h-16 bg-[#63703d]/15 text-[#63703d] flex items-center justify-center rounded-full border border-[#63703d]/30">
+          <Check className="w-8 h-8 text-[#63703d]" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Opportunity Submitted!</h2>
-        <p className="text-gray-600 mb-8">Your opportunity is live for review. It'll appear within 24 hours.</p>
-        <button onClick={() => setSuccess(false)} className="clean-btn px-6 py-2.5">Submit Another</button>
+        <h2 className="text-2xl font-serif font-bold text-[#231f20] dark:text-white">Opportunity Submitted!</h2>
+        <p className="text-sm text-[#603620] dark:text-slate-300 font-medium">Your opportunity is live for review by our moderation team. It will appear within 24 hours.</p>
+        <button 
+          onClick={() => setSuccess(false)} 
+          className="px-6 py-3 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-xs rounded-xl shadow-md transition-colors"
+        >
+          Submit Another Opportunity
+        </button>
       </div>
     );
   }
@@ -100,87 +108,98 @@ export default function SubmitOpportunity() {
   const isTagSelected = (tag: string) => formData.tags.split(',').map(t => t.trim()).includes(tag);
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
-      <header>
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900 mb-2">
+    <div className="w-full max-w-[1400px] mx-auto space-y-8 font-sans pb-16 px-2 sm:px-4">
+      {/* Header */}
+      <header className="border-b border-[#e8ded1] dark:border-slate-800 pb-6 pt-2 space-y-2">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#603620] text-[#f3e4bd] text-xs font-bold uppercase tracking-wider">
+          <PlusCircle className="w-3.5 h-3.5 text-[#f3e4bd]" />
+          <span>Organizer Submission Portal</span>
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[#231f20] dark:text-white tracking-tight">
           Submit Opportunity
-        </h2>
-        <p className="text-gray-500 font-medium">Contribute verified opportunities to the network.</p>
+        </h1>
+        <p className="text-xs sm:text-sm text-[#603620] dark:text-slate-400 font-medium">
+          Contribute verified student-friendly hackathons, internships, scholarships, or jobs to the YuvaHub network.
+        </p>
       </header>
 
       {submitError ? <ErrorState title="Submission failed" description={submitError} /> : null}
 
-      <form onSubmit={handleSubmit} className="clean-card bg-white p-8 space-y-6">
+      <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-sm">
         
-        <div className="space-y-1">
-          <label className="text-sm font-semibold text-gray-700">Title <span className="text-red-500">*</span></label>
-          <input required type="text" className="clean-input w-full p-3" placeholder="e.g. SDE Intern" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold uppercase tracking-wider text-[#603620] dark:text-slate-300">Opportunity Title <span className="text-red-500">*</span></label>
+          <input required type="text" className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none focus:border-[#b56b37]" placeholder="e.g. Software Development Engineer Intern" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-1">
-            <label className="text-sm font-semibold text-gray-700">Organization / Host <span className="text-red-500">*</span></label>
-            <input required type="text" className="clean-input w-full p-3" placeholder="e.g. Google" value={formData.org} onChange={e => setFormData({...formData, org: e.target.value})} />
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-[#603620] dark:text-slate-300">Organization / Company <span className="text-red-500">*</span></label>
+            <input required type="text" className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none focus:border-[#b56b37]" placeholder="e.g. Google / Microsoft" value={formData.org} onChange={e => setFormData({...formData, org: e.target.value})} />
           </div>
           
-          <div className="space-y-1">
-            <label className="text-sm font-semibold text-gray-700">Type <span className="text-red-500">*</span></label>
-            <select className="clean-input w-full p-3" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-[#603620] dark:text-slate-300">Opportunity Category <span className="text-red-500">*</span></label>
+            <select className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none focus:border-[#b56b37] cursor-pointer" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}>
               {['Internship', 'Hackathon', 'Scholarship', 'Job', 'Fellowship', 'Event', 'Program', 'Other'].map(t => (
-                <option key={t} value={t}>{t}</option>
+                <option key={t} value={t} className="bg-white text-[#231f20]">{t}</option>
               ))}
             </select>
           </div>
         </div>
 
-        <div className="space-y-1">
-          <label className="text-sm font-semibold text-gray-700">Description <span className="text-red-500">*</span></label>
-          <textarea required maxLength={500} rows={4} className="clean-input w-full p-3 resize-none" placeholder="Provide a brief description..." value={formData.desc} onChange={e => setFormData({...formData, desc: e.target.value})} />
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold uppercase tracking-wider text-[#603620] dark:text-slate-300">Description <span className="text-red-500">*</span></label>
+          <textarea required maxLength={500} rows={4} className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none focus:border-[#b56b37] resize-none" placeholder="Provide a brief overview of eligibility, responsibilities, and benefits..." value={formData.desc} onChange={e => setFormData({...formData, desc: e.target.value})} />
         </div>
 
-        <div className="pt-4 border-t border-gray-100">
-          <h4 className="font-semibold text-gray-900 mb-4">Eligibility</h4>
+        <div className="pt-4 border-t border-[#e8ded1] dark:border-slate-800 space-y-3">
+          <h4 className="font-serif font-bold text-[#231f20] dark:text-slate-100 text-sm">Eligibility Parameters</h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1">
-               <label className="text-xs font-medium text-gray-500 uppercase">Year</label>
-               <select className="clean-input w-full p-2.5 text-sm" value={formData.year} onChange={e => setFormData({...formData, year: e.target.value})}>
+               <label className="text-[10px] font-bold text-[#8c7569] uppercase">Year of Study</label>
+               <select className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-2.5 text-xs text-[#231f20] dark:text-white" value={formData.year} onChange={e => setFormData({...formData, year: e.target.value})}>
                  {['Any', '1st Year', '2nd Year', '3rd Year', '4th Year', 'Postgrad'].map(y => <option key={y} value={y}>{y}</option>)}
                </select>
             </div>
             <div className="space-y-1">
-               <label className="text-xs font-medium text-gray-500 uppercase">Field</label>
-               <select className="clean-input w-full p-2.5 text-sm" value={formData.field} onChange={e => setFormData({...formData, field: e.target.value})}>
+               <label className="text-[10px] font-bold text-[#8c7569] uppercase">Field of Study</label>
+               <select className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-2.5 text-xs text-[#231f20] dark:text-white" value={formData.field} onChange={e => setFormData({...formData, field: e.target.value})}>
                  {['Any', 'Engineering', 'Science', 'Commerce', 'Arts', 'Law', 'Medicine', 'Design'].map(y => <option key={y} value={y}>{y}</option>)}
                </select>
             </div>
             <div className="space-y-1">
-               <label className="text-xs font-medium text-gray-500 uppercase">Location</label>
-               <input type="text" className="clean-input w-full p-2.5 text-sm" placeholder="e.g. Remote" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} />
+               <label className="text-[10px] font-bold text-[#8c7569] uppercase">Location</label>
+               <input type="text" className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-2.5 text-xs text-[#231f20] dark:text-white" placeholder="e.g. Remote / Hybrid" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} />
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
-          <div className="space-y-1">
-            <label className="text-sm font-semibold text-gray-700">Application Link <span className="text-red-500">*</span></label>
-            <input required type="url" className="clean-input w-full p-3" placeholder="https://..." value={formData.link} onChange={e => setFormData({...formData, link: e.target.value})} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-[#e8ded1] dark:border-slate-800">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-[#603620] dark:text-slate-300">Official Portal Application URL <span className="text-red-500">*</span></label>
+            <input required type="url" className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none focus:border-[#b56b37]" placeholder="https://official-program-page.com" value={formData.link} onChange={e => setFormData({...formData, link: e.target.value})} />
           </div>
-          <div className="space-y-1">
-            <label className="text-sm font-semibold text-gray-700">Deadline</label>
-            <input type="date" className="clean-input w-full p-3" value={formData.deadline} onChange={e => setFormData({...formData, deadline: e.target.value})} />
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-[#603620] dark:text-slate-300">Application Deadline</label>
+            <input type="date" className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none focus:border-[#b56b37]" value={formData.deadline} onChange={e => setFormData({...formData, deadline: e.target.value})} />
           </div>
         </div>
 
-        <div className="pt-4 border-t border-gray-100 space-y-4">
+        <div className="pt-4 border-t border-[#e8ded1] dark:border-slate-800 space-y-4">
           <div>
-            <label className="text-sm font-semibold text-gray-700 block mb-2">Tags</label>
+            <label className="text-xs font-bold uppercase tracking-wider text-[#603620] dark:text-slate-300 block mb-2">Category Tags</label>
             <div className="flex flex-wrap gap-2">
               {TAG_OPTIONS.map(tag => (
                 <button
                   type="button"
                   key={tag}
                   onClick={() => toggleTag(tag)}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors border ${isTagSelected(tag) ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all border cursor-pointer ${
+                    isTagSelected(tag)
+                      ? 'bg-[#b56b37] text-white border-[#b56b37] shadow-sm'
+                      : 'bg-[#f6efe2] dark:bg-slate-800 text-[#603620] dark:text-slate-300 border-[#e8ded1] dark:border-slate-700 hover:bg-[#e8ded1]'
+                  }`}
                 >
                   {tag}
                 </button>
@@ -188,23 +207,31 @@ export default function SubmitOpportunity() {
             </div>
           </div>
           
-          <div className="space-y-1">
-            <label className="text-sm font-semibold text-gray-700">Contact Email</label>
-            <input type="email" className="clean-input w-full p-3" placeholder="Optional" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-[#603620] dark:text-slate-300">Organizer Contact Email</label>
+            <input type="email" className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none focus:border-[#b56b37]" placeholder="organizer@company.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
           </div>
         </div>
 
-        <div className="pt-6 mt-6 flex flex-col gap-6 border-t border-gray-100">
-          <label className="flex items-start gap-3 cursor-pointer group">
-            <div className="mt-0.5 relative flex items-center justify-center">
-              <input type="checkbox" className="peer w-5 h-5 appearance-none border-2 border-gray-300 rounded cursor-pointer checked:bg-blue-600 checked:border-blue-600 transition-colors" checked={formData.confirmed} onChange={e => setFormData({...formData, confirmed: e.target.checked})} />
-              <Check className="w-3.5 h-3.5 text-white absolute pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" />
-            </div>
-            <span className="text-sm text-gray-700 font-medium group-hover:text-gray-900 transition-colors">I confirm this is a legitimate, student-friendly opportunity.</span>
+        <div className="pt-6 border-t border-[#e8ded1] dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <input 
+              type="checkbox" 
+              className="w-4 h-4 rounded border-[#e8ded1] text-[#b56b37] focus:ring-[#b56b37]" 
+              checked={formData.confirmed} 
+              onChange={e => setFormData({...formData, confirmed: e.target.checked})} 
+            />
+            <span className="text-xs text-[#231f20] dark:text-slate-300 font-semibold group-hover:text-[#b56b37] transition-colors">
+              I confirm this is a legitimate, student-friendly opportunity with zero hidden fees.
+            </span>
           </label>
           
-          <button type="submit" disabled={!formData.confirmed || loading} className="clean-btn w-full md:w-auto px-10 py-3.5 flex justify-center items-center gap-2 font-bold shadow-md">
-            {loading ? <><Loader2 className="animate-spin w-5 h-5" /> Submitting...</> : 'Submit Opportunity →'}
+          <button 
+            type="submit" 
+            disabled={!formData.confirmed || loading} 
+            className="w-full sm:w-auto px-8 py-3.5 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-xs rounded-xl shadow-md shadow-[#b56b37]/20 flex justify-center items-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
+          >
+            {loading ? <><Loader2 className="animate-spin w-4 h-4" /> Submitting...</> : <>Submit Opportunity <Send className="w-3.5 h-3.5" /></>}
           </button>
         </div>
 

@@ -89,13 +89,6 @@ export const scraperWorker = new Worker(
         embedding: null as number[] | null,
       };
 
-    const result = await db.collection("opportunities").updateOne(
-      { dedupe_hash: opportunity.dedupe_hash },
-      { $set: opportunity },
-      { upsert: true }
-    );
-
-
       const embeddingText = [
         item.title,
         item.company,
@@ -154,7 +147,6 @@ scraperWorker.on("completed", (job) => {
 });
 
 scraperWorker.on("failed", (job, err) => {
-
   console.error(
     `[ScraperWorker] Job ${job?.id} failed with error: ${err.message}`
   );
@@ -165,15 +157,8 @@ scraperWorker.on("failed", (job, err) => {
     job.attemptsMade === job.opts.attempts
   ) {
     console.error(
-      `[ALERT] Scraper Job ${job.id} for domain ${job.data.domain} failed ${job.attemptsMade} times in a row!`
+      `[ALERT] Scraper Job ${job.id} for domain ${job.data.domain} failed ${job.attemptsMade} times in a row! Maintenance required.`
     );
-
-  console.error(`[ScraperWorker] Job ${job?.id} failed with error: ${err.message}`);
-
-  // Alerting mechanism: Check if this was the final attempt
-  if (job && job.opts.attempts && job.attemptsMade === job.opts.attempts) {
-    console.error(`[ALERT] Scraper Job ${job.id} for domain ${job.data.domain} failed ${job.attemptsMade} times in a row! Maintenance required.`);
-
     sendAdminAlert("ScraperWorker", job, err);
   }
 });
