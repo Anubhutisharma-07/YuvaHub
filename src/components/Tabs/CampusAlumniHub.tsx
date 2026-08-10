@@ -115,23 +115,43 @@ export default function CampusAlumniHub() {
     }
   ]);
 
-  // Campus Events
-  const [events, setEvents] = useState([
+  // Events State (typed to support waitlist + automatic promotion)
+  const [events, setEvents] = useState<{
+    id: string;
+    title: string;
+    chapter: string;
+    date: string;
+    time: string;
+    location: string;
+    rsvpCount: number;
+    maxCapacity: number;
+    waitlistCount: number;
+    // null = no action taken, 'confirmed' | 'waitlisted' | 'cancelled'
+    userStatus: 'confirmed' | 'waitlisted' | 'cancelled' | null;
+  }[]>([
     {
       id: 'evt_1',
       title: 'Global Open Source Hackathon 2026',
       chapter: 'IIT Bombay Open Source Club',
       date: '2026-09-10',
-      rsvps: 340,
-      userRsvped: false
+      time: '5:00 PM IST',
+      location: 'Online / Auditorium 1',
+      rsvpCount: 340,
+      maxCapacity: 500,
+      waitlistCount: 0,
+      userStatus: null,
     },
     {
       id: 'evt_2',
       title: 'Alumni Office Hours: Landing Top Tier Internships',
       chapter: 'BITS Pilani Developer Guild',
       date: '2026-08-28',
-      rsvps: 210,
-      userRsvped: true
+      time: '6:30 PM IST',
+      location: 'Tech Block 3',
+      rsvpCount: 210,
+      maxCapacity: 210,
+      waitlistCount: 5,
+      userStatus: null,
     }
   ]);
 
@@ -142,16 +162,45 @@ export default function CampusAlumniHub() {
   const [targetAlumni, setTargetAlumni] = useState('');
   const [targetRole, setTargetRole] = useState('');
 
-  // Handle Event RSVP
-  const handleToggleRsvp = (eventId: string) => {
+  // New event form state (host event title input)
+  const [newEventTitle, setNewEventTitle] = useState('');
+
+  // RSVP or join waitlist
+  const handleRsvpOrWaitlist = (eventId: string) => {
     setEvents(events.map(e => {
-      if (e.id === eventId) {
-        const nextState = !e.userRsvped;
-        return { ...e, userRsvped: nextState, rsvps: nextState ? e.rsvps + 1 : e.rsvps - 1 };
+      if (e.id !== eventId) return e;
+      const isFull = e.rsvpCount >= e.maxCapacity;
+      if (isFull) {
+        // Join waitlist
+        setNotification({ type: 'success', message: `You joined the waitlist for "${e.title}". We'll notify you if a spot opens!` });
+        return { ...e, waitlistCount: e.waitlistCount + 1, userStatus: 'waitlisted' };
+      }
+      // Confirm RSVP
+      setNotification({ type: 'success', message: `RSVP confirmed for "${e.title}"!` });
+      return { ...e, rsvpCount: e.rsvpCount + 1, userStatus: 'confirmed' };
+    }));
+  };
+
+  // Cancel RSVP or leave waitlist — triggers automatic promotion of next waitlisted user
+  const handleCancelRsvp = (eventId: string) => {
+    setEvents(events.map(e => {
+      if (e.id !== eventId) return e;
+      if (e.userStatus === 'confirmed') {
+        const newRsvpCount = Math.max(0, e.rsvpCount - 1);
+        // Promote next waitlisted person if any
+        if (e.waitlistCount > 0) {
+          setNotification({ type: 'success', message: `RSVP cancelled. The next person on the waitlist has been notified.` });
+          return { ...e, rsvpCount: newRsvpCount, waitlistCount: e.waitlistCount - 1, userStatus: 'cancelled' };
+        }
+        setNotification({ type: 'success', message: 'RSVP cancelled.' });
+        return { ...e, rsvpCount: newRsvpCount, userStatus: 'cancelled' };
+      }
+      if (e.userStatus === 'waitlisted') {
+        setNotification({ type: 'success', message: 'Removed from waitlist.' });
+        return { ...e, waitlistCount: Math.max(0, e.waitlistCount - 1), userStatus: 'cancelled' };
       }
       return e;
     }));
-    setNotification({ type: 'success', message: 'Updated your event RSVP status!' });
   };
 
   // Submit Referral Request
@@ -173,12 +222,37 @@ export default function CampusAlumniHub() {
     setNotification({ type: 'success', message: `Submitted referral request to ${newRef.alumniName}!` });
   };
 
-  // Export Manifest JSON
+  // Add Campus Event
+  const handleAddEvent = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEventTitle.trim()) return;
+
+    const newEvt = {
+      id: `evt_${Date.now()}`,
+      title: newEventTitle.trim(),
+      chapter: 'IIT Bombay Open Source Club',
+      date: '2026-08-25',
+      time: '6:00 PM IST',
+      location: 'Virtual / Campus Center',
+      rsvpCount: 1,
+      maxCapacity: 250,
+      waitlistCount: 0,
+      userStatus: 'confirmed' as const,
+    };
+
+    setEvents([...events, newEvt]);
+    setNewEventTitle('');
+    setNotification({ type: 'success', message: 'Created campus chapter event!' });
+  };
+
+  // Export Campus Network Manifest JSON
   const handleExportManifest = () => {
     const manifest = {
       chapters,
       alumniDirectory: alumni,
       campusEvents: events,
+      userRsvps: events.filter(e => e.userStatus === 'confirmed'),
+      userWaitlists: events.filter(e => e.userStatus === 'waitlisted'),
       referralRequests,
       timestamp: new Date().toISOString()
     };
@@ -206,7 +280,7 @@ export default function CampusAlumniHub() {
 
   return (
     <div className="w-full max-w-[1400px] mx-auto space-y-8 font-sans pb-16 px-2 sm:px-4">
-      
+
       {/* Top Banner Header - YuvaHub Brand Theme */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#f6efe2] via-[#fcf9f2] to-[#f6efe2] dark:from-slate-900 dark:to-slate-950 border border-[#e8ded1] dark:border-slate-800 p-6 md:p-8 shadow-sm">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
@@ -234,8 +308,10 @@ export default function CampusAlumniHub() {
             </div>
             <div>
               <div className="text-[10px] uppercase font-bold text-[#8c7569] tracking-wider">Verified Network Members</div>
-              <div className="text-xs font-extrabold text-[#231f20] dark:text-white">500+ Alumni Referral Ready</div>
-              <div className="text-[11px] text-[#63703d] font-semibold">Active Campus Guilds</div>
+              <div className="text-xs font-extrabold text-[#231f20] dark:text-white">{alumni.length} Alumni Referral Ready</div>
+              <div className="text-[11px] text-[#63703d] font-semibold">
+                {events.filter(e => e.userStatus === 'confirmed').length} Upcoming Event RSVPs
+              </div>
             </div>
           </div>
         </div>
@@ -383,29 +459,107 @@ export default function CampusAlumniHub() {
         </div>
       )}
 
-      {/* Tab 3: Campus Events */}
+      {/* Tab 3: Campus Events (RSVP + Waitlist) */}
       {activeTab === 'events' && (
-        <div className="space-y-4">
-          {events.map(evt => (
-            <div key={evt.id} className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-2xl p-5 shadow-2xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <span className="text-[10px] font-bold text-[#8c7569] uppercase block">{evt.chapter}</span>
-                <h3 className="font-serif font-bold text-base text-[#231f20] dark:text-white mt-0.5">{evt.title}</h3>
-                <p className="text-xs text-[#603620] font-semibold mt-1">Date: {evt.date} • {evt.rsvps} Student RSVPs</p>
-              </div>
-
-              <button
-                onClick={() => handleToggleRsvp(evt.id)}
-                className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-                  evt.userRsvped
-                    ? 'bg-[#63703d] text-white'
-                    : 'bg-[#b56b37] hover:bg-[#96552a] text-white shadow-xs'
-                }`}
-              >
-                {evt.userRsvped ? '✓ RSVP Confirmed' : 'RSVP for Event'}
-              </button>
+        <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-2xl p-6 space-y-6 shadow-2xs">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="font-serif font-bold text-base text-[#231f20] dark:text-white">Campus Workshops & Seminars</h3>
+              <p className="text-xs text-[#603620] dark:text-slate-400 font-medium">RSVP for upcoming technical workshops organized by campus chapters.</p>
             </div>
-          ))}
+          </div>
+
+          <form onSubmit={handleAddEvent} className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Host event title (e.g. LLM Fine-Tuning Workshop)..."
+              value={newEventTitle}
+              onChange={(e) => setNewEventTitle(e.target.value)}
+              className="flex-1 p-2.5 bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl text-xs text-[#231f20] dark:text-white outline-none focus:border-[#b56b37]"
+              required
+            />
+            <button type="submit" className="px-4 py-2.5 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-xs rounded-xl transition cursor-pointer">
+              + Host Event
+            </button>
+          </form>
+
+          <div className="space-y-3">
+            {events.map((e) => {
+              const isFull = e.rsvpCount >= e.maxCapacity;
+              const isConfirmed = e.userStatus === 'confirmed';
+              const isWaitlisted = e.userStatus === 'waitlisted';
+              const hasActed = isConfirmed || isWaitlisted;
+
+              return (
+                <div key={e.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-[#fcf9f2] dark:bg-slate-900/60 rounded-2xl border border-[#e8ded1] dark:border-slate-800 text-xs">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-serif font-bold text-[#231f20] dark:text-white text-sm">{e.title}</span>
+                      <span className="px-2 py-0.5 text-[10px] font-bold bg-[#f6efe2] text-[#603620] rounded-md border border-[#e8ded1]">
+                        {e.chapter}
+                      </span>
+                      {/* Capacity badge */}
+                      {isFull ? (
+                        <span className="px-2 py-0.5 text-[10px] font-bold bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400 rounded-md flex items-center gap-1">
+                          <AlertCircle size={10} /> Full
+                        </span>
+                      ) : null}
+                      {/* Waitlist size badge */}
+                      {e.waitlistCount > 0 && (
+                        <span className="px-2 py-0.5 text-[10px] font-bold bg-[#63703d]/15 text-[#63703d] border border-[#63703d]/30 rounded-md flex items-center gap-1">
+                          <Clock size={10} /> {e.waitlistCount} on waitlist
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-[#8c7569] dark:text-slate-400 mt-1">
+                      {e.date} at {e.time} • {e.location} • ({e.rsvpCount} / {e.maxCapacity} RSVPs)
+                    </p>
+
+                    {/* User status pill */}
+                    {isConfirmed && (
+                      <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 text-[10px] font-bold bg-[#63703d]/15 text-[#63703d] border border-[#63703d]/30 rounded-full">
+                        <CheckCircle2 size={10} /> Your spot is confirmed
+                      </span>
+                    )}
+                    {isWaitlisted && (
+                      <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 text-[10px] font-bold bg-[#f3e4bd] text-[#603620] rounded-full">
+                        <Clock size={10} /> You're on the waitlist
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {/* Primary action button */}
+                    {!hasActed && (
+                      <button
+                        onClick={() => handleRsvpOrWaitlist(e.id)}
+                        className={`px-4 py-2 font-bold rounded-xl transition text-white cursor-pointer ${
+                          isFull
+                            ? 'bg-[#603620] hover:bg-[#4a2a19]'
+                            : 'bg-[#b56b37] hover:bg-[#96552a]'
+                        }`}
+                        aria-label={isFull ? `Join waitlist for ${e.title}` : `RSVP for ${e.title}`}
+                      >
+                        {isFull ? '⏳ Join Waitlist' : 'RSVP Spot'}
+                      </button>
+                    )}
+
+                    {/* Cancel button when user has acted */}
+                    {hasActed && (
+                      <button
+                        onClick={() => handleCancelRsvp(e.id)}
+                        className="px-4 py-2 font-bold rounded-xl transition bg-white dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 text-[#603620] dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-900/40 hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
+                        aria-label={`Cancel ${isWaitlisted ? 'waitlist entry' : 'RSVP'} for ${e.title}`}
+                      >
+                        {isConfirmed ? '✓ RSVP Confirmed' : '⏳ On Waitlist'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -470,7 +624,7 @@ export default function CampusAlumniHub() {
           </div>
           <h2 className="text-2xl font-serif font-bold text-[#231f20] dark:text-white">Export Campus Manifest</h2>
           <p className="text-xs text-[#603620] dark:text-slate-400 font-medium">
-            Download full chapter listings, alumni network directory, and campus events in a JSON file.
+            Download full chapter listings, alumni network directory, campus events, and waitlist status in a JSON file.
           </p>
           <button onClick={handleExportManifest} className="px-6 py-3 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-xs rounded-xl shadow-md cursor-pointer inline-flex items-center gap-2">
             <Download className="w-4 h-4" /> Download Campus Network JSON
