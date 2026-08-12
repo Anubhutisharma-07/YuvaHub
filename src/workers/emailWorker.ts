@@ -2,6 +2,7 @@ import { Worker, Job } from "bullmq";
 import { connection } from "../queues/connection";
 import { EmailJobData } from "../queues/emailQueue";
 import nodemailer from "nodemailer";
+import { logger } from "../utils/logger";
 
 // Retrieve SMTP settings from environment with secure defaults
 const smtpHost = process.env.SMTP_HOST || "";
@@ -22,16 +23,16 @@ if (smtpHost && smtpUser && smtpPass) {
       pass: smtpPass
     }
   });
-  console.log(`[EmailWorker] SMTP Transporter configured for host: ${smtpHost}`);
+  logger.info(`[EmailWorker] SMTP Transporter configured for host: ${smtpHost}`);
 } else {
-  console.log("[EmailWorker] SMTP credentials missing. Running in simulated fallback mode.");
+  logger.info("[EmailWorker] SMTP credentials missing. Running in simulated fallback mode.");
 }
 
 export const emailWorker = new Worker<EmailJobData>(
   "emailQueue",
   async (job: Job<EmailJobData>) => {
     const { to, subject, body, html } = job.data;
-    console.log(`[EmailWorker] Processing job ${job.id} for ${to}`);
+    logger.info(`[EmailWorker] Processing job ${job.id} for ${to}`);
 
     if (transporter) {
       // Send real email via SMTP
@@ -43,9 +44,9 @@ export const emailWorker = new Worker<EmailJobData>(
           text: body,
           html: html || `<div style="font-family: sans-serif; padding: 20px;">${body}</div>`
         });
-        console.log(`[EmailWorker] Successfully sent email via SMTP to ${to}`);
+        logger.info(`[EmailWorker] Successfully sent email via SMTP to ${to}`);
       } catch (smtpErr: any) {
-        console.error(`[EmailWorker] SMTP delivery failed to ${to}:`, smtpErr.message);
+        logger.error({ err: smtpErr, recipient: to }, "SMTP delivery failed");
         throw smtpErr; // Let BullMQ handle retry mechanism
       }
     } else {
@@ -57,28 +58,28 @@ export const emailWorker = new Worker<EmailJobData>(
         throw new Error(`Simulated mock email delivery failure for job ${job.id}`);
       }
       
-      console.log(`[EmailWorker] Mock Sent: To: ${to} | Subject: ${subject} | Body: ${body}`);
+      logger.info(`[EmailWorker] Mock Sent: To: ${to} | Subject: ${subject} | Body: ${body}`);
     }
   },
   { connection: connection as any }
 );
 
 emailWorker.on("completed", (job) => {
-  console.log(`[EmailWorker] Job ${job.id} completed successfully`);
+  logger.info(`[EmailWorker] Job ${job.id} completed successfully`);
 });
 
 emailWorker.on("failed", (job, err) => {
-  console.error(`[EmailWorker] Job ${job?.id} failed with error: ${err.message}`);
+  logger.error({ err, jobId: job?.id }, "Job failed");
   
   if (job && job.attemptsMade >= (job.opts.attempts || 1)) {
-    console.error(`[EmailWorker] Job ${job.id} has exhausted all retries. Moving to DLQ (Logged).`);
+    logger.error({ jobId: job.id }, "Job exhausted all retries; moving to DLQ");
   }
 });
 
 let emailWorkerErrorLogged = false;
 emailWorker.on("error", (err) => {
   if (!emailWorkerErrorLogged) {
-    console.warn('[EmailWorker] Redis connection offline. Worker listening paused.');
+    logger.warn('[EmailWorker] Redis connection offline. Worker listening paused.');
     emailWorkerErrorLogged = true;
   }
 });
