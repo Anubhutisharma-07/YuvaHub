@@ -3,6 +3,7 @@ import { emailWorker } from "./workers/emailWorker";
 import { pushWorker } from "./workers/pushWorker";
 import { scraperWorker } from "./workers/scraperWorker";
 import { initAgentWorker, stopAgentWorker } from "./workers/applicationAgentWorker";
+import { mentorshipWorker } from "./workers/mentorshipWorker";
 
 const workerId = crypto.randomUUID();
 
@@ -16,6 +17,7 @@ const shutdown = async () => {
     emailWorker.close(),
     pushWorker.close(),
     scraperWorker.close(),
+    mentorshipWorker.close(),
     stopAgentWorker()
   ]);
 

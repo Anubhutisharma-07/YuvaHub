@@ -31,19 +31,102 @@ const robustParseJSON = (text: string): any => {
   }
 };
 
-async function generatedContentProxy(prompt: string, expectJson: boolean = false) {
-  try {
-    const res = await fetch("/api/v1/ai/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt, expectJson })
-    });
-    const data = await res.json();
-    return data.text || "";
-  } catch (e) {
-    console.error("AI Proxy Error:", e);
-    return "";
+export interface AIRequestOptions {
+  maxRetries?: number;
+  onRetry?: (attempt: number, error: string) => void;
+}
+
+export interface AIRequestResult {
+  text: string;
+  success: boolean;
+  error?: string;
+  isRetryable?: boolean;
+  attemptsUsed?: number;
+}
+
+export async function generatedContentProxyWithRetry(
+  prompt: string,
+  expectJson: boolean = false,
+  options: AIRequestOptions = {}
+): Promise<AIRequestResult> {
+  const maxRetries = options.maxRetries ?? 2;
+  let attempt = 0;
+  let lastError = "";
+  let isRetryable = false;
+
+  while (attempt <= maxRetries) {
+    attempt++;
+    try {
+      const res = await fetch("/api/v1/ai/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, expectJson })
+      });
+
+      if (!res.ok) {
+        lastError = `AI Service temporary issue (${res.status} ${res.statusText})`;
+        return {
+          text: expectJson ? "[]" : "AI assistant is preparing data. Using curated fallbacks.",
+          success: false,
+          error: lastError,
+          isRetryable: false,
+          attemptsUsed: attempt
+        };
+      }
+
+      const data = await res.json();
+      if (data.error) {
+        lastError = data.error;
+        isRetryable = true;
+        if (attempt <= maxRetries) {
+          if (options.onRetry) options.onRetry(attempt, lastError);
+          await new Promise((resolve) => setTimeout(resolve, 600 * attempt));
+          continue;
+        }
+        return {
+          text: "",
+          success: false,
+          error: lastError,
+          isRetryable: true,
+          attemptsUsed: attempt
+        };
+      }
+
+      return {
+        text: data.text || "",
+        success: true,
+        attemptsUsed: attempt
+      };
+    } catch (e: any) {
+      lastError = e?.message || "Network error communicating with AI endpoint";
+      isRetryable = true;
+      if (attempt <= maxRetries) {
+        if (options.onRetry) options.onRetry(attempt, lastError);
+        await new Promise((resolve) => setTimeout(resolve, 600 * attempt));
+        continue;
+      }
+      return {
+        text: "",
+        success: false,
+        error: lastError,
+        isRetryable: true,
+        attemptsUsed: attempt
+      };
+    }
   }
+
+  return {
+    text: "",
+    success: false,
+    error: lastError || "AI service temporarily unavailable",
+    isRetryable: true,
+    attemptsUsed: attempt
+  };
+}
+
+async function generatedContentProxy(prompt: string, expectJson: boolean = false) {
+  const result = await generatedContentProxyWithRetry(prompt, expectJson, { maxRetries: 2 });
+  return result.text;
 }
 
 export async function generateSmartFeed(profile: any, page: number = 1) {
@@ -219,3 +302,71 @@ function mockCareerAdvice(message: string): string {
   });
 }
 
+export async function analyzeSkillGap(
+  resumeText: string,
+  jobDescription: string
+) {
+  const prompt = `
+You are an AI Career Skill Gap Analyzer.
+
+Compare the student's resume against the target job description.
+
+Student Resume:
+${resumeText}
+
+Target Job Description:
+${jobDescription}
+
+Identify:
+1. Skills already present in the resume.
+2. Missing technical skills.
+3. Missing soft skills.
+4. A prioritized learning roadmap.
+5. Relevant courses/resources.
+6. A practical project for each major missing skill.
+7. An overall skill match percentage.
+
+Return JSON ONLY using exactly this structure:
+
+{
+  "matchPercentage": 0,
+  "existingSkills": [],
+  "missingSkills": [
+    {
+      "skill": "",
+      "category": "technical",
+      "priority": "high",
+      "reason": "",
+      "completed": false
+    }
+  ],
+  "roadmap": [
+    {
+      "skill": "",
+      "priority": "high",
+      "estimatedWeeks": 2,
+      "resources": [],
+      "project": "",
+      "completed": false
+    }
+  ]
+}
+
+Rules:
+- matchPercentage must be between 0 and 100.
+- category must be "technical" or "soft".
+- priority must be "high", "medium", or "low".
+- Do not invent skills already clearly present in the resume.
+- Prioritize skills that are explicitly required by the job.
+- Keep the roadmap practical for a student.
+`;
+
+  const text = await generatedContentProxy(prompt, true);
+
+  return robustParseJSON(text) || {
+    matchPercentage: 0,
+    existingSkills: [],
+    missingSkills: [],
+    roadmap: [],
+  };
+}

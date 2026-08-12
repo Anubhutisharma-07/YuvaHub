@@ -1,40 +1,36 @@
 import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
 import { safeObjectId } from "../../lib/utils.js";
-import { deleteFirebaseUser } from "../../middleware/auth.js";
+import { deleteFirebaseUser } from "../middlewares/auth.js";
 import { calculateProfileProgress } from "../services/profileProgressService.js";
+import { sendSuccess, sendServiceUnavailable, sendNotFound, sendError } from "../../lib/apiResponse.js";
 
 export const syncUser = (req: Request, res: Response) => {
-  res.json({ status: "ok", user: req.user });
+  return sendSuccess(res, { user: req.user });
 };
 
 export const deleteAccount = async (req: Request, res: Response) => {
-  try {
-    const uid = req.user.uid;
+  const uid = req.user.uid;
 
-    // 1. Delete from Firebase Auth
-    await deleteFirebaseUser(uid);
+  // 1. Delete from Firebase Auth
+  await deleteFirebaseUser(uid);
 
-    // 2. Delete from MongoDB
-    if (dbCommand) {
-      await dbCommand.collection("users").deleteOne({ firebaseUid: uid });
+  // 2. Delete from MongoDB
+  if (dbCommand) {
+    await dbCommand.collection("users").deleteOne({ firebaseUid: uid });
 
-      // Also clean up any associated data
-      await dbCommand.collection("interactions").deleteMany({ firebaseUid: uid });
-      // Add more cleanup as needed (e.g. saved opportunities, profiles, etc.)
-    }
-
-    res.json({ status: "success", message: "Account completely deleted" });
-  } catch (err: any) {
-    console.error("[Auth] Error deleting user account:", err);
-    res.status(500).json({ error: "Failed to delete account" });
+    // Also clean up any associated data
+    await dbCommand.collection("interactions").deleteMany({ firebaseUid: uid });
+    // Add more cleanup as needed (e.g. saved opportunities, profiles, etc.)
   }
+
+  return sendSuccess(res, { message: "Account completely deleted" });
 };
 
 export const getSavedOpportunities = async (req: Request, res: Response) => {
   try {
     const user = req.user;
-    if (!dbQuery) return res.status(503).json({ error: "Database not available" });
+    if (!dbQuery) return sendServiceUnavailable(res, "Database not available");
 
     const limit = parseInt(req.query.limit as string) || 10;
     const offset = parseInt(req.query.offset as string) || 0;
@@ -47,7 +43,7 @@ export const getSavedOpportunities = async (req: Request, res: Response) => {
       .toArray();
 
     if (savedOps.length === 0) {
-      return res.json({ items: [], total: 0 });
+      return sendSuccess(res, { items: [], total: 0 });
     }
 
     const opportunityIds = savedOps.map((s: any) => {
@@ -82,23 +78,23 @@ export const getSavedOpportunities = async (req: Request, res: Response) => {
     
     const total = await dbQuery.collection("saved_opportunities").countDocuments({ userId: user.uid });
 
-    res.json({ items: sortedOpportunities, total });
+    return sendSuccess(res, { items: sortedOpportunities, total });
   } catch (err: any) {
     console.error("GET /api/users/me/saved-opportunities error:", err);
-    res.status(500).json({ error: "Internal Server Error" });
+    return sendError(res, "Internal Server Error", 500);
   }
 };
 
 export const getProfileProgress = async (req: Request, res: Response) => {
   try {
     const user = req.user;
-    if (!dbQuery) return res.status(503).json({ error: "Database not available" });
+    if (!dbQuery) return sendServiceUnavailable(res, "Database not available");
 
     const usersCollection = dbQuery.collection("users");
     const dbUser = await usersCollection.findOne({ uid: user.uid });
     
     if (!dbUser) {
-       return res.status(404).json({ error: "User not found" });
+       return sendNotFound(res, "User not found");
     }
 
     const resumesCol = dbQuery.collection("resumes");
@@ -106,9 +102,9 @@ export const getProfileProgress = async (req: Request, res: Response) => {
 
     const progress = calculateProfileProgress(dbUser, resumes);
 
-    res.json(progress);
+    return sendSuccess(res, progress);
   } catch (err: any) {
     console.error("GET /api/users/me/profile-progress error:", err);
-    res.status(500).json({ error: "Internal Server Error" });
+    return sendError(res, "Internal Server Error", 500);
   }
 };

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { syncUser, deleteAccount, getSavedOpportunities, getProfileProgress } from "../controllers/userController.js";
-import { authMiddleware } from "../../middleware/auth.js";
+import { authMiddleware } from "../middlewares/auth.js";
 
 const router = Router();
 

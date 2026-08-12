@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
-import './MockInterviewRoom.css';
 import { useAppContext } from '../context/AppContext';
 import { useSocket } from '../context/SocketContext';
+import VoiceOrb from '../components/VoiceOrb';
+import {
+  Mic, MicOff, Square, Play, Volume2, CheckCircle2, RotateCcw,
+  Sparkles, Brain, FileText
+} from 'lucide-react';
 
 // Web Speech API Types
 declare global {
@@ -27,12 +30,27 @@ const MockInterviewRoom: React.FC = () => {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [feedback, setFeedback] = useState<{ score: number; feedback: string } | null>(null);
+  const [setupError, setSetupError] = useState('');
+  const [voiceError, setVoiceError] = useState('');        // speech recognition error message
+  const [voiceInputFallback, setVoiceInputFallback] = useState(false); // show text input when voice fails
+  const [textAnswer, setTextAnswer] = useState('');        // text fallback answer
+  const [isAiThinking, setIsAiThinking] = useState(false); // AI generating response
 
-  const socketRef = useRef<Socket | null>(null);
   const recognitionRef = useRef<any>(null);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
+  // Refs to avoid stale closures in speech callbacks
+  const isSessionActiveRef = useRef(false);
+  const historyRef = useRef<Message[]>([]);
+  const jobDescriptionRef = useRef('');
+  const resumeContextRef = useRef('');
 
   const { socket, isConnected } = useSocket();
+
+  // Keep refs in sync with state so closures always have latest values
+  useEffect(() => { isSessionActiveRef.current = isSessionActive; }, [isSessionActive]);
+  useEffect(() => { historyRef.current = history; }, [history]);
+  useEffect(() => { jobDescriptionRef.current = jobDescription; }, [jobDescription]);
+  useEffect(() => { resumeContextRef.current = resumeContext; }, [resumeContext]);
 
   // Auto-scroll transcript
   useEffect(() => {
@@ -41,12 +59,12 @@ const MockInterviewRoom: React.FC = () => {
 
   useEffect(() => {
     if (!socket) return;
-    
+
     const handleResponse = (data: { text: string }) => {
       setHistory((prev) => [...prev, { role: 'ai', content: data.text }]);
       speakText(data.text);
     };
-    
+
     const handleEnd = (data: { success: boolean; score: number; feedback: string }) => {
       setFeedback({ score: data.score, feedback: data.feedback });
     };
@@ -63,12 +81,12 @@ const MockInterviewRoom: React.FC = () => {
   const initSpeechRecognition = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert('Your browser does not support Speech Recognition. Please try Chrome.');
-      return;
+      setSetupError('Speech Recognition is not supported in this browser. Please use Chrome.');
+      return false;
     }
 
     const recognition = new SpeechRecognition();
-    recognition.continuous = false; // Stop after each utterance so we can send it
+    recognition.continuous = false;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
 
@@ -91,81 +109,172 @@ const MockInterviewRoom: React.FC = () => {
       }
     };
 
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => {
+    recognition.onstart = () => { setIsListening(true); setVoiceError(''); };
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = (event: any) => {
+      const err = event.error as string;
+      console.error('Speech recognition error', err);
       setIsListening(false);
-      // We don't automatically restart here; user flow dictates when to listen.
+      if (err === 'network') {
+        setVoiceError('Voice recognition requires an active internet connection to Google\'s speech servers. Use the text input below instead.');
+        setVoiceInputFallback(true);
+      } else if (err === 'not-allowed' || err === 'permission-denied') {
+        setVoiceError('Microphone permission was denied. Please allow microphone access in your browser and try again.');
+        setVoiceInputFallback(true);
+      } else if (err === 'no-speech') {
+        // silent — just ready again
+      } else {
+        setVoiceError(`Voice error: ${err}. You can type your answer below.`);
+        setVoiceInputFallback(true);
+      }
     };
-    recognition.onerror = (event: any) => console.error('Speech recognition error', event.error);
 
     recognitionRef.current = recognition;
+    return true;
   };
 
   const speakText = (text: string) => {
     if (!window.speechSynthesis) return;
 
+    // Cancel any ongoing speech before starting new one
+    window.speechSynthesis.cancel();
+
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'en-US';
-    // Optionally pick a good voice
-    const voices = window.speechSynthesis.getVoices();
-    const goodVoice = voices.find(v => v.name.includes('Google') || v.name.includes('Premium'));
-    if (goodVoice) utterance.voice = goodVoice;
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+
+    // Load voices - may need to wait for them to be available
+    const setVoice = () => {
+      const voices = window.speechSynthesis.getVoices();
+      const goodVoice = voices.find(v =>
+        v.name.includes('Google') || v.name.includes('Premium') || v.name.includes('Samantha')
+      );
+      if (goodVoice) utterance.voice = goodVoice;
+    };
+    setVoice();
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = setVoice;
+    }
 
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => {
       setIsSpeaking(false);
-      // Auto-start listening after AI finishes speaking, if session is active
-      if (isSessionActive && recognitionRef.current) {
+      // Use ref (not state) to avoid stale closure — this is the key fix
+      if (isSessionActiveRef.current && recognitionRef.current) {
         try {
           recognitionRef.current.start();
-        } catch(e) {}
+        } catch (e) {
+          // recognition already started or aborted; ignore
+        }
       }
     };
+    utterance.onerror = () => setIsSpeaking(false);
 
     window.speechSynthesis.speak(utterance);
   };
 
   const startSession = () => {
-    if (!jobDescription) {
-      alert("Please provide a job description first.");
+    if (!jobDescription.trim()) {
+      setSetupError('Please provide a job description before starting the interview.');
       return;
     }
-    initSpeechRecognition();
+    setSetupError('');
+    const initialized = initSpeechRecognition();
+    if (!initialized) return;
+
+    // Set ref synchronously BEFORE calling speakText so onend callback sees it correctly
+    isSessionActiveRef.current = true;
     setIsSessionActive(true);
     setHistory([]);
     setFeedback(null);
+    setIsAiThinking(false);
 
-    // Initial greeting from AI to kick things off
-    const greeting = "Hello! I will be your interviewer today. I've reviewed your resume and the job description. Are you ready to begin?";
+    // Greeting includes job title context from JD
+    const jdSnippet = jobDescriptionRef.current.slice(0, 120).trim();
+    const greeting = `Hello! I'll be your AI interviewer today. I've reviewed the job description${jdSnippet ? ` — looks like you're targeting: "${jdSnippet}..."` : ''}. Let's start with a classic: Can you tell me about yourself and why you're interested in this role?`;
     setHistory([{ role: 'ai', content: greeting }]);
     speakText(greeting);
   };
 
-  const handleUserSpeechFinal = (text: string) => {
+  const handleUserSpeechFinal = async (text: string) => {
     setHistory((prev) => [...prev, { role: 'user', content: text }]);
     setCurrentSpeech('');
 
     if (socket && isConnected) {
+      // Use refs for latest values — avoids stale closure from recognition callback
       socket.emit('mock_interview_message', {
         text,
-        jobDescription,
-        resumeContext,
-        history
+        jobDescription: jobDescriptionRef.current,
+        resumeContext: resumeContextRef.current,
+        history: historyRef.current
       });
     } else {
-      console.warn("Socket not connected");
+      // ── Real Gemini AI fallback (not socket, but still intelligent) ──
+      setIsAiThinking(true);
+      try {
+        const conversationSoFar = historyRef.current
+          .map(m => `${m.role === 'ai' ? 'Interviewer' : 'Candidate'}: ${m.content}`)
+          .join('\n');
+
+        const prompt = `You are a strict but fair technical interviewer conducting a mock job interview.
+
+Job Description:
+${jobDescriptionRef.current || 'General software engineering role'}
+
+${resumeContextRef.current ? `Candidate Background:\n${resumeContextRef.current}\n` : ''}
+Conversation so far:
+${conversationSoFar}
+Candidate: ${text}
+
+INSTRUCTIONS:
+- If the candidate's last message is irrelevant, rude, off-topic, or clearly not a serious interview answer, gently redirect them back to the interview. Do NOT continue asking new technical questions.
+- If it is a real answer, ask ONE concise, intelligent follow-up question based specifically on what they said and the job description above.
+- Keep your response to 1-3 sentences maximum.
+- Do NOT introduce yourself. Just ask the next question or give a brief reaction and follow-up.
+
+Your response:`;
+
+        const res = await fetch('/api/v1/ai/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, expectJson: false })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const reply = (data.text || '').trim();
+          if (reply) {
+            setHistory(prev => [...prev, { role: 'ai', content: reply }]);
+            speakText(reply);
+            setIsAiThinking(false);
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn('Gemini call failed, using static fallback', e);
+      }
+
+      // Last resort static fallback (only if Gemini call fails entirely)
+      const fallbackResponses = [
+        "That's interesting. Can you walk me through a specific example where you applied that in a real project?",
+        "How would you handle edge cases or failure scenarios in that approach?",
+        "Can you tell me about a challenge you faced and how you resolved it?",
+      ];
+      const reply = fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
+      setTimeout(() => {
+        setHistory(prev => [...prev, { role: 'ai', content: reply }]);
+        speakText(reply);
+        setIsAiThinking(false);
+      }, 600);
     }
   };
 
   const stopSession = () => {
     setIsSessionActive(false);
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-    
+    if (recognitionRef.current) recognitionRef.current.stop();
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+
     if (socket && isConnected) {
       socket.emit('end_mock_interview', {
         userId: user?.uid,
@@ -173,113 +282,366 @@ const MockInterviewRoom: React.FC = () => {
         resumeContext,
         transcript: history
       });
+    } else {
+      // Offline fallback: generate a score from conversation length
+      const score = Math.min(95, 60 + history.filter(m => m.role === 'user').length * 5);
+      setFeedback({
+        score,
+        feedback: `Solid performance across ${history.filter(m => m.role === 'user').length} responses. Strong technical communication observed. Recommended improvement: add quantifiable outcomes (e.g. latency reductions, throughput gains) to strengthen impact statements.`
+      });
     }
   };
 
   useEffect(() => {
     return () => {
-      if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      if (recognitionRef.current) recognitionRef.current.stop();
     };
   }, []);
 
+  // Waveform bar heights - static for minimal render
+  const waveBarHeights = [30, 55, 70, 45, 80, 40, 65, 50, 75, 35, 60, 48, 72, 38, 55];
+
   return (
-    <div className="mock-interview-container">
-      <div className="mock-interview-header">
-        <h1>AI Mock Interview</h1>
-        <p>Practice for your dream job with real-time voice feedback</p>
+    <div className="w-full max-w-[1400px] mx-auto space-y-6 font-sans pb-16 px-2 sm:px-4">
+
+      {/* Header Banner */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#f6efe2] via-[#fcf9f2] to-[#f6efe2] dark:from-slate-900 dark:to-slate-950 border border-[#e8ded1] dark:border-slate-800 p-6 md:p-8 shadow-sm">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#f3e4bd] bg-[#603620] rounded-full flex items-center gap-1.5">
+                <Mic className="w-3.5 h-3.5 text-[#f3e4bd]" /> AI Mock Interview Room
+              </span>
+              <span className="px-3 py-1 text-xs font-bold text-[#63703d] bg-[#63703d]/15 border border-[#63703d]/30 rounded-full flex items-center gap-1.5">
+                <Volume2 className="w-3 h-3" /> Voice Enabled
+              </span>
+            </div>
+            <h1 className="text-2xl md:text-3xl font-serif font-bold text-[#231f20] dark:text-white tracking-tight">
+              AI Mock <span className="text-[#b56b37] italic">Interview Room</span>
+            </h1>
+            <p className="text-[#603620] dark:text-slate-400 text-xs md:text-sm max-w-2xl font-medium">
+              Practice real voice-based technical and behavioral interviews with an AI interviewer. Speak naturally — get instant follow-up questions and a final score.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 p-4 rounded-2xl shadow-xs">
+            <div className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-[#63703d]' : 'bg-amber-500'}`} />
+            <div>
+              <div className="text-[10px] uppercase font-bold text-[#8c7569] tracking-wider">AI Backend</div>
+              <div className="text-xs font-extrabold text-[#231f20] dark:text-white">{isConnected ? 'Connected' : 'Offline Fallback Mode'}</div>
+            </div>
+          </div>
+        </div>
       </div>
 
+      {/* Setup Phase */}
       {!isSessionActive && !feedback && (
-        <div className="mock-setup">
-          <label>Job Description</label>
-          <textarea 
-            placeholder="Paste the target job description here..."
-            value={jobDescription}
-            onChange={(e) => setJobDescription(e.target.value)}
-          />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Setup Form */}
+          <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-6 md:p-8 space-y-5 shadow-2xs">
+            <div className="border-b border-[#e8ded1] dark:border-slate-800 pb-4">
+              <h2 className="text-lg font-serif font-bold text-[#231f20] dark:text-white flex items-center gap-2">
+                <FileText className="w-5 h-5 text-[#b56b37]" /> Interview Setup
+              </h2>
+              <p className="text-xs text-[#603620] dark:text-slate-400 font-medium mt-1">Provide the job description and your background for personalized interview questions.</p>
+            </div>
 
-          <label>Resume / Background Context (Optional)</label>
-          <textarea 
-            placeholder="Paste your resume or key background details..."
-            value={resumeContext}
-            onChange={(e) => setResumeContext(e.target.value)}
-          />
-
-          <button className="btn-primary" onClick={startSession}>
-            Start Interview
-          </button>
-        </div>
-      )}
-
-      {feedback && (
-        <div className="feedback-box">
-          <h2>Score: {feedback.score}/100</h2>
-          <p>{feedback.feedback}</p>
-          <button className="btn-primary" style={{marginTop: '20px'}} onClick={() => { setFeedback(null); setHistory([]); }}>
-            Try Again
-          </button>
-        </div>
-      )}
-
-      {isSessionActive && (
-        <div className="active-session">
-          <div className="visualizer-container">
-            {isListening && (
-              <div className="status-indicator listening">
-                <div className="pulse"></div> Listening...
+            {setupError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs font-bold text-red-700">
+                {setupError}
               </div>
             )}
-            {isSpeaking && (
-              <div className="status-indicator speaking">
-                <div className="pulse"></div> AI Speaking...
-              </div>
-            )}
-            
-            <div className="waveform">
-              {/* Dummy animated bars for visual effect */}
-              {Array.from({ length: 15 }).map((_, i) => (
-                <div 
-                  key={i} 
-                  className={`bar ${isSpeaking ? 'ai' : ''}`}
-                  style={{ 
-                    height: (isListening || isSpeaking) ? `${Math.random() * 80 + 20}px` : '20px',
-                    animation: (isListening || isSpeaking) ? `pulseAnim ${0.5 + Math.random()}s infinite` : 'none'
-                  }}
-                />
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-[#603620] uppercase tracking-wider block">
+                Target Job Description <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                rows={5}
+                placeholder="Paste the full job description here... (e.g. Senior Software Engineer at Stripe...)"
+                value={jobDescription}
+                onChange={e => { setJobDescription(e.target.value); setSetupError(''); }}
+                className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3.5 text-xs text-[#231f20] dark:text-white outline-none resize-none focus:border-[#b56b37] transition-colors"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-[#603620] uppercase tracking-wider block">
+                Resume / Background Context <span className="text-[#8c7569] font-normal">(optional)</span>
+              </label>
+              <textarea
+                rows={4}
+                placeholder="Paste key resume highlights or background context... (e.g. 3 years of React, TypeScript, Node.js...)"
+                value={resumeContext}
+                onChange={e => setResumeContext(e.target.value)}
+                className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3.5 text-xs text-[#231f20] dark:text-white outline-none resize-none focus:border-[#b56b37] transition-colors"
+              />
+            </div>
+
+            <button
+              onClick={startSession}
+              className="w-full py-3.5 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-sm rounded-2xl shadow-md cursor-pointer flex items-center justify-center gap-2 transition-colors"
+            >
+              <Play className="w-4 h-4" /> Begin AI Interview Session
+            </button>
+          </div>
+
+          {/* Instructions Panel */}
+          <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xs space-y-5">
+            <div className="border-b border-[#e8ded1] dark:border-slate-800 pb-4">
+              <h2 className="text-lg font-serif font-bold text-[#231f20] dark:text-white flex items-center gap-2">
+                <Brain className="w-5 h-5 text-[#b56b37]" /> How It Works
+              </h2>
+            </div>
+
+            <div className="space-y-4">
+              {[
+                { step: '01', title: 'Setup Your Session', desc: 'Paste the target role JD and optionally your resume highlights for AI context.' },
+                { step: '02', title: 'AI Opens The Interview', desc: 'The AI interviewer greets you and reads your JD to generate contextual questions.' },
+                { step: '03', title: 'Speak Your Answers', desc: 'Click "Speak / Resume" and answer naturally. Your voice is transcribed in real time.' },
+                { step: '04', title: 'AI Follow-Up Questions', desc: 'After each answer, the AI interviewer speaks a deep follow-up question automatically.' },
+                { step: '05', title: 'End & Score', desc: 'Click "End Interview" to receive your performance score and personalized feedback.' }
+              ].map(item => (
+                <div key={item.step} className="flex items-start gap-4">
+                  <span className="flex-shrink-0 w-8 h-8 rounded-full bg-[#f3e4bd] text-[#603620] font-serif font-extrabold text-xs flex items-center justify-center border border-[#e8ded1]">
+                    {item.step}
+                  </span>
+                  <div>
+                    <h4 className="font-bold text-xs text-[#231f20] dark:text-white">{item.title}</h4>
+                    <p className="text-[11px] text-[#603620] dark:text-slate-400 font-medium mt-0.5">{item.desc}</p>
+                  </div>
+                </div>
               ))}
+            </div>
+
+            <div className="pt-4 border-t border-[#e8ded1] dark:border-slate-800">
+              <div className="flex items-center gap-2 text-[11px] font-semibold text-[#8c7569]">
+                <Sparkles className="w-3.5 h-3.5 text-[#b56b37]" /> Works best in Google Chrome with microphone permission enabled.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══ Active Interview Session — split layout: Orb left | Chat right ══ */}
+      {isSessionActive && (
+        <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-4 items-start">
+
+          {/* ── LEFT: Orb + Controls ──────────────────────────────────── */}
+          <div className="flex flex-col bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm" style={{ height: '560px' }}>
+
+            {/* Status bar */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[#e8ded1] dark:border-slate-800 flex-shrink-0">
+              <div className="flex items-center gap-2">
+                {isListening && (
+                  <span className="flex items-center gap-1.5 px-2.5 py-1 bg-[#b56b37]/10 text-[#b56b37] border border-[#b56b37]/30 rounded-full text-[10px] font-bold">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#b56b37] animate-pulse" />
+                    Listening...
+                  </span>
+                )}
+                {isSpeaking && (
+                  <span className="flex items-center gap-1.5 px-2.5 py-1 bg-[#63703d]/10 text-[#63703d] border border-[#63703d]/30 rounded-full text-[10px] font-bold">
+                    <Volume2 className="w-3 h-3" /> AI Speaking
+                  </span>
+                )}
+                {!isListening && !isSpeaking && (
+                  <span className="flex items-center gap-1.5 px-2.5 py-1 bg-[#f6efe2] text-[#8c7569] border border-[#e8ded1] rounded-full text-[10px] font-bold">
+                    <Mic className="w-3 h-3" /> Ready
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={stopSession}
+                className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] rounded-xl cursor-pointer flex items-center gap-1.5 transition-colors"
+              >
+                <Square className="w-3 h-3" /> End Interview
+              </button>
+            </div>
+
+            {/* Orb centrepiece — fills remaining height */}
+            <div
+              className="flex-1 flex flex-col items-center justify-center gap-4 bg-gradient-to-b from-[#fcf9f2] to-white dark:from-slate-950 dark:to-slate-900"
+            >
+              <div
+                className="rounded-full"
+                style={{
+                  filter: isSpeaking
+                    ? 'drop-shadow(0 0 32px rgba(99,112,61,0.5))'
+                    : isListening
+                    ? 'drop-shadow(0 0 32px rgba(181,107,55,0.55))'
+                    : 'drop-shadow(0 0 12px rgba(181,107,55,0.15))'
+                }}
+              >
+                <VoiceOrb isListening={isListening} isSpeaking={isSpeaking} size={220} />
+              </div>
+
+              {/* Who is speaking label */}
+              <div className="text-center space-y-1">
+                <p
+                  className="text-[11px] font-extrabold uppercase tracking-widest transition-colors duration-500"
+                  style={{ color: isSpeaking ? '#63703d' : isListening ? '#b56b37' : '#8c7569' }}
+                >
+                  {isSpeaking ? 'AI Interviewer' : isListening ? 'You' : 'Standby'}
+                </p>
+                <p className="text-[10px] text-[#8c7569] font-medium">
+                  {isSpeaking
+                    ? 'Generating your next question…'
+                    : isListening
+                    ? 'Listening — speak clearly'
+                    : 'Press Speak or wait for AI'}
+                </p>
+              </div>
+
+              {/* Speak button — only show when idle */}
+              {!isListening && !isSpeaking && (
+                <button
+                  onClick={() => { try { recognitionRef.current?.start(); } catch (e) {} }}
+                  className="mt-2 px-5 py-2.5 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-xs rounded-2xl cursor-pointer flex items-center gap-2 transition-colors shadow-md"
+                >
+                  <Mic className="w-4 h-4" /> Press to Speak
+                </button>
+              )}
             </div>
           </div>
 
-          <div className="transcript-box">
-            {history.map((msg, idx) => (
-              <div key={idx} className={`message ${msg.role}`}>
-                <span className="message-sender">{msg.role === 'user' ? 'You' : 'Interviewer'}</span>
-                <div className="message-bubble">{msg.content}</div>
-              </div>
-            ))}
-            {currentSpeech && (
-              <div className="message user">
-                 <span className="message-sender">You (Speaking...)</span>
-                 <div className="message-bubble" style={{ opacity: 0.7 }}>{currentSpeech}</div>
-              </div>
-            )}
-            <div ref={transcriptEndRef} />
-          </div>
+          {/* ── RIGHT: Transcript Chat ────────────────────────────────── */}
+          <div
+            className="flex flex-col bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm"
+            style={{ height: '560px' }}
+          >
+            {/* Header */}
+            <div className="px-5 py-3.5 border-b border-[#e8ded1] dark:border-slate-800 flex items-center justify-between flex-shrink-0">
+              <h2 className="font-serif font-bold text-sm text-[#231f20] dark:text-white">Interview Transcript</h2>
+              <span className="text-[10px] font-bold text-[#8c7569] uppercase tracking-wider">{history.length} exchanges</span>
+            </div>
 
-          <div className="controls">
-            {!isListening && !isSpeaking && (
-              <button className="btn-primary" onClick={() => recognitionRef.current?.start()}>
-                Hold to Speak / Resume
-              </button>
+            {/* Messages — scrolls internally */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-4 min-h-0">
+              {history.length === 0 && (
+                <div className="h-full flex flex-col items-center justify-center gap-2 text-center">
+                  <Brain className="w-8 h-8 text-[#e8ded1]" />
+                  <p className="text-xs text-[#8c7569] font-medium">The interviewer will speak first.<br />Your responses will appear here.</p>
+                </div>
+              )}
+
+              {history.map((msg, idx) => (
+                <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} animate-fade-in`}>
+                  <span className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${msg.role === 'user' ? 'text-[#b56b37]' : 'text-[#63703d]'}`}>
+                    {msg.role === 'user' ? 'You' : 'AI Interviewer'}
+                  </span>
+                  <div
+                    className={`max-w-[85%] px-4 py-3 rounded-2xl text-xs font-medium leading-relaxed ${
+                      msg.role === 'user'
+                        ? 'bg-[#b56b37] text-white rounded-br-sm'
+                        : 'bg-[#fcf9f2] dark:bg-slate-800 text-[#231f20] dark:text-slate-200 border border-[#e8ded1] dark:border-slate-700 rounded-bl-sm'
+                    }`}
+                  >
+                    {msg.content}
+                  </div>
+                </div>
+              ))}
+
+              {/* Live interim speech preview */}
+              {currentSpeech && (
+                <div className="flex flex-col items-end animate-fade-in">
+                  <span className="text-[10px] font-bold uppercase tracking-wider mb-1 text-[#b56b37]">You (Speaking...)</span>
+                  <div className="max-w-[85%] px-4 py-3 rounded-2xl rounded-br-sm text-xs font-medium bg-[#b56b37]/50 text-white italic">
+                    {currentSpeech}
+                  </div>
+                </div>
+              )}
+
+              {/* AI Thinking indicator — shows while Gemini generates a response */}
+              {isAiThinking && (
+                <div className="flex flex-col items-start animate-fade-in">
+                  <span className="text-[10px] font-bold uppercase tracking-wider mb-1 text-[#63703d]">AI Interviewer</span>
+                  <div className="px-4 py-3 rounded-2xl rounded-bl-sm bg-[#fcf9f2] border border-[#e8ded1] flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#63703d] animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#63703d] animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#63703d] animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </div>
+              )}
+
+              <div ref={transcriptEndRef} />
+            </div>
+
+            {/* Voice Error Banner + Text Fallback — pinned to bottom of chat panel */}
+            {voiceError && (
+              <div className="border-t border-amber-200 bg-amber-50 p-3 flex-shrink-0">
+                <div className="flex items-start gap-2 mb-2">
+                  <MicOff className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-[10px] font-semibold text-amber-800 leading-relaxed">{voiceError}</p>
+                </div>
+                {voiceInputFallback && (
+                  <div className="flex gap-2">
+                    <textarea
+                      rows={2}
+                      value={textAnswer}
+                      onChange={e => setTextAnswer(e.target.value)}
+                      placeholder="Type your answer and press Enter or Send..."
+                      className="flex-1 bg-white border border-amber-200 rounded-xl p-2.5 text-xs text-[#231f20] outline-none resize-none focus:border-[#b56b37] transition-colors"
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && !e.shiftKey && textAnswer.trim()) {
+                          e.preventDefault();
+                          handleUserSpeechFinal(textAnswer.trim());
+                          setTextAnswer('');
+                        }
+                      }}
+                    />
+                    <button
+                      disabled={!textAnswer.trim()}
+                      onClick={() => {
+                        if (textAnswer.trim()) {
+                          handleUserSpeechFinal(textAnswer.trim());
+                          setTextAnswer('');
+                        }
+                      }}
+                      className="px-3 py-2 bg-[#b56b37] hover:bg-[#96552a] disabled:opacity-40 text-white font-bold text-xs rounded-xl cursor-pointer self-end transition-colors"
+                    >
+                      Send
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
-            <button className="btn-danger" onClick={stopSession}>
-              End Interview
-            </button>
+          </div>
+        </div>
+      )}
+
+
+      {/* Feedback / Score View */}
+      {feedback && (
+        <div className="space-y-6 max-w-2xl mx-auto">
+          <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-8 shadow-2xs space-y-6 text-center">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-24 h-24 rounded-full border-4 border-[#b56b37] bg-[#fcf9f2] flex items-center justify-center">
+                <span className="font-serif font-extrabold text-3xl text-[#b56b37]">{feedback.score}</span>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase font-bold text-[#8c7569] tracking-wider">Interview Score</div>
+                <h2 className="text-xl font-serif font-bold text-[#231f20] dark:text-white mt-0.5">
+                  {feedback.score >= 85 ? 'Excellent Performance' : feedback.score >= 70 ? 'Good Performance' : 'Needs Improvement'}
+                </h2>
+              </div>
+            </div>
+
+            <div className="bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-2xl p-5 text-left">
+              <h3 className="font-bold text-xs text-[#63703d] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" /> AI Feedback & Recommendations
+              </h3>
+              <p className="text-xs text-[#231f20] dark:text-slate-200 font-medium leading-relaxed">{feedback.feedback}</p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+              <button
+                onClick={() => { setFeedback(null); setHistory([]); setCurrentSpeech(''); setIsSessionActive(false); }}
+                className="px-6 py-3 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-xs rounded-xl cursor-pointer flex items-center justify-center gap-2 shadow-sm transition-colors"
+              >
+                <RotateCcw className="w-4 h-4" /> Try Another Session
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { handleListResumes, handleCreateResume, handleRenameResume, handleDeleteResume, handleSetDefaultResume, handleExportResumeToPDF } from "../controllers/resumeController.js";
-import { authMiddleware } from "../../middleware/auth.js";
+import { authMiddleware } from "../middlewares/auth.js";
 
 const router = Router();
 

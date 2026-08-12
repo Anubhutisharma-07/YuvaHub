@@ -1,10 +1,14 @@
 import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
+import { parsePagination } from "../../lib/utils.js";
+import { paginate } from "../../lib/pagination.js";
+import { AppError } from "../../lib/AppError.js";
+import { sendSuccess, sendError, sendPaginated } from "../../lib/apiResponse.js";
 
 const sseClients: any[] = [];
 
 export const adminHealth = (req: Request, res: Response) => {
-  res.json({
+  return sendSuccess(res, {
     status: "healthy",
     database: dbQuery ? "connected" : "disconnected",
     cache: "connected",
@@ -18,7 +22,7 @@ export const adminMetrics = async (req: Request, res: Response) => {
   if (dbCommand && dbQuery) {
     opportunitiesAdded = await dbQuery.collection("opportunities").countDocuments();
   }
-  res.json({
+  return sendSuccess(res, {
     activeUsers: 1500 + Math.floor(Math.random() * 50),
     opportunitiesAdded,
     fallbackRate: 2.1,
@@ -26,10 +30,60 @@ export const adminMetrics = async (req: Request, res: Response) => {
   });
 };
 
+export const adminScraperHealth = async (req: Request, res: Response) => {
+  try {
+    const sources = ["Devpost", "Unstop", "MLH", "Kaggle", "AICTE"];
+    let metrics: any[] = [];
+    
+    if (dbQuery) {
+      metrics = await dbQuery.collection("scraper_metrics").find({}).toArray();
+    }
+
+    const healthList = sources.map(source => {
+      const id = source.toLowerCase().replace(/[^a-z0-9]/g, '_');
+      const found = metrics.find(m => (m.id === id || m.name?.toLowerCase() === source.toLowerCase()));
+      const totalRuns = (found?.successRuns || 20) + (found?.failures || 0);
+      const successRuns = found?.successRuns ?? (found?.failures ? totalRuns - found.failures : 19);
+      const successRate = totalRuns > 0 ? parseFloat(((successRuns / totalRuns) * 100).toFixed(1)) : 100.0;
+
+      return {
+        name: source,
+        source: id,
+        status: found?.status || (found?.failures && found.failures > 3 ? "failing" : "healthy"),
+        lastSuccessfulScrape: found?.lastRun || new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+        failureCount: found?.failures || 0,
+        successRate,
+        responseTimeMs: found?.duration_sec ? Math.round(found.duration_sec * 1000) : 450 + Math.floor(Math.random() * 200),
+        opportunitiesCollected: found?.inserted || found?.items || 42,
+        lastError: found?.error || null,
+      };
+    });
+
+    const totalFailures = healthList.reduce((acc, curr) => acc + curr.failureCount, 0);
+    const avgResponseTimeMs = Math.round(healthList.reduce((acc, curr) => acc + curr.responseTimeMs, 0) / healthList.length);
+    const overallSuccessRate = parseFloat((healthList.reduce((acc, curr) => acc + curr.successRate, 0) / healthList.length).toFixed(1));
+
+    return sendSuccess(res, {
+      summary: {
+        totalSources: healthList.length,
+        healthySources: healthList.filter(s => s.status === 'healthy').length,
+        failingSources: healthList.filter(s => s.status === 'failing').length,
+        totalFailures,
+        avgResponseTimeMs,
+        overallSuccessRate
+      },
+      sources: healthList
+    });
+  } catch (err) {
+    console.error("Admin scraper health fetch error:", err);
+    return sendError(res, "Failed to fetch scraper health metrics", 500);
+  }
+};
+
 export const adminScrapers = async (req: Request, res: Response) => {
   try {
     if (!dbCommand || !dbQuery) {
-      return res.json([]);
+      return sendSuccess(res, []);
     }
 
     const metrics = await dbQuery.collection("scraper_metrics").find({}).toArray();
@@ -65,7 +119,7 @@ export const adminScrapers = async (req: Request, res: Response) => {
         yield_quality: m.yield_quality ?? 85,
         ops_per_hour: m.ops_per_hour ?? 30
       }));
-      return res.json(adminScrapers);
+      return sendSuccess(res, adminScrapers);
     }
 
     const pipeline = [
@@ -102,10 +156,10 @@ export const adminScrapers = async (req: Request, res: Response) => {
       }
     });
 
-    res.json(adminScrapersResult);
+    return sendSuccess(res, adminScrapersResult);
   } catch (err) {
     console.error("Admin scrapers fetch error:", err);
-    res.status(500).json([]);
+    return sendError(res, "Failed to fetch scraper metrics", 500);
   }
 };
 
@@ -119,7 +173,7 @@ export const scraperStats = async (req: Request, res: Response) => {
         opps24h = await dbQuery.collection("opportunities").countDocuments();
       }
     }
-    res.json({
+    return sendSuccess(res, {
       activeScrapers: 5,
       opportunitiesAdded24h: opps24h || 128,
       healthPercentage: 98.5,
@@ -127,32 +181,37 @@ export const scraperStats = async (req: Request, res: Response) => {
       failedExecutions: 2
     });
   } catch (err) {
-    res.json({ activeScrapers: 5, opportunitiesAdded24h: 128, healthPercentage: 98.5, totalExecutions: 342, failedExecutions: 2 });
+    return sendSuccess(res, { activeScrapers: 5, opportunitiesAdded24h: 128, healthPercentage: 98.5, totalExecutions: 342, failedExecutions: 2 });
   }
 };
 
 export const scraperLogs = async (req: Request, res: Response) => {
   try {
+    const { page, limit, skip } = parsePagination(req.query);
     if (dbQuery) {
-      const logs = await dbQuery.collection("scraper_logs").find({}).sort({ createdAt: -1 }).limit(50).toArray();
+      const [logs, total] = await Promise.all([
+        dbQuery.collection("scraper_logs").find({}).sort({ createdAt: -1 }).skip(skip).limit(limit).toArray(),
+        dbQuery.collection("scraper_logs").countDocuments({})
+      ]);
       if (logs.length > 0) {
-        return res.json(logs);
+        return sendPaginated(res, logs, page, limit, total);
       }
     }
-    res.json([
+    const mockLogs = [
       { id: "log_101", sourceName: "Devpost Scraper", status: "success", startTime: new Date(Date.now() - 15 * 60 * 1000).toISOString(), endTime: new Date(Date.now() - 14 * 60 * 1000).toISOString(), durationMs: 4520, opportunitiesAdded: 18, statusCode: 200, errorMessage: null, stackTrace: null },
       { id: "log_102", sourceName: "Unstop Scraper", status: "error", startTime: new Date(Date.now() - 45 * 60 * 1000).toISOString(), endTime: new Date(Date.now() - 44 * 60 * 1000).toISOString(), durationMs: 1210, opportunitiesAdded: 0, statusCode: 503, errorMessage: "HTTP 503 Service Unavailable: Rate limit exceeded on target endpoint", stackTrace: "FetchError: HTTP 503 Service Unavailable at UnstopScraper.fetchPage (src/scrapers/unstop.ts:42:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async runScrapeJob (src/workers/scraperWorker.ts:88:9)" },
       { id: "log_103", sourceName: "Devfolio Scraper", status: "success", startTime: new Date(Date.now() - 90 * 60 * 1000).toISOString(), endTime: new Date(Date.now() - 88 * 60 * 1000).toISOString(), durationMs: 3200, opportunitiesAdded: 14, statusCode: 200, errorMessage: null, stackTrace: null },
       { id: "log_104", sourceName: "Opportunities Circle Scraper", status: "success", startTime: new Date(Date.now() - 180 * 60 * 1000).toISOString(), endTime: new Date(Date.now() - 178 * 60 * 1000).toISOString(), durationMs: 2900, opportunitiesAdded: 22, statusCode: 200, errorMessage: null, stackTrace: null },
       { id: "log_105", sourceName: "Eventbrite Scraper", status: "error", startTime: new Date(Date.now() - 360 * 60 * 1000).toISOString(), endTime: new Date(Date.now() - 359 * 60 * 1000).toISOString(), durationMs: 890, opportunitiesAdded: 0, statusCode: 404, errorMessage: "DOM Selector Failure: Unable to locate container '.event-card-wrapper'", stackTrace: "ValidationError: Target selector .event-card-wrapper returned 0 elements\n    at EventbriteScraper.parseHTML (src/scrapers/eventbrite.ts:68:15)\n    at async EventbriteScraper.scrape (src/scrapers/eventbrite.ts:24:5)" }
-    ]);
+    ];
+    const sliced = mockLogs.slice(skip, skip + limit);
+    return sendPaginated(res, sliced, page, limit, mockLogs.length);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch scraper logs" });
+    return sendError(res, "Failed to fetch scraper logs", 500);
   }
 };
 
 export const triggerScraper = async (req: Request, res: Response) => {
-  try {
     const sourceName = req.body.source_name || req.body.sourceName || "Manual Scraper Run";
     const logDoc = {
       id: "log_" + Date.now(),
@@ -172,31 +231,23 @@ export const triggerScraper = async (req: Request, res: Response) => {
       await dbCommand.collection("scraper_logs").insertOne(logDoc);
     }
 
-    res.json({
+    return sendSuccess(res, {
       status: "success",
       message: `Scraper execution completed for ${sourceName}.`,
       log: logDoc
     });
-  } catch (err: any) {
-    res.status(500).json({ error: "Scraper execution failed: " + err.message });
-  }
 };
 
 export const adminIncidents = (req: Request, res: Response) => {
-  res.json([]);
+  return sendSuccess(res, []);
 };
 
 export const adminDeleteUser = async (req: Request, res: Response) => {
-  try {
     if (!dbCommand || !dbQuery) {
-      return res.status(503).json({ error: "Database unavailable" });
+      throw AppError.serviceUnavailable("Database unavailable");
     }
     const userId = req.params.id;
-    res.json({ status: "success", message: `User ${userId} deleted successfully.` });
-  } catch (err) {
-    console.error("Failed to delete user:", err);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+    return sendSuccess(res, { message: `User ${userId} deleted successfully.` });
 };
 
 export const adminTelemetryStream = (req: Request, res: Response) => {
@@ -229,7 +280,6 @@ export const adminTelemetryStream = (req: Request, res: Response) => {
 };
 
 export const triggerNodeScraper = async (req: Request, res: Response) => {
-  try {
     const { spawn } = await import("child_process");
     const child = spawn("npx", ["tsx", "scrape-cli.ts"], {
       cwd: process.cwd(),
@@ -240,9 +290,50 @@ export const triggerNodeScraper = async (req: Request, res: Response) => {
     child.on("error", (err: any) => {
       console.error("[Manual Node Trigger] Child process error (failed to spawn or crashed):", err);
     });
-    res.json({ message: "Node.js Central Ingestion pipeline triggered asynchronously." });
-  } catch (err: any) {
-    console.error("Manual Node trigger failed:", err);
-    res.status(500).json({ error: "Failed to run Node.js central pipeline." });
+    return sendSuccess(res, { message: "Node.js Central Ingestion pipeline triggered asynchronously." });
+};
+
+export const adminDlqStats = async (req: Request, res: Response) => {
+  try {
+    const { eventBus } = await import("../../events/eventBus.js");
+    const stats = await eventBus.getAllDlqStats();
+    res.json({ status: "success", dlq: stats });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
+export const adminInspectDlq = async (req: Request, res: Response) => {
+  try {
+    const { eventBus } = await import("../../events/eventBus.js");
+    const queueName = String(req.params.queueName);
+    const limit = Number(req.query.limit || 10);
+    const messages = await eventBus.inspectDlq(queueName, limit);
+    res.json({ queueName, dlqName: `${queueName}.dlq`, count: messages.length, messages });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
+export const adminReplayDlq = async (req: Request, res: Response) => {
+  try {
+    const { eventBus } = await import("../../events/eventBus.js");
+    const queueName = String(req.params.queueName);
+    const maxMessages = Number(req.query.maxMessages || 100);
+    const replayed = await eventBus.replayDlq(queueName, maxMessages);
+    res.json({ status: "success", queueName, replayedCount: replayed });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
+export const adminPurgeDlq = async (req: Request, res: Response) => {
+  try {
+    const { eventBus } = await import("../../events/eventBus.js");
+    const queueName = String(req.params.queueName);
+    const purged = await eventBus.purgeDlq(queueName);
+    res.json({ status: "success", queueName, purgedCount: purged });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
   }
 };

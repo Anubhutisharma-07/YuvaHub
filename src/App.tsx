@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import {
   LayoutDashboard, Globe, PlusCircle, Users, User, Menu, X, Bookmark, Sparkles, MessageSquare, Settings, Sun, Moon, Mic,
   Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert
@@ -8,54 +8,75 @@ import { UserProfile } from './types';
 import { useAppContext } from './context/AppContext';
 import { useSocket } from './context/SocketContext';
 import { scrollContentToTop } from './lib/smoothScroll';
-// Tab/View Components
-import Dashboard from './components/Tabs/Dashboard';
-import Opportunities from './components/Tabs/Opportunities';
-import SubmitOpportunity from './components/Tabs/SubmitOpportunity';
-import Mentorship from './components/Tabs/Mentorship';
-import Profile from './components/Tabs/Profile';
-import Community from './components/Tabs/Community';
-import Bookmarks from './components/Tabs/Bookmarks';
-import SettingsTab from './components/Tabs/Settings';
-import AdminDashboard from './components/Admin/AdminDashboard';
-import NotificationDropdown from './components/ui/NotificationDropdown';
-import OpportunityDetail from './components/Tabs/OpportunityDetail';
-import AIAssistant from './components/Tabs/AIAssistant';
-import BountyBoard from './components/Tabs/BountyBoard';
-import BackToTopButton from './components/ui/BackToTopButton';import OnboardingFlow from './components/OnboardingFlow';
-import SplashAuth from './components/SplashAuth';
-import Security from './components/Tabs/Security';
-import AuthSecurityCenter from './components/Tabs/AuthSecurityCenter';
-import CareerMatchStudio from './components/Tabs/CareerMatchStudio';
-import HackathonStudio from './components/Tabs/HackathonStudio';
-import DeveloperApiPortal from './components/Tabs/DeveloperApiPortal';
-import GrantFellowshipStudio from './components/Tabs/GrantFellowshipStudio';
-import CampusAlumniHub from './components/Tabs/CampusAlumniHub';
-import ResumeAtsStudio from './components/Tabs/ResumeAtsStudio';
-import InterviewPrepStudio from './components/Tabs/InterviewPrepStudio';
-import OpenSourceBountyStudio from './components/Tabs/OpenSourceBountyStudio';
-import OpportunityMatchStudio from './components/Tabs/OpportunityMatchStudio';
-import TechEcosystemStudio from './components/Tabs/TechEcosystemStudio';
-import HackathonJudgeStudio from './components/Tabs/HackathonJudgeStudio';
-import MentorshipAdvisoryStudio from './components/Tabs/MentorshipAdvisoryStudio';
-import ResearchGrantPortal from './components/Tabs/ResearchGrantPortal';
-import ProjectShowcaseVault from './components/Tabs/ProjectShowcaseVault';
-import StarInterviewStudio from './components/Tabs/StarInterviewStudio';
-import Legal from './components/Tabs/Legal';
-import Support from './components/Tabs/Support';
-import HelpCenter from './components/Tabs/HelpCenter';
-import FAQ from './components/Tabs/FAQ';
-import Privacy from './pages/Privacy';
-import Terms from './pages/Terms';
-import Cookies from './pages/Cookies';
-import Guidelines from './components/Tabs/Guidelines';
-import About from './pages/About';
-import AboutTab from './components/Tabs/About';
-import HelpCenterPage from './pages/HelpCenter';
-import GettingStartedDetail from './pages/GettingStartedDetail';
 import { SEO } from './components/SEO';
-import Teams from './components/Tabs/Teams';
-import MockInterviewRoom from './pages/MockInterviewRoom';
+import LoadingScreen from './components/ui/LoadingScreen';
+import NotificationDropdown from './components/ui/NotificationDropdown';
+import BackToTopButton from './components/ui/BackToTopButton';
+import AccessibilityEnhancer from './components/accessibility/AccessibilityEnhancer';
+
+// Route components are lazy-loaded to reduce the initial bundle size (code splitting)
+const Dashboard = lazy(() => import('./components/Tabs/Dashboard'));
+const Opportunities = lazy(() => import('./components/Tabs/Opportunities'));
+const SubmitOpportunity = lazy(() => import('./components/Tabs/SubmitOpportunity'));
+const Mentorship = lazy(() => import('./components/Tabs/Mentorship'));
+const Profile = lazy(() => import('./components/Tabs/Profile'));
+const Community = lazy(() => import('./components/Tabs/Community'));
+const Bookmarks = lazy(() => import('./components/Tabs/Bookmarks'));
+const SettingsTab = lazy(() => import('./components/Tabs/Settings'));
+const AdminDashboard = lazy(() => import('./components/Admin/AdminDashboard'));
+const OpportunityDetail = lazy(() => import('./components/Tabs/OpportunityDetail'));
+const AIAssistant = lazy(() => import('./components/Tabs/AIAssistant'));
+const OnboardingFlow = lazy(() => import('./components/OnboardingFlow'));
+const SplashAuth = lazy(() => import('./components/SplashAuth'));
+const Security = lazy(() => import('./components/Tabs/Security'));
+const Legal = lazy(() => import('./components/Tabs/Legal'));
+const Support = lazy(() => import('./components/Tabs/Support'));
+const Privacy = lazy(() => import('./pages/Privacy'));
+const Terms = lazy(() => import('./pages/Terms'));
+const Cookies = lazy(() => import('./pages/Cookies'));
+const Guidelines = lazy(() => import('./components/Tabs/Guidelines'));
+const AboutTab = lazy(() => import('./components/Tabs/About'));
+const HelpCenterPage = lazy(() => import('./pages/HelpCenter'));
+const GettingStartedDetail = lazy(() => import('./pages/GettingStartedDetail'));
+const BountyBoard = lazy(() => import('./components/Tabs/BountyBoard'));
+const AuthSecurityCenter = lazy(() => import('./components/Tabs/AuthSecurityCenter'));
+const CareerMatchStudio = lazy(() => import('./components/Tabs/CareerMatchStudio'));
+const HackathonStudio = lazy(() => import('./components/Tabs/HackathonStudio'));
+const DeveloperApiPortal = lazy(() => import('./components/Tabs/DeveloperApiPortal'));
+const GrantFellowshipStudio = lazy(() => import('./components/Tabs/GrantFellowshipStudio'));
+const CampusAlumniHub = lazy(() => import('./components/Tabs/CampusAlumniHub'));
+const ResumeAtsStudio = lazy(() => import('./components/Tabs/ResumeAtsStudio'));
+const InterviewPrepStudio = lazy(() => import('./components/Tabs/InterviewPrepStudio'));
+const OpenSourceBountyStudio = lazy(() => import('./components/Tabs/OpenSourceBountyStudio'));
+const OpportunityMatchStudio = lazy(() => import('./components/Tabs/OpportunityMatchStudio'));
+const TechEcosystemStudio = lazy(() => import('./components/Tabs/TechEcosystemStudio'));
+const HackathonJudgeStudio = lazy(() => import('./components/Tabs/HackathonJudgeStudio'));
+const MentorshipAdvisoryStudio = lazy(() => import('./components/Tabs/MentorshipAdvisoryStudio'));
+const ResearchGrantPortal = lazy(() => import('./components/Tabs/ResearchGrantPortal'));
+const ProjectShowcaseVault = lazy(() => import('./components/Tabs/ProjectShowcaseVault'));
+const StarInterviewStudio = lazy(() => import('./components/Tabs/StarInterviewStudio'));
+const HelpCenter = lazy(() => import('./components/Tabs/HelpCenter'));
+const FAQ = lazy(() => import('./components/Tabs/FAQ'));
+const Teams = lazy(() => import('./components/Tabs/Teams'));
+const MockInterviewRoom = lazy(() => import('./pages/MockInterviewRoom'));
+
+const LoadingFallback = () => (
+  <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
+    <div className="flex items-center gap-3 animate-pulse">
+       <div className="w-12 h-12 rounded-xl bg-[#2563EB] flex items-center justify-center shadow-lg shadow-blue-500/20">
+         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+       </div>
+       <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">
+         Yuva<span className="text-[#2563EB]">Hub</span>
+       </h1>
+    </div>
+    <div className="flex gap-2">
+      <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB] animate-bounce" style={{ animationDelay: '0ms' }}></div>
+      <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB] animate-bounce" style={{ animationDelay: '150ms' }}></div>
+      <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB] animate-bounce" style={{ animationDelay: '300ms' }}></div>
+    </div>
+  </div>
+);
 
 const PUBLIC_TABS = ['opportunities', 'about', 'privacy', 'terms', 'cookies', 'guidelines', 'security', 'support', 'legal'];
 
@@ -279,7 +300,20 @@ function App() {
       case 'opportunities': return <Opportunities />;
       case 'teams': return <Teams />;
       case 'bookmarks': return <Bookmarks />;
-      case 'ai_assistant': return <AIAssistant />;
+      case 'ai_assistant': return (
+        <Suspense fallback={
+          <div className="flex flex-col items-center justify-center h-full min-h-[400px] gap-4">
+            <div className="flex gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB] animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB] animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB] animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            </div>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Loading AI Assistant...</p>
+          </div>
+        }>
+          <AIAssistant />
+        </Suspense>
+      );
       case 'career_match': return <CareerMatchStudio />;
       case 'hackathon_studio': return <HackathonStudio />;
       case 'developer_api': return <DeveloperApiPortal />;
@@ -296,7 +330,7 @@ function App() {
       case 'project_showcase': return <ProjectShowcaseVault />;
       case 'star_interview': return <StarInterviewStudio />;
       case 'submit': return <SubmitOpportunity />;
-      case 'mentorship': return <Mentorship />;
+      case 'mentorship': return <MentorshipAdvisoryStudio />;
       case 'bounty_board': return <BountyBoard />;
       case 'community': return <Community />;
       case 'profile': return <Profile />;
@@ -319,42 +353,119 @@ function App() {
   };
 
   if (loading) {
+    return <LoadingScreen fullScreen={true} />;
+  }
+
+  if ((activeTab === 'legal' || activeTab === 'security' || activeTab === 'support' || activeTab === 'about' || activeTab === 'guidelines') && !user) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 gap-6">
-        <div className="flex items-center gap-3 animate-pulse">
-           <div className="w-12 h-12 rounded-xl bg-[#2563EB] flex items-center justify-center shadow-lg shadow-blue-500/20">
-             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-           </div>
-           <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-             Yuva<span className="text-[#2563EB]">Hub</span>
-           </h1>
-        </div>
-        <div className="flex gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB] animate-bounce" style={{ animationDelay: '0ms' }}></div>
-          <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB] animate-bounce" style={{ animationDelay: '150ms' }}></div>
-          <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB] animate-bounce" style={{ animationDelay: '300ms' }}></div>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col font-sans">
+        {/* Public Header */}
+        <header className="sticky top-0 z-50 h-[60px] bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6 lg:px-12">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => { clearSelectedOpportunity(); setActiveTab('dashboard'); }}>
+            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            </div>
+            <span className="font-bold text-[17px] tracking-tight text-gray-900 dark:text-white">YuvaHub</span>
+          </div>
+          
+          <nav className="hidden md:flex items-center gap-8 text-[14px] font-medium text-gray-600 dark:text-gray-300">
+            <button onClick={() => { clearSelectedOpportunity(); setActiveTab('opportunities'); }} className="hover:text-blue-600 dark:hover:text-blue-400 bg-transparent border-none cursor-pointer">Opportunities</button>
+            <button onClick={() => { clearSelectedOpportunity(); setActiveTab('about'); }} className="hover:text-blue-600 dark:hover:text-blue-400 bg-transparent border-none cursor-pointer">About Us</button>
+            <button onClick={() => { clearSelectedOpportunity(); setActiveTab('legal'); }} className="hover:text-blue-600 dark:hover:text-blue-400 bg-transparent border-none cursor-pointer">Legal Index</button>
+            <button onClick={() => { clearSelectedOpportunity(); setActiveTab('support'); }} className="hover:text-blue-600 dark:hover:text-blue-400 bg-transparent border-none cursor-pointer">Support</button>
+          </nav>
+          
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={toggleTheme} 
+              className="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Toggle Dark Mode"
+            >
+              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+            <button onClick={signInWithGoogle} className="px-5 py-2 text-[14px] font-medium bg-blue-600 text-white rounded-[8px] hover:bg-blue-700 transition-colors cursor-pointer">
+              Login
+            </button>
+          </div>
+        </header>
+
+        {/* Centralized SEO component for public pages */}
+        {selectedOppId ? null : (
+          <SEO 
+            title={getSeoPropsForTab(activeTab).title}
+            description={getSeoPropsForTab(activeTab).description}
+            noindex={false}
+          />
+        )}
+
+        {/* Content Area */}
+        <main className="flex-1 max-w-6xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8 pb-20">
+          <div className="mb-6">
+            <button 
+              onClick={() => { clearSelectedOpportunity(); setActiveTab('dashboard'); }} 
+              className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline font-bold bg-transparent border-none cursor-pointer"
+            >
+              ← Back to Home
+            </button>
+          </div>
+          <Suspense fallback={<LoadingScreen />}>
+            {activeTab === 'legal' ? <Legal /> : activeTab === 'security' ? <Security /> : activeTab === 'about' ? <AboutTab /> : activeTab === 'guidelines' ? <Guidelines /> : <Support />}
+          </Suspense>
+        </main>
       </div>
     );
   }
 
   if (!user) {
-    return <SplashAuth />;
+    return (
+      <Suspense fallback={<LoadingScreen fullScreen={true} />}>
+        <SplashAuth />
+      </Suspense>
+    );
   }
 
   // Ensure they are onboarded or we show the onboarding flow (for first-time signups only)
   const hasOnboarded = Boolean(
     profile?.onboarded || 
     profile?.college || 
-    (user?.uid && typeof localStorage !== 'undefined' && localStorage.getItem(`yuvahub-onboarded-${user.uid}`) === 'true')
+    profile?.year ||
+    profile?.field ||
+    (user && typeof localStorage !== 'undefined' && (
+      (user.uid && localStorage.getItem(`yuvahub-onboarded-${user.uid}`) === 'true') ||
+      (user.email && localStorage.getItem(`yuvahub-onboarded-${user.email}`) === 'true') ||
+      localStorage.getItem('yuvahub-user-onboarded') === 'true'
+    ))
   );
 
   if (user && profile && !hasOnboarded) {
-    return <OnboardingFlow user={user} profile={profile} onComplete={(updated) => setProfile(updated)} />;
+    return (
+      <Suspense fallback={<LoadingScreen fullScreen={true} />}>
+        <OnboardingFlow user={user} profile={profile} onComplete={(updated) => {
+          const finishedProfile = { ...updated, onboarded: true };
+          setProfile(finishedProfile);
+          if (typeof localStorage !== 'undefined') {
+            if (user?.uid) localStorage.setItem(`yuvahub-onboarded-${user.uid}`, 'true');
+            if (user?.email) localStorage.setItem(`yuvahub-onboarded-${user.email}`, 'true');
+            localStorage.setItem('yuvahub-user-onboarded', 'true');
+          }
+        }} />
+      </Suspense>
+    );
   }
 
   return (
     <div className="flex h-screen bg-gray-50 text-gray-900 font-sans overflow-hidden dark:bg-gray-900 dark:text-gray-100">
+      {/* Global accessibility enhancer: focus trap, ARIA labels, Esc handling */}
+      <AccessibilityEnhancer />
+
+      {/* Skip to main content link for keyboard users */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-[#603620] focus:text-white focus:rounded-lg focus:font-bold focus:text-sm focus:shadow-lg focus:outline-none"
+      >
+        Skip to main content
+      </a>
+
       {/* Centralized SEO component for logged-in views */}
       {selectedOppId ? null : (
         <SEO 
@@ -521,7 +632,7 @@ function App() {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col pt-16 lg:pt-0 h-screen overflow-hidden relative">
+      <main id="main-content" tabIndex={-1} className="flex-1 flex flex-col pt-16 lg:pt-0 h-screen overflow-hidden relative">
         
         {/* Topbar */}
         <div className="hidden lg:flex h-16 border-b border-[#e8ded1] bg-[#fcf9f2] items-center justify-between px-6 shrink-0">
@@ -582,12 +693,14 @@ function App() {
            </div>
         </div>
 
-        <div className="flex-1 p-4 lg:p-8 overflow-y-auto no-scrollbar pb-8" id="app-content">
-          {selectedOppId ? (
-            <OpportunityDetail />
-          ) : (
-            renderContent()
-          )}
+        <div className="flex-1 p-4 lg:p-6 overflow-y-auto no-scrollbar pb-24">
+          <Suspense fallback={<LoadingScreen />}>
+            {selectedOppId ? (
+              <OpportunityDetail />
+            ) : (
+              renderContent()
+            )}
+          </Suspense>
         </div>
 
         <BackToTopButton />

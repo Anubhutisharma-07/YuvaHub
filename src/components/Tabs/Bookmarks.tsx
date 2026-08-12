@@ -47,11 +47,12 @@ export default function Bookmarks() {
       const res = await fetch(`/api/v1/user/bookmark-folders?uid=${user?.uid || 'user_default'}`);
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          setFolders(data);
+        const folderList = Array.isArray(data) ? data : (data.items ?? data.data ?? []);
+        if (folderList.length > 0) {
+          setFolders(folderList);
           // Build itemFolderMap
           const map: Record<string, string> = {};
-          data.forEach((f: BookmarkFolder) => {
+          folderList.forEach((f: BookmarkFolder) => {
             (f.opportunityIds || []).forEach(opId => {
               map[opId] = f.folderId;
             });

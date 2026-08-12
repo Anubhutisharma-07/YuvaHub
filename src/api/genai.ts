@@ -20,20 +20,35 @@ export function getGenAI(): GoogleGenAI | null {
   return _genAI;
 }
 
-// In-memory cache for AI generation prompts and resume reviews
-const aiCache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+import { LRUCache } from "../utils/lruCache.js";
+
+// Configurable LRU cache for AI generation prompts and resume reviews (Issue #593)
+const MAX_CACHE_SIZE = process.env.AI_CACHE_MAX_SIZE
+  ? parseInt(process.env.AI_CACHE_MAX_SIZE, 10)
+  : 100;
+const CACHE_TTL_MS = process.env.AI_CACHE_TTL_MS
+  ? parseInt(process.env.AI_CACHE_TTL_MS, 10)
+  : 60 * 60 * 1000; // 1 hour
+
+export const aiCache = new LRUCache<string, any>({
+  maxSize: MAX_CACHE_SIZE,
+  defaultTtlMs: CACHE_TTL_MS,
+});
 
 export function getCachedResponse(key: string): any | null {
-  const entry = aiCache.get(key);
-  if (entry && (Date.now() - entry.timestamp < CACHE_TTL_MS)) {
-    return entry.data;
-  }
-  return null;
+  return aiCache.get(key);
 }
 
-export function setCachedResponse(key: string, data: any) {
-  aiCache.set(key, { data, timestamp: Date.now() });
+export function setCachedResponse(key: string, data: any, ttlMs?: number) {
+  aiCache.set(key, data, ttlMs);
+}
+
+export function getAICacheStats() {
+  return aiCache.getStats();
+}
+
+export function clearAICache() {
+  aiCache.clear();
 }
 
 export function getAIFallback(prompt: string, expectJson: boolean): string {

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { generateDraft, queueApplication } from "../controllers/applicationController.js";
-import { authMiddleware } from "../../middleware/auth.js";
+import { authMiddleware } from "../middlewares/auth.js";
 
 const router = Router();
 

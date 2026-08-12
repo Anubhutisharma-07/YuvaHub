@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Code,
   GitPullRequest,
@@ -23,24 +23,14 @@ import {
   X,
   FileCode,
   TrendingUp,
-  UserCheck
+  UserCheck,
+  Trophy
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { EmptyState } from '../ui/states';
 
-/**
- * OpenSourceBountyStudio Component
- * 
- * Interactive 550+ line Open Source Bounty & PR Contributor Studio for YuvaHub.
- * Features:
- * 1. Open Source Bounties Directory ($100 - $2,500 Payouts)
- * 2. Pull Request Link Verification & Test Suite Scanner
- * 3. AI Good First Issue & Skill Matcher
- * 4. Maintainer Review & Payout Tracker
- * 5. Contributor Rank Leaderboard & Badge Matrix
- * 6. Bounty Claims JSON Manifest Exporter
- */
 export default function OpenSourceBountyStudio() {
-  const { user } = useAppContext();
+  const { user, profile, karmaBalance } = useAppContext();
 
   // Navigation State
   const [activeTab, setActiveTab] = useState<'bounties' | 'pr_claim' | 'leaderboard' | 'export'>('bounties');
@@ -57,9 +47,10 @@ export default function OpenSourceBountyStudio() {
       title: 'Optimize Vector Index Search Latency in Node.js',
       repo: 'yuvahub/yuva-vector-engine',
       reward: '$1,200 USD',
+      rewardAmount: 1200,
       difficulty: 'INTERMEDIATE',
       language: 'TypeScript',
-      issueUrl: 'https://github.com/dipanshubatra/YuvaHub/issues/104',
+      issueUrl: 'https://github.com/Chirag1724/YuvaHub/issues/104',
       claimedBy: null,
       claimed: false,
       tags: ['TypeScript', 'Vector DB', 'Performance']
@@ -69,84 +60,164 @@ export default function OpenSourceBountyStudio() {
       title: 'Implement WebAuthn FIDO2 Passkey Support',
       repo: 'yuvahub/yuva-auth-core',
       reward: '$1,500 USD',
+      rewardAmount: 1500,
       difficulty: 'HARD',
       language: 'TypeScript',
-      issueUrl: 'https://github.com/dipanshubatra/YuvaHub/issues/88',
-      claimedBy: 'Dipanshu B.',
+      issueUrl: 'https://github.com/Chirag1724/YuvaHub/issues/88',
+      claimedBy: 'Aarav Patel',
       claimed: true,
       tags: ['Passkeys', 'Security', 'WebAuthn']
     },
     {
       id: 'bnty_3',
-      title: 'Add PyTorch CUDA Memory Diagnostic Utility',
-      repo: 'open-ai/model-tools',
+      title: 'Fix Memory Leak in PyTorch Distributed Worker Loop',
+      repo: 'yuvahub/yuva-ml-pipeline',
       reward: '$800 USD',
+      rewardAmount: 800,
       difficulty: 'EASY',
       language: 'Python',
-      issueUrl: 'https://github.com/pytorch/pytorch/issues/9981',
+      issueUrl: 'https://github.com/Chirag1724/YuvaHub/issues/62',
       claimedBy: null,
       claimed: false,
-      tags: ['Python', 'PyTorch', 'CUDA']
+      tags: ['Python', 'PyTorch', 'Memory']
     }
   ]);
 
-  // PR Verification Form State
+  // PR Submission State
   const [prUrl, setPrUrl] = useState('');
-  const [selectedBountyId, setSelectedBountyId] = useState('');
-  const [prClaims, setPrClaims] = useState([
-    {
-      id: 'claim_1',
-      bountyTitle: 'Implement WebAuthn FIDO2 Passkey Support',
-      prUrl: 'https://github.com/dipanshubatra/YuvaHub/pull/42',
-      status: 'VERIFIED',
-      reward: '$1,500 USD',
-      date: '2026-07-20'
-    }
+  const [claimedBountyId, setClaimedBountyId] = useState(bounties[0]?.id || '');
+  const [prDesc, setPrDesc] = useState('');
+
+  // Contributors State (Dynamically calculated and sorted)
+  const [rawContributors, setRawContributors] = useState([
+    { id: 'c_1', name: 'Aarav Patel', github: '@aaravdev', bountiesSolved: 14, earnedNum: 8400, badge: 'LEGENDARY CONTRIBUTOR' },
+    { id: 'c_2', name: 'Sneha Kulkarni', github: '@sneha-ai', bountiesSolved: 11, earnedNum: 6200, badge: 'OPEN SOURCE FELLOW' },
+    { id: 'c_3', name: profile?.name || 'Chirag Dwivedi', github: `@${(user?.email?.split('@')[0]) || 'Chirag1724'}`, bountiesSolved: 9, earnedNum: 5100, badge: 'CORE MAINTAINER' }
   ]);
 
-  // Claim Bounty PR
-  const handleClaimBounty = (e: React.FormEvent) => {
+  // Fetch Live Leaderboard on Mount
+  useEffect(() => {
+    fetch('/api/v1/leaderboard')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data && data.items && Array.isArray(data.items) && data.items.length > 0) {
+          const mapped = data.items.map((item: any, idx: number) => ({
+            id: item.userId || `c_api_${idx}`,
+            name: item.name || 'Student Contributor',
+            github: `@${item.name.toLowerCase().replace(/\s+/g, '')}`,
+            bountiesSolved: item.bountiesResolved || Math.floor((item.reputation || 500) / 100),
+            earnedNum: (item.bountiesResolved || 5) * 500 + (item.reputation || 0) * 10,
+            badge: idx === 0 ? 'TOP CONTRIBUTOR' : (idx === 1 ? 'OPEN SOURCE FELLOW' : 'ACTIVE CONTRIBUTOR')
+          }));
+          setRawContributors(mapped);
+        }
+      })
+      .catch(() => {
+        // Fallback gracefully to dynamic state
+      });
+  }, []);
+
+  // Synchronize current user's profile into contributor list
+  useEffect(() => {
+    if (user && profile?.name) {
+      setRawContributors(prev => {
+        const exists = prev.some(c => c.name.toLowerCase() === profile.name.toLowerCase());
+        if (!exists) {
+          return [
+            ...prev,
+            {
+              id: user.uid,
+              name: profile.name,
+              github: `@${user.email?.split('@')[0] || 'user'}`,
+              bountiesSolved: 1,
+              earnedNum: (karmaBalance || 10) * 100,
+              badge: 'COMMUNITY MEMBER'
+            }
+          ];
+        }
+        return prev;
+      });
+    }
+  }, [user, profile, karmaBalance]);
+
+  // DYNAMIC RANK CALCULATOR (Re-sorts entries in real-time by earnings and assigns dynamic #1, #2, #3 ranks)
+  const dynamicRankedContributors = useMemo(() => {
+    return [...rawContributors]
+      .sort((a, b) => b.earnedNum - a.earnedNum || b.bountiesSolved - a.bountiesSolved)
+      .map((contributor, index) => ({
+        ...contributor,
+        rank: index + 1,
+        earnedFormatted: `$${contributor.earnedNum.toLocaleString()} Earned`
+      }));
+  }, [rawContributors]);
+
+  // Submit PR Claim (Dynamically updates current user's solved bounties and re-calculates ranks!)
+  const handleSubmitPr = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!prUrl.trim() || !selectedBountyId) return;
+    if (!prUrl.trim() || !prUrl.includes('github.com')) {
+      setNotification({ type: 'error', message: 'Please enter a valid GitHub Pull Request URL.' });
+      return;
+    }
 
-    const b = bounties.find(item => item.id === selectedBountyId);
-    if (!b) return;
+    const targetBounty = bounties.find(b => b.id === claimedBountyId);
+    const rewardAmount = targetBounty?.rewardAmount || 1000;
 
-    const newClaim = {
-      id: `claim_${Date.now()}`,
-      bountyTitle: b.title,
-      prUrl: prUrl.trim(),
-      status: 'PENDING_REVIEW',
-      reward: b.reward,
-      date: new Date().toISOString().split('T')[0]
-    };
+    // 1. Update Bounty Claim Status
+    setBounties(bounties.map(b => b.id === claimedBountyId ? { ...b, claimed: true, claimedBy: profile?.name || user?.displayName || 'Student Contributor' } : b));
 
-    setPrClaims([...prClaims, newClaim]);
-    setBounties(bounties.map(item => item.id === b.id ? { ...item, claimed: true, claimedBy: user?.displayName || 'Student Contributor' } : item));
+    // 2. DYNAMIC RANK UPDATE: Increment earnings and solved count for current user
+    const currentUserName = profile?.name || user?.displayName || 'Chirag Dwivedi';
+    setRawContributors(prev => {
+      const userExists = prev.some(c => c.name.toLowerCase() === currentUserName.toLowerCase());
+      if (userExists) {
+        return prev.map(c => {
+          if (c.name.toLowerCase() === currentUserName.toLowerCase()) {
+            return {
+              ...c,
+              bountiesSolved: c.bountiesSolved + 1,
+              earnedNum: c.earnedNum + rewardAmount
+            };
+          }
+          return c;
+        });
+      } else {
+        return [
+          ...prev,
+          {
+            id: user?.uid || `user_${Date.now()}`,
+            name: currentUserName,
+            github: `@${user?.email?.split('@')[0] || 'contributor'}`,
+            bountiesSolved: 1,
+            earnedNum: rewardAmount,
+            badge: 'ACTIVE CONTRIBUTOR'
+          }
+        ];
+      }
+    });
+
     setPrUrl('');
-    setNotification({ type: 'success', message: `PR claimed for "${b.title}"!` });
+    setPrDesc('');
+    setNotification({ type: 'success', message: 'Pull Request submitted! Ranks dynamically updated on the leaderboard.' });
   };
 
-  // Export Contributor Manifest JSON
+  // Export Claims Manifest JSON
   const handleExportManifest = () => {
     const manifest = {
-      contributor: user?.displayName || 'Open Source Dev',
-      totalEarned: '$1,500 USD',
-      claimsCount: prClaims.length,
-      claimsLedger: prClaims,
+      openSourceBounties: bounties,
+      topContributors: dynamicRankedContributors,
       timestamp: new Date().toISOString()
     };
 
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(manifest, null, 2));
     const anchor = document.createElement('a');
     anchor.setAttribute("href", dataStr);
-    anchor.setAttribute("download", `YuvaHub_OpenSource_Bounties_${new Date().toISOString().slice(0,10)}.json`);
+    anchor.setAttribute("download", `YuvaHub_OS_Bounties_${new Date().toISOString().slice(0,10)}.json`);
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
+    setNotification({ type: 'success', message: 'Exported Open Source Bounty Claims Manifest!' });
   };
 
-  // Filtered Bounties
   const filteredBounties = bounties.filter(b => {
     const matchesSearch = b.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           b.repo.toLowerCase().includes(searchTerm.toLowerCase());
@@ -155,159 +226,150 @@ export default function OpenSourceBountyStudio() {
   });
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-16">
+    <div className="w-full max-w-[1400px] mx-auto space-y-8 font-sans pb-16 px-2 sm:px-4">
       
-      {/* Top Banner Header */}
-      <div className="bg-gradient-to-r from-orange-950 via-slate-900 to-slate-950 border border-orange-800/40 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden text-white">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
-
+      {/* Top Banner Header - YuvaHub Brand Theme */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#f6efe2] via-[#fcf9f2] to-[#f6efe2] dark:from-slate-900 dark:to-slate-950 border border-[#e8ded1] dark:border-slate-800 p-6 md:p-8 shadow-sm">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <span className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-orange-400 bg-orange-500/20 border border-orange-500/30 rounded-full flex items-center gap-1.5">
-                <GitPullRequest size={13} /> Open Source Bounty Vault
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#f3e4bd] bg-[#603620] rounded-full flex items-center gap-1.5 shadow-xs">
+                <Code className="w-3.5 h-3.5 text-[#f3e4bd]" /> Open Source Bounty Vault
               </span>
-              <span className="px-3 py-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/20 border border-emerald-500/30 rounded-full">
-                Active Bounties Open
+              <span className="px-3 py-1 text-xs font-bold text-[#63703d] bg-[#63703d]/15 border border-[#63703d]/30 rounded-full">
+                Live Dynamic Rankings
               </span>
             </div>
 
-            <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
-              Open Source Bounties & PR Contributor Studio
+            <h1 className="text-2xl md:text-3xl font-serif font-bold text-[#231f20] dark:text-white tracking-tight">
+              Open Source Bounties <span className="text-[#b56b37] italic">Studio</span>
             </h1>
-            <p className="text-slate-400 text-xs md:text-sm max-w-2xl leading-relaxed">
-              Earn rewards for fixing open-source issues, verify pull request test suites, and build your GitHub contributor reputation.
+            <p className="text-[#603620] dark:text-slate-400 text-xs md:text-sm max-w-2xl font-medium">
+              Solve verified open source GitHub issues, submit Pull Request links for test suite verification, and earn financial grants with real-time rank updates.
             </p>
           </div>
 
-          {/* Earned Bounties Meter */}
-          <div className="flex items-center gap-4 bg-slate-900/90 border border-orange-700/60 p-4 rounded-2xl w-full lg:w-auto shadow-lg">
-            <div className="relative flex items-center justify-center w-16 h-16 rounded-full border-4 border-orange-400 bg-slate-950 font-black text-xl text-orange-400">
-              $1.5k
+          <div className="flex items-center gap-4 bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 p-4 rounded-2xl w-full lg:w-auto shadow-xs">
+            <div className="relative flex items-center justify-center w-14 h-14 rounded-full border-4 border-[#b56b37] bg-[#fcf9f2] font-serif font-bold text-base text-[#b56b37]">
+              $3.5K
             </div>
             <div>
-              <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wide">Total Bounties Claimed</div>
-              <div className="text-xs font-extrabold text-emerald-400">{prClaims.length} PRs Verified</div>
-              <div className="text-[11px] text-slate-400">Top 5% Contributor</div>
+              <div className="text-[10px] uppercase font-bold text-[#8c7569] tracking-wider">Active Bounty Pool</div>
+              <div className="text-xs font-extrabold text-[#231f20] dark:text-white">3 Active Open Bounties</div>
+              <div className="text-[11px] text-[#63703d] font-semibold">Instant Maintainer Review</div>
             </div>
           </div>
         </div>
-
-        {/* Global Notifications */}
-        {notification.message && (
-          <div className={`mt-6 p-4 rounded-xl text-xs font-semibold flex items-center justify-between border ${
-            notification.type === 'error'
-              ? 'bg-red-500/20 border-red-500/40 text-red-300'
-              : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
-          }`}>
-            <div className="flex items-center gap-2">
-              {notification.type === 'error' ? <AlertTriangle size={16} /> : <CheckCircle2 size={16} />}
-              <span>{notification.message}</span>
-            </div>
-            <button onClick={() => setNotification({ type: '', message: '' })} className="text-slate-400 hover:text-white">
-              <X size={14} />
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-gray-200 dark:border-gray-800 scrollbar-none">
+      {/* Navigation Sub-Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar border-b border-[#e8ded1] dark:border-slate-800 pb-3">
         {[
-          { id: 'bounties', label: `Open Bounties (${bounties.length})`, icon: DollarSign },
-          { id: 'pr_claim', label: `Submit PR Claim (${prClaims.length})`, icon: GitPullRequest },
-          { id: 'export', label: 'Bounty Manifest JSON', icon: Download }
-        ].map((tab) => {
-          const Icon = tab.icon;
+          { id: 'bounties', label: 'Bounty Directory', icon: Code },
+          { id: 'pr_claim', label: 'Submit PR Claim', icon: GitPullRequest },
+          { id: 'leaderboard', label: 'Contributor Ranks', icon: Trophy },
+          { id: 'export', label: 'Export Manifest', icon: Download }
+        ].map(tab => {
+          const IconComponent = tab.icon;
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer border ${
                 isActive
-                  ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20'
-                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-700'
+                  ? 'bg-[#b56b37] border-[#b56b37] text-white shadow-sm scale-[1.02]'
+                  : 'bg-white dark:bg-slate-900 border-[#e8ded1] dark:border-slate-800 text-[#603620] dark:text-slate-300 hover:bg-[#f6efe2]'
               }`}
             >
-              <Icon size={14} />
-              {tab.label}
+              <IconComponent className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-[#b56b37]'}`} />
+              <span>{tab.label}</span>
             </button>
           );
         })}
       </div>
 
-      {/* TAB CONTENT */}
+      {/* Notification Banner */}
+      {notification.message && (
+        <div className={`flex items-center justify-between p-3.5 rounded-xl text-xs font-bold animate-fade-in ${
+          notification.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-[#63703d]/15 text-[#63703d] border border-[#63703d]/30'
+        }`}>
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>{notification.message}</span>
+          </div>
+          <button onClick={() => setNotification({ type: '', message: '' })}>
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
-      {/* TAB 1: BOUNTIES */}
+      {/* Tab 1: Bounties Directory */}
       {activeTab === 'bounties' && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-6 shadow-sm">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">Active Open Source Bounties</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Solve open issues to earn cash rewards and badges.</p>
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 p-4 rounded-2xl shadow-2xs">
+            <div className="relative flex-1 w-full sm:w-auto max-w-md">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8c7569]" />
+              <input
+                type="text"
+                placeholder="Search by issue title or repository..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-xs text-[#231f20] dark:text-white outline-none focus:border-[#b56b37]"
+              />
             </div>
 
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-64">
-                <Search size={14} className="absolute left-3 top-3 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search repository or issue..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-xs text-gray-900 dark:text-white outline-none"
-                />
-              </div>
-
-              <select
-                value={selectedLanguage}
-                onChange={(e) => setSelectedLanguage(e.target.value)}
-                className="px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-bold text-gray-900 dark:text-white outline-none"
-              >
-                <option value="all">All Languages</option>
-                <option value="TypeScript">TypeScript</option>
-                <option value="Python">Python</option>
-              </select>
+            <div className="flex items-center gap-2">
+              {['all', 'TypeScript', 'Python'].map(lang => (
+                <button
+                  key={lang}
+                  onClick={() => setSelectedLanguage(lang)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all border ${
+                    selectedLanguage === lang
+                      ? 'bg-[#231f20] text-white border-[#231f20]'
+                      : 'bg-white border-[#e8ded1] text-[#603620] hover:bg-[#f6efe2]'
+                  }`}
+                >
+                  {lang}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {filteredBounties.map((b) => (
-              <div key={b.id} className="p-5 bg-gray-50 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3 flex flex-col justify-between text-xs">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-orange-600 dark:text-orange-400 uppercase">{b.repo}</span>
-                    <span className="px-2 py-0.5 font-extrabold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 rounded-md">
-                      {b.reward}
-                    </span>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredBounties.map(bounty => (
+              <div key={bounty.id} className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-2xl p-5 shadow-2xs space-y-4 hover:border-[#b56b37] transition-all">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-[10px] font-bold text-[#8c7569] uppercase tracking-wider block">{bounty.repo}</span>
+                    <h3 className="font-serif font-bold text-base text-[#231f20] dark:text-white mt-1 leading-snug">{bounty.title}</h3>
                   </div>
-                  <h4 className="font-bold text-gray-900 dark:text-white text-sm mt-2">{b.title}</h4>
+                  <span className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold border ${
+                    bounty.claimed ? 'bg-[#f3e4bd] text-[#603620] border-[#e8ded1]' : 'bg-[#63703d]/15 text-[#63703d] border-[#63703d]/30'
+                  }`}>
+                    {bounty.claimed ? 'CLAIMED' : 'OPEN'}
+                  </span>
                 </div>
 
-                <div className="space-y-3">
-                  <div className="flex flex-wrap gap-1">
-                    {b.tags.map(t => (
-                      <span key={t} className="px-2 py-0.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-[10px] font-semibold rounded-md">
-                        {t}
-                      </span>
-                    ))}
-                  </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {bounty.tags.map(t => (
+                    <span key={t} className="px-2 py-0.5 bg-[#f6efe2] text-[#603620] text-[10px] font-bold rounded-md border border-[#e8ded1]">
+                      #{t}
+                    </span>
+                  ))}
+                </div>
 
-                  <button
-                    onClick={() => {
-                      setSelectedBountyId(b.id);
-                      setActiveTab('pr_claim');
-                    }}
-                    className={`w-full py-2 font-bold rounded-xl transition ${
-                      b.claimed
-                        ? 'bg-gray-400 text-white cursor-not-allowed'
-                        : 'bg-orange-600 hover:bg-orange-700 text-white'
-                    }`}
-                    disabled={b.claimed}
+                <div className="pt-3 border-t border-[#e8ded1] dark:border-slate-800 flex items-center justify-between text-xs font-bold">
+                  <div className="text-[#b56b37]">{bounty.reward}</div>
+                  <a
+                    href={bounty.issueUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[#b56b37] hover:underline"
                   >
-                    {b.claimed ? `Claimed by ${b.claimedBy}` : 'Submit PR Claim'}
-                  </button>
+                    <span>View GitHub Issue</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
                 </div>
               </div>
             ))}
@@ -315,99 +377,103 @@ export default function OpenSourceBountyStudio() {
         </div>
       )}
 
-      {/* TAB 2: PR CLAIM */}
+      {/* Tab 2: Submit PR Claim */}
       {activeTab === 'pr_claim' && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-6 shadow-sm">
-          <div>
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">Submit Pull Request Verification</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Link your merged or opened GitHub PR to claim the bounty payout.</p>
+        <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xs max-w-2xl mx-auto">
+          <div className="border-b border-[#e8ded1] dark:border-slate-800 pb-4">
+            <h2 className="text-xl font-serif font-bold text-[#231f20] dark:text-white">Submit Pull Request Link</h2>
+            <p className="text-xs text-[#603620] dark:text-slate-400 font-medium">Link your merged or active Pull Request to claim the bounty grant and boost your dynamic rank.</p>
           </div>
 
-          <form onSubmit={handleClaimBounty} className="space-y-4 text-xs">
-            <div>
-              <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Select Open Bounty</label>
+          <form onSubmit={handleSubmitPr} className="space-y-4 text-xs">
+            <div className="space-y-1">
+              <label className="font-bold text-[#603620] uppercase">Select Target Bounty</label>
               <select
-                value={selectedBountyId}
-                onChange={(e) => setSelectedBountyId(e.target.value)}
-                className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white outline-none"
-                required
+                value={claimedBountyId}
+                onChange={e => setClaimedBountyId(e.target.value)}
+                className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none"
               >
-                <option value="">-- Choose Bounty Issue --</option>
-                {bounties.filter(b => !b.claimed).map(b => (
+                {bounties.map(b => (
                   <option key={b.id} value={b.id}>{b.title} ({b.reward})</option>
                 ))}
               </select>
             </div>
 
-            <div>
-              <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">GitHub Pull Request URL</label>
+            <div className="space-y-1">
+              <label className="font-bold text-[#603620] uppercase">GitHub Pull Request URL</label>
               <input
                 type="url"
-                placeholder="https://github.com/.../pull/12"
-                value={prUrl}
-                onChange={(e) => setPrUrl(e.target.value)}
-                className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white outline-none"
                 required
+                placeholder="https://github.com/org/repo/pull/123"
+                value={prUrl}
+                onChange={e => setPrUrl(e.target.value)}
+                className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none"
               />
             </div>
 
-            <button type="submit" className="w-full py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl transition">
-              Verify PR & Submit Claim
-            </button>
-          </form>
-
-          <div className="space-y-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <h4 className="font-bold text-xs text-gray-900 dark:text-white">Active Bounty Claims Ledger</h4>
-            {prClaims.map((c) => (
-              <div key={c.id} className="flex items-center justify-between p-3.5 bg-gray-50 dark:bg-gray-900/60 rounded-xl border border-gray-200 dark:border-gray-700 text-xs">
-                <div>
-                  <div className="font-bold text-gray-900 dark:text-white">{c.bountyTitle}</div>
-                  <div className="text-gray-500 font-mono text-[11px]">{c.prUrl}</div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <span className="font-bold text-emerald-600">{c.reward}</span>
-                  <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full ${
-                    c.status === 'VERIFIED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                  }`}>
-                    {c.status}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* TAB 3: EXPORT */}
-      {activeTab === 'export' && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">Bounty Contributor Manifest JSON</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Complete summary of claimed open-source bounties.</p>
+            <div className="space-y-1">
+              <label className="font-bold text-[#603620] uppercase">PR Summary & Test Suite Results</label>
+              <textarea
+                rows={3}
+                placeholder="Explain what changes were made and link passed CI build tests..."
+                value={prDesc}
+                onChange={e => setPrDesc(e.target.value)}
+                className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none resize-none"
+              />
             </div>
 
-            <button
-              onClick={handleExportManifest}
-              className="px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5"
-            >
-              <Download size={14} /> Download Manifest JSON
+            <button type="submit" className="w-full py-3 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-xs rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-2">
+              <GitPullRequest className="w-4 h-4" /> Submit Pull Request for Verification
             </button>
-          </div>
-
-          <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 font-mono text-xs text-orange-300 overflow-x-auto">
-            <pre>{JSON.stringify({
-              contributor: user?.displayName || 'Open Source Dev',
-              totalEarned: '$1,500 USD',
-              claimsCount: prClaims.length,
-              claimsLedger: prClaims,
-              timestamp: new Date().toISOString()
-            }, null, 2)}</pre>
-          </div>
+          </form>
         </div>
       )}
 
+      {/* Tab 3: DYNAMIC Contributor Ranks */}
+      {activeTab === 'leaderboard' && (
+        <div className="space-y-4">
+          {dynamicRankedContributors.map(c => (
+            <div key={c.id} className="flex items-center justify-between p-5 rounded-2xl bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 shadow-2xs hover:border-[#b56b37] transition-all">
+              <div className="flex items-center gap-4">
+                <div className={`w-10 h-10 rounded-full font-serif font-bold flex items-center justify-center text-sm shadow-xs ${
+                  c.rank === 1 ? 'bg-[#603620] text-[#f3e4bd]' : (c.rank === 2 ? 'bg-[#b56b37] text-white' : 'bg-[#f6efe2] text-[#603620] border border-[#e8ded1]')
+                }`}>
+                  #{c.rank}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-serif font-bold text-sm text-[#231f20] dark:text-white">{c.name}</h3>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-[#63703d]/15 text-[#63703d] border border-[#63703d]/30">
+                      {c.badge}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#603620] font-semibold">{c.github}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm font-extrabold text-[#b56b37]">{c.earnedFormatted}</div>
+                <span className="text-[10px] font-bold text-[#8c7569]">{c.bountiesSolved} Bounties Merged</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Tab 4: Export */}
+      {activeTab === 'export' && (
+        <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-2xs max-w-xl mx-auto">
+          <div className="w-16 h-16 bg-[#f6efe2] text-[#b56b37] flex items-center justify-center rounded-full mx-auto border border-[#e8ded1]">
+            <Download className="w-8 h-8 text-[#b56b37]" />
+          </div>
+          <h2 className="text-2xl font-serif font-bold text-[#231f20] dark:text-white">Export Bounty Manifest</h2>
+          <p className="text-xs text-[#603620] dark:text-slate-400 font-medium">
+            Download all active bounty listings and verified contributor claims as a JSON file.
+          </p>
+          <button onClick={handleExportManifest} className="px-6 py-3 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-xs rounded-xl shadow-md cursor-pointer inline-flex items-center gap-2">
+            <Download className="w-4 h-4" /> Download Open Source Bounties JSON
+          </button>
+        </div>
+      )}
     </div>
   );
 }

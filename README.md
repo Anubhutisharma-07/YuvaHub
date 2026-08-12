@@ -159,18 +159,32 @@ docker compose up -d
 
 ## Environment Variables Guide
 
-Provide these keys in your `.env` file to fully enable application databases and AI APIs:
+Copy the reviewed template:
 
-| Variable Name | Description | Source / Link |
-| :--- | :--- | :--- |
-| `MONGODB_URI` | Connection URI for the MongoDB Atlas Cluster. | MongoDB Atlas Dashboard |
-| `MONGODB_DB_NAME` | Target database collection name. | `yuvahub` |
-| `GEMINI_API_KEY` | **Server-only secret.** Used by backend Gemini services; never expose it through Vite or browser code. | [Google AI Studio](https://aistudio.google.com/) |
-| `APP_URL` | Base host URL of the local or deployed server. | `http://localhost:3000` |
-| `FRONTEND_URL` | Allowed client origin to enforce CORS security policy. | `http://localhost:5173` (or Vercel URL) |
-| `VITE_EMAILJS_SERVICE_ID` | EmailJS service connection ID. | [EmailJS Dashboard](https://www.emailjs.com/) |
-| `VITE_EMAILJS_TEMPLATE_ID`| EmailJS template container ID. | [EmailJS Dashboard](https://www.emailjs.com/) |
-| `VITE_EMAILJS_PUBLIC_KEY` | Public client key for direct frontend transmission. | [EmailJS Dashboard](https://www.emailjs.com/) |
+```bash
+cp .env.example .env
+```
+
+The template classifies variables as required, conditional, optional,
+development-only, public, or secret. Values prefixed with `VITE_` are bundled
+into browser assets and must never contain server credentials.
+
+Startup validation currently requires:
+
+```text
+MONGODB_URI
+JWT_SECRET
+GEMINI_API_KEY
+```
+
+`REDIS_URL` is additionally required when Redis is explicitly enabled.
+
+See the complete guide for supported integrations, safe secret handling,
+split MongoDB connections, workers, Firebase, SMTP, Sentry, dynamic scraper
+URLs, and deployment guidance:
+
+- [Environment variables guide](./docs/ENVIRONMENT_VARIABLES.md)
+- [Environment template](./.env.example)
 
 ---
 

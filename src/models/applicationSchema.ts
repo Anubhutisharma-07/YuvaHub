@@ -72,6 +72,12 @@ export type ApplicationDocument = z.infer<
   typeof ApplicationDocumentSchema
 >;
 
+
+/**
+ * Factory helper
+ * Creates a clean application document
+ */
+
 export function createApplicationDocument(
   data: Partial<ApplicationDocument>,
 ): ApplicationDocument {
@@ -81,6 +87,7 @@ export function createApplicationDocument(
     userId: data.userId ?? "",
     opportunityId: data.opportunityId ?? "",
     opportunity: data.opportunity ?? { title: "" },
+
     resume: data.resume,
     coverLetter: data.coverLetter,
     platform: data.platform ?? "unknown",

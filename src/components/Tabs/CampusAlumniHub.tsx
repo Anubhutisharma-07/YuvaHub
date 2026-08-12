@@ -26,22 +26,13 @@ import {
   X,
   UserCheck,
   Clock,
-  TrendingUp
+  TrendingUp,
+  CalendarPlus,
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { EmptyState } from '../ui/states';
+import { downloadICS } from '../../lib/icsExport';
 
-/**
- * CampusAlumniHub Component
- * 
- * Interactive 550+ line Campus Chapter & Alumni Network Hub for YuvaHub.
- * Features:
- * 1. Campus Tech Chapter Directory (GDSC, Open Source Clubs, Hackathon Guilds)
- * 2. Verified Alumni Directory & Referral Request Portal
- * 3. Campus Event Hosting & Live RSVP System
- * 4. Chapter Leaderboard & Activity Points Matrix
- * 5. Referral & Office Hour Request Ledger
- * 6. Campus Network Manifest JSON Exporter
- */
 export default function CampusAlumniHub() {
   const { user, profile } = useAppContext();
 
@@ -79,131 +70,156 @@ export default function CampusAlumniHub() {
     },
     {
       id: 'ch_3',
-      name: 'IIIT Hyderabad AI Society',
+      name: 'IIIT Hyderabad AI & Robotics Society',
       college: 'IIIT Hyderabad',
       location: 'Hyderabad, TS',
-      members: 760,
+      members: 850,
       lead: 'Ananya Roy',
       rank: 3,
       badge: 'RESEARCH HUB',
-      tags: ['LLMs', 'Computer Vision', 'PyTorch']
+      tags: ['Robotics', 'Computer Vision', 'PyTorch']
     }
   ]);
 
-  // Alumni Directory State
+  // Verified Alumni Directory
   const [alumni, setAlumni] = useState([
     {
       id: 'alm_1',
-      name: 'Siddharth Sharma',
-      company: 'Google Cloud AI',
-      role: 'Senior Staff ML Engineer',
-      gradYear: '2022',
+      name: 'Siddharth Rao',
       college: 'IIT Bombay',
+      gradYear: '2023',
+      currentRole: 'Senior SWE @ Google',
+      location: 'Bengaluru, KA',
       referralsAvailable: true,
-      officeHours: 'Thursdays 6:00 PM IST',
-      avatar: 'S'
+      tags: ['Google', 'Distributed Systems', 'Java']
     },
     {
       id: 'alm_2',
-      name: 'Priya Nambiar',
-      company: 'Stripe',
-      role: 'Backend Infrastructure Lead',
-      gradYear: '2021',
+      name: 'Kavya Nair',
       college: 'BITS Pilani',
+      gradYear: '2022',
+      currentRole: 'Tech Lead @ Microsoft',
+      location: 'Hyderabad, TS',
       referralsAvailable: true,
-      officeHours: 'Saturdays 11:00 AM IST',
-      avatar: 'P'
+      tags: ['Microsoft', 'Azure', 'C#']
     },
     {
       id: 'alm_3',
-      name: 'Karan Malhotra',
-      company: 'Meta AI',
-      role: 'Research Scientist',
-      gradYear: '2023',
+      name: 'Rohan Sharma',
       college: 'IIIT Hyderabad',
+      gradYear: '2024',
+      currentRole: 'AI Research Scientist @ OpenAI',
+      location: 'San Francisco, CA',
       referralsAvailable: false,
-      officeHours: 'By Appointment',
-      avatar: 'K'
+      tags: ['OpenAI', 'LLMs', 'PyTorch']
     }
   ]);
 
-  // Events State
-  const [events, setEvents] = useState([
+  // Events State (typed to support waitlist + automatic promotion)
+  const [events, setEvents] = useState<{
+    id: string;
+    title: string;
+    chapter: string;
+    date: string;
+    time: string;
+    location: string;
+    rsvpCount: number;
+    maxCapacity: number;
+    waitlistCount: number;
+    // null = no action taken, 'confirmed' | 'waitlisted' | 'cancelled'
+    userStatus: 'confirmed' | 'waitlisted' | 'cancelled' | null;
+  }[]>([
     {
       id: 'evt_1',
-      title: 'Generative AI & Agentic Workflows Summit',
+      title: 'Global Open Source Hackathon 2026',
       chapter: 'IIT Bombay Open Source Club',
-      date: '2026-08-10',
+      date: '2026-09-10',
       time: '5:00 PM IST',
       location: 'Online / Auditorium 1',
-      rsvps: 340,
+      rsvpCount: 340,
       maxCapacity: 500,
-      userRsvp: true
+      waitlistCount: 0,
+      userStatus: null,
     },
     {
       id: 'evt_2',
-      title: 'Rust & WebAssembly Systems Workshop',
+      title: 'Alumni Office Hours: Landing Top Tier Internships',
       chapter: 'BITS Pilani Developer Guild',
-      date: '2026-08-18',
+      date: '2026-08-28',
       time: '6:30 PM IST',
       location: 'Tech Block 3',
-      rsvps: 180,
-      maxCapacity: 200,
-      userRsvp: false
+      rsvpCount: 210,
+      maxCapacity: 210,
+      waitlistCount: 5,
+      userStatus: null,
     }
   ]);
-  const [newEventTitle, setNewEventTitle] = useState('');
 
   // Referral Requests State
   const [referralRequests, setReferralRequests] = useState([
-    {
-      id: 'ref_1',
-      alumniName: 'Siddharth Sharma',
-      company: 'Google Cloud AI',
-      roleTarget: 'Software Engineering Intern 2026',
-      status: 'ACCEPTED',
-      requestDate: '2026-07-10'
-    }
+    { id: 'ref_1', alumniName: 'Siddharth Rao', role: 'Software Engineer Intern', status: 'PENDING', date: '2026-08-01' }
   ]);
+  const [targetAlumni, setTargetAlumni] = useState('');
   const [targetRole, setTargetRole] = useState('');
-  const [selectedAlumniId, setSelectedAlumniId] = useState('');
 
-  // Toggle RSVP
-  const handleToggleRsvp = (eventId: string) => {
+  // New event form state (host event title input)
+  const [newEventTitle, setNewEventTitle] = useState('');
+
+  // RSVP or join waitlist
+  const handleRsvpOrWaitlist = (eventId: string) => {
     setEvents(events.map(e => {
-      if (e.id === eventId) {
-        const nextRsvp = !e.userRsvp;
-        return {
-          ...e,
-          userRsvp: nextRsvp,
-          rsvps: nextRsvp ? e.rsvps + 1 : e.rsvps - 1
-        };
+      if (e.id !== eventId) return e;
+      const isFull = e.rsvpCount >= e.maxCapacity;
+      if (isFull) {
+        // Join waitlist
+        setNotification({ type: 'success', message: `You joined the waitlist for "${e.title}". We'll notify you if a spot opens!` });
+        return { ...e, waitlistCount: e.waitlistCount + 1, userStatus: 'waitlisted' };
+      }
+      // Confirm RSVP
+      setNotification({ type: 'success', message: `RSVP confirmed for "${e.title}"!` });
+      return { ...e, rsvpCount: e.rsvpCount + 1, userStatus: 'confirmed' };
+    }));
+  };
+
+  // Cancel RSVP or leave waitlist — triggers automatic promotion of next waitlisted user
+  const handleCancelRsvp = (eventId: string) => {
+    setEvents(events.map(e => {
+      if (e.id !== eventId) return e;
+      if (e.userStatus === 'confirmed') {
+        const newRsvpCount = Math.max(0, e.rsvpCount - 1);
+        // Promote next waitlisted person if any
+        if (e.waitlistCount > 0) {
+          setNotification({ type: 'success', message: `RSVP cancelled. The next person on the waitlist has been notified.` });
+          return { ...e, rsvpCount: newRsvpCount, waitlistCount: e.waitlistCount - 1, userStatus: 'cancelled' };
+        }
+        setNotification({ type: 'success', message: 'RSVP cancelled.' });
+        return { ...e, rsvpCount: newRsvpCount, userStatus: 'cancelled' };
+      }
+      if (e.userStatus === 'waitlisted') {
+        setNotification({ type: 'success', message: 'Removed from waitlist.' });
+        return { ...e, waitlistCount: Math.max(0, e.waitlistCount - 1), userStatus: 'cancelled' };
       }
       return e;
     }));
-    setNotification({ type: 'success', message: 'Updated event RSVP status!' });
   };
 
   // Submit Referral Request
   const handleRequestReferral = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!targetRole.trim() || !selectedAlumniId) return;
-
-    const targetAlumni = alumni.find(a => a.id === selectedAlumniId);
-    if (!targetAlumni) return;
+    if (!targetAlumni.trim() || !targetRole.trim()) return;
 
     const newRef = {
       id: `ref_${Date.now()}`,
-      alumniName: targetAlumni.name,
-      company: targetAlumni.company,
-      roleTarget: targetRole.trim(),
+      alumniName: targetAlumni.trim(),
+      role: targetRole.trim(),
       status: 'PENDING',
-      requestDate: new Date().toISOString().split('T')[0]
+      date: new Date().toISOString().split('T')[0]
     };
 
     setReferralRequests([...referralRequests, newRef]);
+    setTargetAlumni('');
     setTargetRole('');
-    setNotification({ type: 'success', message: `Submitted referral request to ${targetAlumni.name}!` });
+    setNotification({ type: 'success', message: `Submitted referral request to ${newRef.alumniName}!` });
   };
 
   // Add Campus Event
@@ -218,9 +234,10 @@ export default function CampusAlumniHub() {
       date: '2026-08-25',
       time: '6:00 PM IST',
       location: 'Virtual / Campus Center',
-      rsvps: 1,
+      rsvpCount: 1,
       maxCapacity: 250,
-      userRsvp: true
+      waitlistCount: 0,
+      userStatus: 'confirmed' as const,
     };
 
     setEvents([...events, newEvt]);
@@ -231,23 +248,25 @@ export default function CampusAlumniHub() {
   // Export Campus Network Manifest JSON
   const handleExportManifest = () => {
     const manifest = {
-      chaptersCount: chapters.length,
-      alumniCount: alumni.length,
-      userRsvps: events.filter(e => e.userRsvp),
-      referralRequests: referralRequests,
+      chapters,
+      alumniDirectory: alumni,
+      campusEvents: events,
+      userRsvps: events.filter(e => e.userStatus === 'confirmed'),
+      userWaitlists: events.filter(e => e.userStatus === 'waitlisted'),
+      referralRequests,
       timestamp: new Date().toISOString()
     };
 
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(manifest, null, 2));
     const anchor = document.createElement('a');
     anchor.setAttribute("href", dataStr);
-    anchor.setAttribute("download", `YuvaHub_Campus_Network_${new Date().toISOString().slice(0,10)}.json`);
+    anchor.setAttribute("download", `YuvaHub_Campus_Alumni_Manifest_${new Date().toISOString().slice(0,10)}.json`);
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
+    setNotification({ type: 'success', message: 'Exported Campus Network JSON Manifest!' });
   };
 
-  // Filtered Chapters & Alumni
   const filteredChapters = chapters.filter(c =>
     c.name.toLowerCase().includes(chapterSearch.toLowerCase()) ||
     c.college.toLowerCase().includes(chapterSearch.toLowerCase())
@@ -255,152 +274,130 @@ export default function CampusAlumniHub() {
 
   const filteredAlumni = alumni.filter(a =>
     a.name.toLowerCase().includes(alumniSearch.toLowerCase()) ||
-    a.company.toLowerCase().includes(alumniSearch.toLowerCase()) ||
-    a.role.toLowerCase().includes(alumniSearch.toLowerCase())
+    a.currentRole.toLowerCase().includes(alumniSearch.toLowerCase()) ||
+    a.college.toLowerCase().includes(alumniSearch.toLowerCase())
   );
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-16">
-      
-      {/* Top Banner Header */}
-      <div className="bg-gradient-to-r from-indigo-950 via-slate-900 to-slate-950 border border-indigo-800/40 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden text-white">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="w-full max-w-[1400px] mx-auto space-y-8 font-sans pb-16 px-2 sm:px-4">
 
+      {/* Top Banner Header - YuvaHub Brand Theme */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#f6efe2] via-[#fcf9f2] to-[#f6efe2] dark:from-slate-900 dark:to-slate-950 border border-[#e8ded1] dark:border-slate-800 p-6 md:p-8 shadow-sm">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <span className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-indigo-400 bg-indigo-500/20 border border-indigo-500/30 rounded-full flex items-center gap-1.5">
-                <GraduationCap size={13} /> Campus Network & Alumni Guild
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#f3e4bd] bg-[#603620] rounded-full flex items-center gap-1.5 shadow-xs">
+                <GraduationCap className="w-3.5 h-3.5 text-[#f3e4bd]" /> Campus & Alumni Network
               </span>
-              <span className="px-3 py-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/20 border border-emerald-500/30 rounded-full">
+              <span className="px-3 py-1 text-xs font-bold text-[#63703d] bg-[#63703d]/15 border border-[#63703d]/30 rounded-full">
                 50+ University Chapters
               </span>
             </div>
 
-            <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
-              Campus Chapter & Alumni Referral Hub
+            <h1 className="text-2xl md:text-3xl font-serif font-bold text-[#231f20] dark:text-white tracking-tight">
+              Campus & Alumni <span className="text-[#b56b37] italic">Hub</span>
             </h1>
-            <p className="text-slate-400 text-xs md:text-sm max-w-2xl leading-relaxed">
-              Connect with top tech alumni, join campus chapters, host developer workshops, and request job referral endorsements.
+            <p className="text-[#603620] dark:text-slate-400 text-xs md:text-sm max-w-2xl font-medium">
+              Explore university tech chapters, request job referrals from verified alumni, and RSVP for campus hackathons and office hours.
             </p>
           </div>
 
-          {/* Network Stats Meter */}
-          <div className="flex items-center gap-4 bg-slate-900/90 border border-indigo-700/60 p-4 rounded-2xl w-full lg:w-auto shadow-lg">
-            <div className="relative flex items-center justify-center w-16 h-16 rounded-full border-4 border-indigo-400 bg-slate-950 font-black text-xl text-indigo-400">
-              3,160+
+          <div className="flex items-center gap-4 bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 p-4 rounded-2xl w-full lg:w-auto shadow-xs">
+            <div className="relative flex items-center justify-center w-14 h-14 rounded-full border-4 border-[#b56b37] bg-[#fcf9f2] font-serif font-bold text-base text-[#b56b37]">
+              3,250
             </div>
             <div>
-              <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wide">Active Network Members</div>
-              <div className="text-xs font-extrabold text-emerald-400">{alumni.length} Verified Alumni</div>
-              <div className="text-[11px] text-slate-400">{events.filter(e => e.userRsvp).length} Upcoming Event RSVPs</div>
+              <div className="text-[10px] uppercase font-bold text-[#8c7569] tracking-wider">Verified Network Members</div>
+              <div className="text-xs font-extrabold text-[#231f20] dark:text-white">{alumni.length} Alumni Referral Ready</div>
+              <div className="text-[11px] text-[#63703d] font-semibold">
+                {events.filter(e => e.userStatus === 'confirmed').length} Upcoming Event RSVPs
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Global Notifications */}
-        {notification.message && (
-          <div className={`mt-6 p-4 rounded-xl text-xs font-semibold flex items-center justify-between border ${
-            notification.type === 'error'
-              ? 'bg-red-500/20 border-red-500/40 text-red-300'
-              : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
-          }`}>
-            <div className="flex items-center gap-2">
-              {notification.type === 'error' ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
-              <span>{notification.message}</span>
-            </div>
-            <button onClick={() => setNotification({ type: '', message: '' })} className="text-slate-400 hover:text-white">
-              <X size={14} />
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-gray-200 dark:border-gray-800 scrollbar-none">
+      {/* Sub Navigation Bar */}
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar border-b border-[#e8ded1] dark:border-slate-800 pb-3">
         {[
-          { id: 'chapters', label: `Campus Chapters (${chapters.length})`, icon: Building2 },
-          { id: 'alumni', label: `Alumni Directory (${alumni.length})`, icon: Users },
-          { id: 'events', label: `Campus Events (${events.length})`, icon: Calendar },
-          { id: 'referrals', label: `Referral Requests (${referralRequests.length})`, icon: Briefcase },
-          { id: 'export', label: 'Network Manifest JSON', icon: Download }
-        ].map((tab) => {
-          const Icon = tab.icon;
+          { id: 'chapters', label: 'Campus Chapters', icon: Building2 },
+          { id: 'alumni', label: 'Alumni Directory', icon: UserCheck },
+          { id: 'events', label: 'Campus Events', icon: Calendar },
+          { id: 'referrals', label: 'Referral Portal', icon: Briefcase },
+          { id: 'export', label: 'Export Manifest', icon: Download }
+        ].map(tab => {
+          const IconComponent = tab.icon;
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer border ${
                 isActive
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
-                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-700'
+                  ? 'bg-[#b56b37] border-[#b56b37] text-white shadow-sm scale-[1.02]'
+                  : 'bg-white dark:bg-slate-900 border-[#e8ded1] dark:border-slate-800 text-[#603620] dark:text-slate-300 hover:bg-[#f6efe2]'
               }`}
             >
-              <Icon size={14} />
-              {tab.label}
+              <IconComponent className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-[#b56b37]'}`} />
+              <span>{tab.label}</span>
             </button>
           );
         })}
       </div>
 
-      {/* TAB CONTENT */}
+      {/* Notification */}
+      {notification.message && (
+        <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#63703d]/15 border border-[#63703d]/30 text-[#63703d] text-xs font-bold animate-fade-in">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>{notification.message}</span>
+          </div>
+          <button onClick={() => setNotification({ type: '', message: '' })}>
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
-      {/* TAB 1: CHAPTERS */}
+      {/* Tab 1: Campus Chapters */}
       {activeTab === 'chapters' && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-6 shadow-sm">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">University Tech Chapters</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Join student circles for open source, competitive coding, and hackathons.</p>
-            </div>
-
-            <div className="relative w-full sm:w-64">
-              <Search size={14} className="absolute left-3 top-3 text-gray-400" />
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 p-4 rounded-2xl shadow-2xs">
+            <div className="relative flex-1 w-full max-w-md">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8c7569]" />
               <input
                 type="text"
-                placeholder="Search by chapter or college..."
+                placeholder="Search chapters by name or college..."
                 value={chapterSearch}
-                onChange={(e) => setChapterSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-xs text-gray-900 dark:text-white outline-none"
+                onChange={e => setChapterSearch(e.target.value)}
+                className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-xs text-[#231f20] dark:text-white outline-none focus:border-[#b56b37]"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {filteredChapters.map((c) => (
-              <div key={c.id} className="p-5 bg-gray-50 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3 flex flex-col justify-between text-xs">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-indigo-600 dark:text-indigo-400 uppercase">Rank #{c.rank}</span>
-                    <span className="px-2 py-0.5 font-extrabold bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 rounded-md text-[10px]">
-                      {c.badge}
-                    </span>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredChapters.map(ch => (
+              <div key={ch.id} className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-2xl p-5 shadow-2xs space-y-4 hover:border-[#b56b37] transition-all">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-[10px] font-bold text-[#8c7569] uppercase tracking-wider block">{ch.location}</span>
+                    <h3 className="font-serif font-bold text-base text-[#231f20] dark:text-white mt-1 leading-snug">{ch.name}</h3>
                   </div>
-                  <h4 className="font-bold text-gray-900 dark:text-white text-sm mt-2">{c.name}</h4>
-                  <p className="text-gray-500 dark:text-gray-400">{c.college} • {c.location}</p>
+                  <span className="px-2.5 py-1 rounded-md bg-[#63703d]/15 text-[#63703d] font-bold text-xs border border-[#63703d]/30">
+                    {ch.badge}
+                  </span>
                 </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-[11px] text-gray-500">
-                    <span>Members: <strong className="text-gray-900 dark:text-white">{c.members}</strong></span>
-                    <span>Lead: {c.lead}</span>
-                  </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {ch.tags.map(t => (
+                    <span key={t} className="px-2 py-0.5 bg-[#f6efe2] text-[#603620] text-[10px] font-bold rounded-md border border-[#e8ded1]">
+                      #{t}
+                    </span>
+                  ))}
+                </div>
 
-                  <div className="flex flex-wrap gap-1">
-                    {c.tags.map(t => (
-                      <span key={t} className="px-2 py-0.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-[10px] font-semibold rounded-md">
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={() => setNotification({ type: 'success', message: `Joined ${c.name}!` })}
-                    className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition"
-                  >
-                    Join Chapter
-                  </button>
+                <div className="pt-3 border-t border-[#e8ded1] dark:border-slate-800 flex items-center justify-between text-xs font-bold">
+                  <div className="text-[#603620]">{ch.members} Members</div>
+                  <span className="text-[#b56b37]">Lead: {ch.lead}</span>
                 </div>
               </div>
             ))}
@@ -408,68 +405,67 @@ export default function CampusAlumniHub() {
         </div>
       )}
 
-      {/* TAB 2: ALUMNI DIRECTORY */}
+      {/* Tab 2: Alumni Directory */}
       {activeTab === 'alumni' && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-6 shadow-sm">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">Verified Alumni Network</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Request referrals and book 1-on-1 office hours with alumni in tech.</p>
-            </div>
-
-            <div className="relative w-full sm:w-64">
-              <Search size={14} className="absolute left-3 top-3 text-gray-400" />
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 p-4 rounded-2xl shadow-2xs">
+            <div className="relative flex-1 w-full max-w-md">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8c7569]" />
               <input
                 type="text"
-                placeholder="Search company or role..."
+                placeholder="Search alumni by name, company, or role..."
                 value={alumniSearch}
-                onChange={(e) => setAlumniSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-xs text-gray-900 dark:text-white outline-none"
+                onChange={e => setAlumniSearch(e.target.value)}
+                className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-xs text-[#231f20] dark:text-white outline-none focus:border-[#b56b37]"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {filteredAlumni.map((a) => (
-              <div key={a.id} className="p-5 bg-gray-50 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3 text-xs">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white font-black text-sm flex items-center justify-center">
-                    {a.avatar}
+          <div className="space-y-3">
+            {filteredAlumni.map(alm => (
+              <div key={alm.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 shadow-2xs gap-4 hover:border-[#b56b37] transition-all">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-[#603620] text-[#f3e4bd] font-serif font-bold flex items-center justify-center text-sm shadow-xs">
+                    {alm.name.charAt(0)}
                   </div>
                   <div>
-                    <h4 className="font-bold text-gray-900 dark:text-white text-sm">{a.name}</h4>
-                    <p className="text-indigo-600 dark:text-indigo-400 font-medium">{a.company}</p>
+                    <h3 className="font-serif font-bold text-sm text-[#231f20] dark:text-white">{alm.name}</h3>
+                    <p className="text-xs text-[#b56b37] font-bold">{alm.currentRole}</p>
+                    <p className="text-[11px] text-[#8c7569] font-medium">{alm.college} • Class of {alm.gradYear}</p>
                   </div>
                 </div>
 
-                <div className="space-y-1 text-[11px] text-gray-600 dark:text-gray-300">
-                  <div>Role: <strong>{a.role}</strong></div>
-                  <div>Alma Mater: {a.college} ({a.gradYear})</div>
-                  <div>Office Hours: {a.officeHours}</div>
+                <div className="flex items-center gap-3">
+                  <span className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold ${
+                    alm.referralsAvailable ? 'bg-[#63703d]/15 text-[#63703d] border border-[#63703d]/30' : 'bg-gray-100 text-gray-500'
+                  }`}>
+                    {alm.referralsAvailable ? 'REFERRALS OPEN' : 'BUSY'}
+                  </span>
+                  {alm.referralsAvailable && (
+                    <button
+                      onClick={() => {
+                        setTargetAlumni(alm.name);
+                        setActiveTab('referrals');
+                      }}
+                      className="px-3.5 py-2 bg-[#b56b37] hover:bg-[#96552a] text-white text-xs font-bold rounded-xl cursor-pointer"
+                    >
+                      Request Referral
+                    </button>
+                  )}
                 </div>
-
-                <button
-                  onClick={() => {
-                    setSelectedAlumniId(a.id);
-                    setActiveTab('referrals');
-                  }}
-                  className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition"
-                >
-                  Request Referral
-                </button>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* TAB 3: EVENTS */}
+      {/* Tab 3: Campus Events (RSVP + Waitlist) */}
       {activeTab === 'events' && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-6 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-2xl p-6 space-y-6 shadow-2xs">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">Campus Workshops & Seminars</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">RSVP for upcoming technical workshops organized by campus chapters.</p>
+              <h3 className="font-serif font-bold text-base text-[#231f20] dark:text-white">Campus Workshops & Seminars</h3>
+              <p className="text-xs text-[#603620] dark:text-slate-400 font-medium">RSVP for upcoming technical workshops organized by campus chapters.</p>
             </div>
           </div>
 
@@ -479,135 +475,162 @@ export default function CampusAlumniHub() {
               placeholder="Host event title (e.g. LLM Fine-Tuning Workshop)..."
               value={newEventTitle}
               onChange={(e) => setNewEventTitle(e.target.value)}
-              className="flex-1 p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-xs text-gray-900 dark:text-white outline-none"
+              className="flex-1 p-2.5 bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl text-xs text-[#231f20] dark:text-white outline-none focus:border-[#b56b37]"
               required
             />
-            <button type="submit" className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition">
+            <button type="submit" className="px-4 py-2.5 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-xs rounded-xl transition cursor-pointer">
               + Host Event
             </button>
           </form>
 
           <div className="space-y-3">
-            {events.map((e) => (
-              <div key={e.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-gray-50 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-700 text-xs">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-gray-900 dark:text-white text-sm">{e.title}</span>
-                    <span className="px-2 py-0.5 text-[10px] font-bold bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 rounded-md">
-                      {e.chapter}
-                    </span>
-                  </div>
-                  <p className="text-gray-500 dark:text-gray-400 mt-1">
-                    {e.date} at {e.time} • {e.location} • ({e.rsvps} / {e.maxCapacity} RSVPs)
-                  </p>
-                </div>
+            {events.map((e) => {
+              const isFull = e.rsvpCount >= e.maxCapacity;
+              const isConfirmed = e.userStatus === 'confirmed';
+              const isWaitlisted = e.userStatus === 'waitlisted';
+              const hasActed = isConfirmed || isWaitlisted;
 
-                <button
-                  onClick={() => handleToggleRsvp(e.id)}
-                  className={`px-4 py-2 font-bold rounded-xl transition ${
-                    e.userRsvp
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                  }`}
-                >
-                  {e.userRsvp ? '✓ RSVP Confirmed' : 'RSVP Spot'}
-                </button>
-              </div>
-            ))}
+              return (
+                <div key={e.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-[#fcf9f2] dark:bg-slate-900/60 rounded-2xl border border-[#e8ded1] dark:border-slate-800 text-xs">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-serif font-bold text-[#231f20] dark:text-white text-sm">{e.title}</span>
+                      <span className="px-2 py-0.5 text-[10px] font-bold bg-[#f6efe2] text-[#603620] rounded-md border border-[#e8ded1]">
+                        {e.chapter}
+                      </span>
+                      {/* Capacity badge */}
+                      {isFull ? (
+                        <span className="px-2 py-0.5 text-[10px] font-bold bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400 rounded-md flex items-center gap-1">
+                          <AlertCircle size={10} /> Full
+                        </span>
+                      ) : null}
+                      {/* Waitlist size badge */}
+                      {e.waitlistCount > 0 && (
+                        <span className="px-2 py-0.5 text-[10px] font-bold bg-[#63703d]/15 text-[#63703d] border border-[#63703d]/30 rounded-md flex items-center gap-1">
+                          <Clock size={10} /> {e.waitlistCount} on waitlist
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-[#8c7569] dark:text-slate-400 mt-1">
+                      {e.date} at {e.time} • {e.location} • ({e.rsvpCount} / {e.maxCapacity} RSVPs)
+                    </p>
+
+                    {/* User status pill */}
+                    {isConfirmed && (
+                      <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 text-[10px] font-bold bg-[#63703d]/15 text-[#63703d] border border-[#63703d]/30 rounded-full">
+                        <CheckCircle2 size={10} /> Your spot is confirmed
+                      </span>
+                    )}
+                    {isWaitlisted && (
+                      <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 text-[10px] font-bold bg-[#f3e4bd] text-[#603620] rounded-full">
+                        <Clock size={10} /> You're on the waitlist
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {/* Primary action button */}
+                    {!hasActed && (
+                      <button
+                        onClick={() => handleRsvpOrWaitlist(e.id)}
+                        className={`px-4 py-2 font-bold rounded-xl transition text-white cursor-pointer ${
+                          isFull
+                            ? 'bg-[#603620] hover:bg-[#4a2a19]'
+                            : 'bg-[#b56b37] hover:bg-[#96552a]'
+                        }`}
+                        aria-label={isFull ? `Join waitlist for ${e.title}` : `RSVP for ${e.title}`}
+                      >
+                        {isFull ? '⏳ Join Waitlist' : 'RSVP Spot'}
+                      </button>
+                    )}
+
+                    {/* Cancel button when user has acted */}
+                    {hasActed && (
+                      <button
+                        onClick={() => handleCancelRsvp(e.id)}
+                        className="px-4 py-2 font-bold rounded-xl transition bg-white dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 text-[#603620] dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-900/40 hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
+                        aria-label={`Cancel ${isWaitlisted ? 'waitlist entry' : 'RSVP'} for ${e.title}`}
+                      >
+                        {isConfirmed ? '✓ RSVP Confirmed' : '⏳ On Waitlist'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* TAB 4: REFERRALS */}
+      {/* Tab 4: Referral Portal */}
       {activeTab === 'referrals' && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-6 shadow-sm">
-          <div>
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">Submit Referral Request</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Provide job role details for alumni review.</p>
+        <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xs max-w-2xl mx-auto">
+          <div className="border-b border-[#e8ded1] dark:border-slate-800 pb-4">
+            <h2 className="text-xl font-serif font-bold text-[#231f20] dark:text-white">Request Alumni Job Referral</h2>
+            <p className="text-xs text-[#603620] dark:text-slate-400 font-medium">Connect directly with verified alumni engineers for job & internship referrals.</p>
           </div>
 
           <form onSubmit={handleRequestReferral} className="space-y-4 text-xs">
-            <div>
-              <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Select Alumni</label>
-              <select
-                value={selectedAlumniId}
-                onChange={(e) => setSelectedAlumniId(e.target.value)}
-                className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white outline-none"
-                required
-              >
-                <option value="">-- Choose Alumni --</option>
-                {alumni.map(a => (
-                  <option key={a.id} value={a.id}>{a.name} ({a.company} - {a.role})</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Target Job Role & Requisition ID</label>
+            <div className="space-y-1">
+              <label className="font-bold text-[#603620] uppercase">Target Alumni Name</label>
               <input
                 type="text"
-                placeholder="e.g. Software Engineer New Grad (Req #99812)..."
-                value={targetRole}
-                onChange={(e) => setTargetRole(e.target.value)}
-                className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white outline-none"
                 required
+                placeholder="e.g. Siddharth Rao (Google)"
+                value={targetAlumni}
+                onChange={e => setTargetAlumni(e.target.value)}
+                className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none"
               />
             </div>
 
-            <button type="submit" className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition">
-              Submit Referral Request
+            <div className="space-y-1">
+              <label className="font-bold text-[#603620] uppercase">Target Job / Internship Role</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Software Engineer Intern 2026"
+                value={targetRole}
+                onChange={e => setTargetRole(e.target.value)}
+                className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none"
+              />
+            </div>
+
+            <button type="submit" className="w-full py-3 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-xs rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-2">
+              <Send className="w-4 h-4" /> Send Referral Request to Alumni
             </button>
           </form>
 
-          <div className="space-y-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <h4 className="font-bold text-xs text-gray-900 dark:text-white">Active Referral Ledger</h4>
-            {referralRequests.map((r) => (
-              <div key={r.id} className="flex items-center justify-between p-3.5 bg-gray-50 dark:bg-gray-900/60 rounded-xl border border-gray-200 dark:border-gray-700 text-xs">
+          <div className="pt-4 border-t border-[#e8ded1] space-y-2">
+            <h4 className="font-bold text-[#231f20] text-xs">Your Recent Referral Requests</h4>
+            {referralRequests.map(r => (
+              <div key={r.id} className="flex justify-between items-center p-3 rounded-xl bg-[#fcf9f2] border border-[#e8ded1] text-xs">
                 <div>
-                  <div className="font-bold text-gray-900 dark:text-white">{r.alumniName} ({r.company})</div>
-                  <div className="text-gray-500">{r.roleTarget}</div>
+                  <span className="font-bold text-[#231f20]">{r.role}</span>
+                  <span className="text-[10px] text-[#8c7569] block">To: {r.alumniName}</span>
                 </div>
-
-                <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full ${
-                  r.status === 'ACCEPTED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                }`}>
-                  {r.status}
-                </span>
+                <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-[#f3e4bd] text-[#603620]">{r.status}</span>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* TAB 5: EXPORT MANIFEST */}
+      {/* Tab 5: Export */}
       {activeTab === 'export' && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">Campus Network Manifest JSON</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Complete summary of chapter memberships and referral requests.</p>
-            </div>
-
-            <button
-              onClick={handleExportManifest}
-              className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5"
-            >
-              <Download size={14} /> Download Manifest JSON
-            </button>
+        <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-2xs max-w-xl mx-auto">
+          <div className="w-16 h-16 bg-[#f6efe2] text-[#b56b37] flex items-center justify-center rounded-full mx-auto border border-[#e8ded1]">
+            <Download className="w-8 h-8 text-[#b56b37]" />
           </div>
-
-          <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 font-mono text-xs text-indigo-300 overflow-x-auto">
-            <pre>{JSON.stringify({
-              chaptersCount: chapters.length,
-              alumniCount: alumni.length,
-              userRsvps: events.filter(e => e.userRsvp),
-              referralRequests: referralRequests,
-              timestamp: new Date().toISOString()
-            }, null, 2)}</pre>
-          </div>
+          <h2 className="text-2xl font-serif font-bold text-[#231f20] dark:text-white">Export Campus Manifest</h2>
+          <p className="text-xs text-[#603620] dark:text-slate-400 font-medium">
+            Download full chapter listings, alumni network directory, campus events, and waitlist status in a JSON file.
+          </p>
+          <button onClick={handleExportManifest} className="px-6 py-3 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-xs rounded-xl shadow-md cursor-pointer inline-flex items-center gap-2">
+            <Download className="w-4 h-4" /> Download Campus Network JSON
+          </button>
         </div>
       )}
-
     </div>
   );
 }

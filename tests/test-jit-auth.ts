@@ -7,7 +7,7 @@ process.env.ENABLE_MOCK_AUTH = 'true';
 process.env.FIREBASE_SERVICE_ACCOUNT_BASE64 = '';
 process.env.FIREBASE_PROJECT_ID = '';
 
-const { authenticateUser, deleteFirebaseUser, authMiddleware } = await import('../src/middleware/auth.js');
+const { authenticateUser, deleteFirebaseUser, authMiddleware } = await import('../src/api/middlewares/auth.js');
 const dbModule = await import('../src/api/db.js');
 
 // Mock request and response

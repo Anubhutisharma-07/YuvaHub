@@ -1,8 +1,17 @@
 import { Response } from "express";
 
+export interface ApiPaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+}
+
 export interface ApiSuccess<T = any> {
   success: true;
   data: T;
+  meta?: ApiPaginationMeta;
+  items?: T[];
+  [key: string]: unknown;
 }
 
 export interface ApiError {
@@ -11,12 +20,70 @@ export interface ApiError {
   code?: string;
 }
 
-export function sendSuccess<T>(res: Response, data: T, status = 200) {
-  return res.status(status).json({ success: true, data });
+export type ApiEnvelope<T = any> = ApiSuccess<T> | ApiError;
+
+/**
+ * Send a success response using the universal envelope.
+ *
+ * Standard shape: `{ success: true, data?, meta? }`.
+ *
+ * For backward compatibility, object payloads are also flattened onto the
+ * top-level response body (e.g. `{ status, profile }`) so existing clients
+ * keep working while still receiving the standard `success: true` flag.
+ */
+export function sendSuccess<T>(
+  res: Response,
+  data: T,
+  status = 200,
+  meta?: ApiPaginationMeta,
+) {
+  if (data !== null && typeof data === "object" && !Array.isArray(data)) {
+    return res.status(status).json({
+      success: true,
+      ...(data as Record<string, unknown>),
+      ...(meta ? { meta } : {}),
+    });
+  }
+  return res.status(status).json({
+    success: true,
+    data,
+    ...(meta ? { meta } : {}),
+  });
 }
 
-export function sendError(res: Response, error: string, status = 500, code?: string) {
-  return res.status(status).json({ success: false, error, ...(code ? { code } : {}) });
+/**
+ * Send a paginated list response using the universal envelope.
+ *
+ * Shape: `{ success: true, data: T[], items: T[], meta: { page, limit, total } }`.
+ * `items` is a backward-compatible alias of `data`.
+ */
+export function sendPaginated<T>(
+  res: Response,
+  data: T[],
+  page: number,
+  limit: number,
+  total: number,
+  status = 200,
+) {
+  return res.status(status).json({
+    success: true,
+    data,
+    items: data,
+    meta: { page, limit, total },
+  });
+}
+
+export function sendError(
+  res: Response,
+  error: string,
+  status = 500,
+  code?: string,
+) {
+  return res.status(status).json({
+    success: false,
+    error,
+    ...(code ? { code } : {}),
+  });
 }
 
 export function sendBadRequest(res: Response, error: string) {
