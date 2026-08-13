@@ -330,7 +330,7 @@ function App() {
       case 'project_showcase': return <ProjectShowcaseVault />;
       case 'star_interview': return <StarInterviewStudio />;
       case 'submit': return <SubmitOpportunity />;
-      case 'mentorship': return <Mentorship />;
+      case 'mentorship': return <MentorshipAdvisoryStudio />;
       case 'bounty_board': return <BountyBoard />;
       case 'community': return <Community />;
       case 'profile': return <Profile />;
@@ -428,13 +428,27 @@ function App() {
   const hasOnboarded = Boolean(
     profile?.onboarded || 
     profile?.college || 
-    (user?.uid && typeof localStorage !== 'undefined' && localStorage.getItem(`yuvahub-onboarded-${user.uid}`) === 'true')
+    profile?.year ||
+    profile?.field ||
+    (user && typeof localStorage !== 'undefined' && (
+      (user.uid && localStorage.getItem(`yuvahub-onboarded-${user.uid}`) === 'true') ||
+      (user.email && localStorage.getItem(`yuvahub-onboarded-${user.email}`) === 'true') ||
+      localStorage.getItem('yuvahub-user-onboarded') === 'true'
+    ))
   );
 
   if (user && profile && !hasOnboarded) {
     return (
       <Suspense fallback={<LoadingScreen fullScreen={true} />}>
-        <OnboardingFlow user={user} profile={profile} onComplete={(updated) => setProfile(updated)} />
+        <OnboardingFlow user={user} profile={profile} onComplete={(updated) => {
+          const finishedProfile = { ...updated, onboarded: true };
+          setProfile(finishedProfile);
+          if (typeof localStorage !== 'undefined') {
+            if (user?.uid) localStorage.setItem(`yuvahub-onboarded-${user.uid}`, 'true');
+            if (user?.email) localStorage.setItem(`yuvahub-onboarded-${user.email}`, 'true');
+            localStorage.setItem('yuvahub-user-onboarded', 'true');
+          }
+        }} />
       </Suspense>
     );
   }
@@ -679,7 +693,7 @@ function App() {
            </div>
         </div>
 
-        <div className="flex-1 p-4 lg:p-8 overflow-y-auto no-scrollbar pb-24">
+        <div className="flex-1 p-4 lg:p-6 overflow-y-auto no-scrollbar pb-24">
           <Suspense fallback={<LoadingScreen />}>
             {selectedOppId ? (
               <OpportunityDetail />

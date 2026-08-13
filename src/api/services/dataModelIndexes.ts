@@ -83,5 +83,42 @@ export async function ensureDataModelIndexes(db: Db): Promise<void> {
       { createdBy: 1, createdAt: -1 },
       { name: "bounties_creator_history" },
     ),
+
+    db.collection("mentor_profiles").createIndex(
+      { mentorUid: 1 },
+      { name: "mentor_profiles_uid", unique: true, sparse: true },
+    ),
+    db.collection("mentor_profiles").createIndex(
+      { verificationStatus: 1, isActive: 1, "stats.sessionsCompleted": -1 },
+      { name: "mentor_profiles_public_feed" },
+    ),
+    db.collection("mentor_availability").createIndex(
+      { mentorUid: 1, date: 1, startTime: 1 },
+      { name: "mentor_availability_slot_window" },
+    ),
+    db.collection("mentor_availability").createIndex(
+      { status: 1, mentorUid: 1, date: 1 },
+      { name: "mentor_availability_open_slots" },
+    ),
+    db.collection("mentorship_sessions").createIndex(
+      { studentUid: 1, createdAt: -1 },
+      { name: "mentorship_sessions_student" },
+    ),
+    db.collection("mentorship_sessions").createIndex(
+      { mentorUid: 1, createdAt: -1 },
+      { name: "mentorship_sessions_mentor" },
+    ),
+    db.collection("mentorship_sessions").createIndex(
+      { sessionId: 1 },
+      { name: "mentorship_sessions_session_id", unique: true, sparse: true },
+    ),
+    db.collection("mentorship_applications").createIndex(
+      { applicantUid: 1, createdAt: -1 },
+      { name: "mentorship_applications_applicant" },
+    ),
+    db.collection("mentorship_applications").createIndex(
+      { status: 1, createdAt: -1 },
+      { name: "mentorship_applications_status" },
+    ),
   ]);
 }

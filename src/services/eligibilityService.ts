@@ -1,5 +1,5 @@
 import { getCommandDB } from "../lib/mongodb";
-import { getGenAI } from "../../server";
+import { getGenAI } from "../api/genai.js";
 import { EligibilityPrediction } from "../models/eligibilitySchema";
 
 export async function predictEligibility(
@@ -109,7 +109,7 @@ Return ONLY valid JSON in this format:
 
   const db = await getCommandDB();
 
-  await db.collection("eligibility_predictions").insertOne(prediction);
+  await db.collection("eligibility_predictions").insertOne(prediction as any);
 
   return prediction;
 }
