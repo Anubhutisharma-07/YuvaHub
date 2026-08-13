@@ -12,6 +12,7 @@ import { SEO } from './components/SEO';
 import LoadingScreen from './components/ui/LoadingScreen';
 import NotificationDropdown from './components/ui/NotificationDropdown';
 import BackToTopButton from './components/ui/BackToTopButton';
+import AccessibilityEnhancer from './components/accessibility/AccessibilityEnhancer';
 
 // Route components are lazy-loaded to reduce the initial bundle size (code splitting)
 const Dashboard = lazy(() => import('./components/Tabs/Dashboard'));
@@ -329,7 +330,7 @@ function App() {
       case 'project_showcase': return <ProjectShowcaseVault />;
       case 'star_interview': return <StarInterviewStudio />;
       case 'submit': return <SubmitOpportunity />;
-      case 'mentorship': return <Mentorship />;
+      case 'mentorship': return <MentorshipAdvisoryStudio />;
       case 'bounty_board': return <BountyBoard />;
       case 'community': return <Community />;
       case 'profile': return <Profile />;
@@ -427,19 +428,44 @@ function App() {
   const hasOnboarded = Boolean(
     profile?.onboarded || 
     profile?.college || 
-    (user?.uid && typeof localStorage !== 'undefined' && localStorage.getItem(`yuvahub-onboarded-${user.uid}`) === 'true')
+    profile?.year ||
+    profile?.field ||
+    (user && typeof localStorage !== 'undefined' && (
+      (user.uid && localStorage.getItem(`yuvahub-onboarded-${user.uid}`) === 'true') ||
+      (user.email && localStorage.getItem(`yuvahub-onboarded-${user.email}`) === 'true') ||
+      localStorage.getItem('yuvahub-user-onboarded') === 'true'
+    ))
   );
 
   if (user && profile && !hasOnboarded) {
     return (
       <Suspense fallback={<LoadingScreen fullScreen={true} />}>
-        <OnboardingFlow user={user} profile={profile} onComplete={(updated) => setProfile(updated)} />
+        <OnboardingFlow user={user} profile={profile} onComplete={(updated) => {
+          const finishedProfile = { ...updated, onboarded: true };
+          setProfile(finishedProfile);
+          if (typeof localStorage !== 'undefined') {
+            if (user?.uid) localStorage.setItem(`yuvahub-onboarded-${user.uid}`, 'true');
+            if (user?.email) localStorage.setItem(`yuvahub-onboarded-${user.email}`, 'true');
+            localStorage.setItem('yuvahub-user-onboarded', 'true');
+          }
+        }} />
       </Suspense>
     );
   }
 
   return (
     <div className="flex h-screen bg-gray-50 text-gray-900 font-sans overflow-hidden dark:bg-gray-900 dark:text-gray-100">
+      {/* Global accessibility enhancer: focus trap, ARIA labels, Esc handling */}
+      <AccessibilityEnhancer />
+
+      {/* Skip to main content link for keyboard users */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-[#603620] focus:text-white focus:rounded-lg focus:font-bold focus:text-sm focus:shadow-lg focus:outline-none"
+      >
+        Skip to main content
+      </a>
+
       {/* Centralized SEO component for logged-in views */}
       {selectedOppId ? null : (
         <SEO 
@@ -606,7 +632,7 @@ function App() {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col pt-16 lg:pt-0 h-screen overflow-hidden relative">
+      <main id="main-content" tabIndex={-1} className="flex-1 flex flex-col pt-16 lg:pt-0 h-screen overflow-hidden relative">
         
         {/* Topbar */}
         <div className="hidden lg:flex h-16 border-b border-[#e8ded1] bg-[#fcf9f2] items-center justify-between px-6 shrink-0">
@@ -667,7 +693,7 @@ function App() {
            </div>
         </div>
 
-        <div className="flex-1 p-4 lg:p-8 overflow-y-auto no-scrollbar pb-24" id="app-content">
+        <div className="flex-1 p-4 lg:p-6 overflow-y-auto no-scrollbar pb-24">
           <Suspense fallback={<LoadingScreen />}>
             {selectedOppId ? (
               <OpportunityDetail />

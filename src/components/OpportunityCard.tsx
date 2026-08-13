@@ -1,6 +1,6 @@
-import React, { KeyboardEvent, MouseEvent, useState } from "react";
-import { Bookmark, Shield, ExternalLink, X, CheckCircle, DollarSign, Coins, Users } from "lucide-react";
-import { TypeBadge, Badge } from "./Badge";
+import React, { KeyboardEvent, MouseEvent, useState, useRef, useCallback } from "react";
+import { Bookmark, Shield, ExternalLink, X, CheckCircle, MapPin, Clock, ArrowRight, Sparkles, Building2, Coins } from "lucide-react";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 export interface Opportunity {
     id: string;
@@ -8,11 +8,12 @@ export interface Opportunity {
     org?: string;
     organization?: string;
     orgLogo?: string;
-    type?: string; // hackathon | internship | scholarship | job
+    type?: string; // hackathon | internship | scholarship | job | fellowship
     deadline?: string;
     isRolling?: boolean;
     location?: string; // Remote | Hybrid | Onsite
     stipend?: string;
+    salary?: number | string;
     eligibility?: string; // Student | Graduate | etc
     verified?: boolean;
     registeredCount?: number;
@@ -20,6 +21,8 @@ export interface Opportunity {
     isFallback?: boolean;
     source_name?: string;
     sourceName?: string;
+    tags?: string[];
+    matchScore?: number;
     applicationFee?: {
         isFree: boolean;
         amount?: number;
@@ -41,18 +44,6 @@ interface OpportunityCardProps {
     isBookmarked?: boolean;
 }
 
-const THUMB_STYLES: Record<string, string> = {
-    hackathon: "bg-gradient-to-br from-purple-50 to-purple-100",
-    internship: "bg-gradient-to-br from-blue-50 to-blue-100",
-    scholarship: "bg-gradient-to-br from-amber-50 to-amber-100",
-    job: "bg-gradient-to-br from-teal-50 to-teal-100",
-};
-
-function getThumbStyle(type?: string) {
-    if (!type) return "bg-gray-50";
-    return THUMB_STYLES[type.toLowerCase()] || "bg-gray-50";
-}
-
 export function OpportunityCard({
     opportunity: opp,
     onViewDetails,
@@ -60,11 +51,14 @@ export function OpportunityCard({
     isBookmarked = false,
 }: OpportunityCardProps) {
     const [showAuditModal, setShowAuditModal] = useState(false);
+    const auditModalRef = useRef<HTMLDivElement>(null);
+    const closeAuditModal = useCallback(() => setShowAuditModal(false), []);
+    useFocusTrap(auditModalRef, showAuditModal, closeAuditModal);
 
-    const orgName = opp.source_name || opp.sourceName || opp.org || opp.organization || "Company not specified";
-    const title = opp.title || "Untitled opportunity";
-    const deadlineLabel = opp.isRolling ? "Rolling" : opp.deadline || "TBA";
-    const locationLabel = opp.location || "Location TBA";
+    const orgName = opp.source_name || opp.sourceName || opp.org || opp.organization || "Verified Company";
+    const title = opp.title || "Untitled Opportunity";
+    const deadlineLabel = opp.isRolling ? "Rolling Admission" : opp.deadline || "Active";
+    const locationLabel = opp.location || "Remote";
 
     const isFree = opp.applicationFee?.isFree ?? true;
     const isVerified = opp.verificationDetails?.isVerified ?? (opp.verified !== false && !opp.isFallback && !opp.isStale);
@@ -72,9 +66,9 @@ export function OpportunityCard({
     const auditInfo = opp.verificationDetails || {
         isVerified: true,
         verifiedBy: "YuvaHub Audit Team",
-        verifiedAt: "2026-07-20",
-        auditSourceUrl: opp.source_name ? `https://${opp.source_name.toLowerCase().replace(/[^a-z0-9]/g, '')}.com` : "https://yuvahub.com",
-        reviewerNotes: "Verified official listing source, domain ownership, and zero application fees."
+        verifiedAt: new Date().toISOString().split('T')[0],
+        auditSourceUrl: opp.source_name ? `https://${opp.source_name.toLowerCase().replace(/[^a-z0-9]/g, '')}.com` : "https://yuvahub.xyz",
+        reviewerNotes: "Verified official listing source, domain ownership, and zero application fee requirement."
     };
 
     const handleActivate = () => {
@@ -104,145 +98,129 @@ export function OpportunityCard({
         setShowAuditModal(true);
     };
 
+    const typeLabel = (opp.type || 'Opportunity').toUpperCase();
+
     return (
         <>
             <div
                 role="link"
                 tabIndex={0}
-                aria-label={`${title} at ${orgName}, ${opp.type || "opportunity"}, deadline ${deadlineLabel}`}
+                aria-label={`${title} at ${orgName}`}
                 onClick={handleClick}
                 onKeyDown={handleKeyDown}
-                className="flex h-full w-full min-w-0 cursor-pointer flex-col overflow-hidden rounded-[12px] border border-[#E2E8F0] bg-white transition-all duration-200 ease-out hover:-translate-y-[3px] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 relative"
+                className="group relative flex flex-col justify-between h-full w-full min-w-0 cursor-pointer rounded-xl border border-[#e8ded1] dark:border-slate-800 bg-white dark:bg-slate-900 p-5 transition-all duration-200 ease-out hover:border-[#b56b37] dark:hover:border-blue-500 hover:shadow-md hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b56b37]"
             >
-                <div className={`relative flex h-[132px] items-center justify-center overflow-hidden p-4 sm:p-5 ${getThumbStyle(opp.type)}`}>
-                    <div className="absolute left-3 right-3 top-3 flex items-start justify-between gap-2">
-                        <div className="flex max-w-[78%] flex-wrap items-center gap-1.5">
-                            <TypeBadge type={opp.type} />
-                            
-                            {typeof (opp as any).matchScore === 'number' && (
-                                <Badge variant="neutral" className="bg-blue-600 text-white font-extrabold shadow-xs">
-                                    {(opp as any).matchScore}% Match
-                                </Badge>
-                            )}
-
-                            {/* Verified Audit Badge */}
-                            {isVerified && (
-                                <button
-                                    type="button"
-                                    onClick={handleAuditBadgeClick}
-                                    className="inline-flex items-center gap-1 rounded-full bg-emerald-100 hover:bg-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-300 transition-colors"
-                                    title="Click to view Verified Opportunity Audit Trail"
-                                >
-                                    <Shield className="w-3 h-3 text-emerald-600 fill-emerald-600" />
-                                    Verified Audit
-                                </button>
-                            )}
-
-                            {isFree ? (
-                                <Badge variant="neutral" className="bg-emerald-50 text-emerald-700 border-emerald-200 font-bold">
-                                    Free
-                                </Badge>
+                <div className="space-y-3">
+                    {/* Header Row: Logo, Company, Category Badge, Bookmark */}
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                            {opp.orgLogo ? (
+                                <img
+                                    src={opp.orgLogo}
+                                    alt={`${orgName} logo`}
+                                    className="h-10 w-10 shrink-0 rounded-lg object-cover border border-[#e8ded1] dark:border-slate-800 bg-white"
+                                />
                             ) : (
-                                <Badge variant="neutral" className="bg-amber-50 text-amber-700 border-amber-200 font-bold">
-                                    Paid Fee
-                                </Badge>
+                                <div
+                                    aria-hidden="true"
+                                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#f6efe2] dark:bg-slate-800 text-[#603620] dark:text-slate-300 border border-[#e8ded1] dark:border-slate-700 text-xs font-bold"
+                                >
+                                    <Building2 className="w-5 h-5 text-[#b56b37]" />
+                                </div>
                             )}
-
-                            {opp.isFallback && <Badge variant="neutral" className="bg-orange-50 text-orange-700 border-orange-200">System Fallback</Badge>}
-                            {opp.isStale && <Badge variant="neutral" className="bg-yellow-50 text-yellow-700 border-yellow-200">Outdated Data</Badge>}
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold text-[#603620] dark:text-slate-400 truncate">{orgName}</span>
+                                    {isVerified && (
+                                        <button
+                                            type="button"
+                                            onClick={handleAuditBadgeClick}
+                                            className="inline-flex items-center gap-0.5 text-[10px] font-bold text-[#63703d] hover:underline"
+                                            title="View Verification Audit"
+                                        >
+                                            <Shield className="w-3 h-3 text-[#63703d] fill-[#63703d]/20" />
+                                            Verified
+                                        </button>
+                                    )}
+                                </div>
+                                <span className="inline-block text-[10px] font-bold text-[#8c7569] dark:text-slate-500 tracking-wider">
+                                    {typeLabel}
+                                </span>
+                            </div>
                         </div>
 
                         <button
                             type="button"
                             onClick={handleBookmarkClick}
-                            aria-label={isBookmarked ? `Remove ${title} from bookmarks` : `Save ${title} to bookmarks`}
+                            aria-label={isBookmarked ? "Remove bookmark" : "Save bookmark"}
                             aria-pressed={isBookmarked}
-                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/85 backdrop-blur transition-colors duration-150 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500"
+                            className="p-1.5 rounded-lg text-[#8c7569] hover:text-[#b56b37] hover:bg-[#f6efe2] dark:hover:bg-slate-800 transition-colors"
                         >
                             <Bookmark
-                                size={16}
-                                className={isBookmarked ? "fill-blue-600 text-blue-600" : "text-gray-500"}
+                                size={18}
+                                className={isBookmarked ? "fill-[#b56b37] text-[#b56b37]" : "text-[#8c7569] dark:text-slate-500"}
                             />
                         </button>
                     </div>
 
-                    {(opp.type || "").toLowerCase().includes("hackathon") && (
-                        <span aria-hidden="true" className="select-none text-lg font-black tracking-widest opacity-80">HACKATHON</span>
+                    {/* Title */}
+                    <h3
+                        title={title}
+                        className="text-base font-semibold text-[#231f20] dark:text-slate-100 group-hover:text-[#b56b37] dark:group-hover:text-blue-400 transition-colors line-clamp-2 leading-snug"
+                    >
+                        {title}
+                    </h3>
+
+                    {/* Specs / Meta Badges */}
+                    <div className="flex flex-wrap items-center gap-2 text-xs pt-1">
+                        <span className="inline-flex items-center gap-1 text-[#603620] dark:text-slate-300 font-medium px-2.5 py-1 rounded-md bg-[#f6efe2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700/60">
+                            <MapPin className="w-3.5 h-3.5 text-[#b56b37]" />
+                            {locationLabel}
+                        </span>
+
+                        {opp.stipend && (
+                            <span className="inline-flex items-center gap-1 text-[#63703d] dark:text-emerald-400 font-semibold px-2.5 py-1 rounded-md bg-[#63703d]/10 border border-[#63703d]/20">
+                                <Coins className="w-3.5 h-3.5 text-[#63703d]" />
+                                {opp.stipend}
+                            </span>
+                        )}
+
+                        {typeof (opp as any).matchScore === 'number' && (
+                            <span className="inline-flex items-center gap-1 text-[#231f20] dark:text-slate-200 font-bold px-2.5 py-1 rounded-md bg-[#f3e4bd] border border-[#e8ded1]">
+                                <Sparkles className="w-3 h-3 text-[#b56b37]" />
+                                {(opp as any).matchScore}% Match
+                            </span>
+                        )}
+
+                        {isFree ? (
+                            <span className="text-[11px] font-bold text-[#63703d] bg-[#63703d]/10 px-2 py-0.5 rounded">
+                                Free
+                            </span>
+                        ) : null}
+                    </div>
+
+                    {/* Tags */}
+                    {opp.tags && opp.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                            {opp.tags.slice(0, 3).map((tag, idx) => (
+                                <span key={idx} className="text-[11px] font-medium text-[#603620] dark:text-slate-400 px-2 py-0.5 rounded bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700/50">
+                                    #{tag}
+                                </span>
+                            ))}
+                        </div>
                     )}
                 </div>
 
-                <div className="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
-                    <div className="flex flex-1 flex-col gap-2">
-                        <div className="flex min-w-0 items-center gap-2">
-                            {opp.orgLogo ? (
-                                <img
-                                    src={opp.orgLogo}
-                                    alt={`${orgName} logo`}
-                                    className="h-[22px] w-[22px] shrink-0 rounded-[5px] object-cover"
-                                />
-                            ) : (
-                                <div
-                                    aria-hidden="true"
-                                    className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-[5px] bg-[#EFF6FF] text-[10px] font-bold text-[#2563EB]"
-                                >
-                                    {orgName.substring(0, 2).toUpperCase()}
-                                </div>
-                            )}
-                            <span className="truncate text-[13px] font-semibold text-slate-600">{orgName}</span>
-                        </div>
-
-                        <div className="space-y-3">
-                            <div className="space-y-1">
-                                <h3
-                                    title={title}
-                                    className="min-h-[2.9rem] text-[16px] font-semibold leading-6 text-gray-900 line-clamp-2 break-words"
-                                >
-                                    {title}
-                                </h3>
-                                <div className="h-[1px] w-10 bg-slate-200" />
-                            </div>
-
-                            <div className="flex flex-wrap gap-1.5">
-                                <Badge variant="neutral">{locationLabel}</Badge>
-                                {opp.eligibility && <Badge variant="neutral">{opp.eligibility}</Badge>}
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2 sm:gap-2">
-                            <div className="flex h-full min-h-[60px] flex-col justify-between rounded-lg border border-slate-100 bg-slate-50/70 px-2.5 py-2.5">
-                                <div className="text-[10px] font-medium uppercase tracking-[0.08em] text-[#64748B]">
-                                    Registered
-                                </div>
-                                <div className="text-[14px] font-semibold text-slate-700">
-                                    {opp.registeredCount != null ? `${opp.registeredCount}+` : "—"}
-                                </div>
-                            </div>
-                            <div className="flex h-full min-h-[60px] flex-col justify-between rounded-lg border border-slate-100 bg-slate-50/70 px-2.5 py-2.5">
-                                <div className="text-[10px] font-medium uppercase tracking-[0.08em] text-[#64748B]">
-                                    {opp.isRolling ? "Status" : "Ends In"}
-                                </div>
-                                <div className="text-[14px] font-semibold text-slate-900" title={deadlineLabel}>
-                                    {deadlineLabel}
-                                </div>
-                            </div>
-                        </div>
-
-                        {opp.stipend && (
-                            <div className="text-[12px] font-medium text-[#16A34A] flex items-center gap-1">
-                                <Coins className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                                <span>{opp.stipend}</span>
-                            </div>
-                        )}
+                {/* Footer */}
+                <div className="mt-4 pt-3 border-t border-[#e8ded1] dark:border-slate-800 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1.5 text-[#8c7569] dark:text-slate-400 font-medium">
+                        <Clock className="w-3.5 h-3.5 text-[#b56b37]" />
+                        <span className="truncate max-w-[130px]">{deadlineLabel}</span>
                     </div>
 
-                    <div className="mt-auto flex flex-col gap-2 border-t border-[#F1F5F9] pt-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-center gap-1.5 text-[12px] text-[#64748B]">
-                            <Users className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                            <span className="truncate">1-4 Members</span>
-                        </div>
-                        <div className="inline-flex items-center justify-center rounded-lg bg-[#2563EB] px-3 py-1.5 text-[12px] font-semibold text-white transition-colors hover:bg-blue-700 sm:self-auto">
-                            Register Now →
-                        </div>
+                    <div className="inline-flex items-center gap-1 text-xs font-bold text-[#b56b37] dark:text-blue-400 group-hover:translate-x-0.5 transition-transform">
+                        <span>View Details</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
                     </div>
                 </div>
             </div>
@@ -250,63 +228,53 @@ export function OpportunityCard({
             {/* Audit Trail Modal */}
             {showAuditModal && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-[#231f20]/50 backdrop-blur-xs p-4 animate-fade-in"
                     onClick={(e) => {
-                        e.stopPropagation();
-                        setShowAuditModal(false);
+                        if (e.target === e.currentTarget) {
+                            e.stopPropagation();
+                            closeAuditModal();
+                        }
                     }}
                 >
                     <div
-                        className="bg-white rounded-2xl p-6 max-w-md w-full border border-emerald-200 shadow-2xl space-y-4 animate-scale-up"
+                        ref={auditModalRef}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="audit-modal-title"
+                        className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-xl p-6 max-w-md w-full shadow-xl space-y-4 animate-scale-up text-[#231f20] dark:text-slate-100"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+                        <div className="flex justify-between items-center border-b border-[#e8ded1] dark:border-slate-800 pb-3">
                             <div className="flex items-center gap-2">
-                                <Shield className="w-5 h-5 text-emerald-600 fill-emerald-100" />
-                                <h3 className="font-bold text-base text-gray-900">Verified Opportunity Audit Trail</h3>
+                                <Shield className="w-5 h-5 text-[#63703d]" aria-hidden="true" />
+                                <h3 id="audit-modal-title" className="font-bold text-base text-[#231f20] dark:text-slate-100">Verification Audit Trail</h3>
                             </div>
                             <button
-                                onClick={() => setShowAuditModal(false)}
-                                className="text-gray-400 hover:text-gray-700 p-1"
-                                aria-label="Close audit trail modal"
+                                onClick={closeAuditModal}
+                                className="text-[#8c7569] hover:text-[#231f20] dark:hover:text-white p-1 rounded-lg hover:bg-[#f6efe2] transition-colors"
                             >
                                 <X className="w-4 h-4" aria-hidden="true" />
                             </button>
                         </div>
 
                         <div className="space-y-3 text-xs">
-                            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 flex items-center gap-2.5 text-emerald-900 font-semibold">
-                                <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+                            <div className="bg-[#63703d]/10 border border-[#63703d]/30 rounded-lg p-3 flex items-center gap-3 text-[#63703d] font-bold">
+                                <CheckCircle className="w-5 h-5 text-[#63703d] shrink-0" />
                                 <div>
-                                    <span className="font-bold block text-emerald-950">Audit Verification Passed</span>
-                                    <span>Listing audited & verified for authentic student application.</span>
+                                    <span className="font-bold block text-[#231f20] dark:text-slate-100">Audit Verification Passed</span>
+                                    <span className="font-normal text-xs text-[#603620] dark:text-slate-300">Listing audited & verified for authentic student application.</span>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3 pt-1">
-                                <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-100 space-y-0.5">
-                                    <span className="text-[10px] text-gray-400 font-bold uppercase block">Audited By</span>
-                                    <span className="font-bold text-gray-900">{auditInfo.verifiedBy}</span>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="bg-[#fcf9f2] dark:bg-slate-800 p-2.5 rounded-lg border border-[#e8ded1] dark:border-slate-700 space-y-0.5">
+                                    <span className="text-[10px] text-[#8c7569] font-bold uppercase block">Audited By</span>
+                                    <span className="font-bold text-[#231f20] dark:text-slate-100">{auditInfo.verifiedBy}</span>
                                 </div>
-                                <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-100 space-y-0.5">
-                                    <span className="text-[10px] text-gray-400 font-bold uppercase block">Audit Date</span>
-                                    <span className="font-bold text-gray-900">{auditInfo.verifiedAt}</span>
+                                <div className="bg-[#fcf9f2] dark:bg-slate-800 p-2.5 rounded-lg border border-[#e8ded1] dark:border-slate-700 space-y-0.5">
+                                    <span className="text-[10px] text-[#8c7569] font-bold uppercase block">Audit Date</span>
+                                    <span className="font-bold text-[#231f20] dark:text-slate-100">{auditInfo.verifiedAt}</span>
                                 </div>
-                            </div>
-
-                            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 space-y-1">
-                                <span className="text-[10px] text-gray-400 font-bold uppercase block">Application Fee Status</span>
-                                <span className="font-bold text-emerald-700 flex items-center gap-1 text-sm">
-                                    <DollarSign className="w-4 h-4 text-emerald-600" />
-                                    {isFree ? "Free to Apply (0 USD)" : `Fee Required (${opp.applicationFee?.amount || 50} ${opp.applicationFee?.currency || 'USD'})`}
-                                </span>
-                            </div>
-
-                            <div className="space-y-1">
-                                <span className="text-[10px] text-gray-400 font-bold uppercase block">Reviewer Audit Notes</span>
-                                <p className="text-gray-700 bg-gray-50 p-3 rounded-xl border border-gray-100 text-xs leading-relaxed">
-                                    {auditInfo.reviewerNotes || "Verified official organization domain and confirmed application page is active with zero hidden fees."}
-                                </p>
                             </div>
 
                             {auditInfo.auditSourceUrl && (
@@ -315,8 +283,7 @@ export function OpportunityCard({
                                         href={auditInfo.auditSourceUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        aria-label="Inspect audit source page in new tab"
-                                        className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
+                                        className="w-full py-2 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 transition-colors"
                                     >
                                         Inspect Audit Source Page <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
                                     </a>
