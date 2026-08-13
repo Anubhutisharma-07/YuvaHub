@@ -29,18 +29,6 @@ import {
 import { useAppContext } from '../../context/AppContext';
 import { EmptyState } from '../ui/states';
 
-/**
- * GrantFellowshipStudio Component
- * 
- * Interactive 550+ line Student Grant & Fellowship Application Studio for YuvaHub.
- * Features:
- * 1. Grant Eligibility Match Calculator (0-100% Match Scores)
- * 2. Interactive Budget & Milestone Calculator
- * 3. Proposal Draft Builder & Live Readiness Diagnostics
- * 4. Active Grants & Research Fellowships Directory
- * 5. Mentor Endorsement & Recommendation Ledger
- * 6. Grant Application Manifest & Proposal Exporter
- */
 export default function GrantFellowshipStudio() {
   const { user, profile } = useAppContext();
 
@@ -63,7 +51,8 @@ export default function GrantFellowshipStudio() {
       category: 'open_source',
       eligibilityMatch: 95,
       description: 'Funding for undergraduate & graduate students building open-source developer tooling and ML infrastructure.',
-      applied: false
+      applied: false,
+      apply_link: 'https://research.google/outreach/research-scholar-program/'
     },
     {
       id: 'g_2',
@@ -74,7 +63,8 @@ export default function GrantFellowshipStudio() {
       category: 'web3',
       eligibilityMatch: 88,
       description: 'Supports research on zero-knowledge cryptography, Layer-2 scalability, and decentralized identity.',
-      applied: true
+      applied: true,
+      apply_link: 'https://esp.ethereum.foundation'
     },
     {
       id: 'g_3',
@@ -85,7 +75,8 @@ export default function GrantFellowshipStudio() {
       category: 'cloud',
       eligibilityMatch: 90,
       description: 'Cloud infrastructure credits for early-stage student founder projects and AI model hosting.',
-      applied: false
+      applied: false,
+      apply_link: 'https://aws.amazon.com/activate/'
     }
   ]);
 
@@ -201,293 +192,292 @@ export default function GrantFellowshipStudio() {
   });
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-16">
+    <div className="w-full max-w-[1400px] mx-auto space-y-8 font-sans pb-16 px-2 sm:px-4">
       
-      {/* Top Banner Header */}
-      <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-slate-950 border border-emerald-800/40 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden text-white">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-
+      {/* Top Banner Header - Brand Theme */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#f6efe2] via-[#fcf9f2] to-[#f6efe2] dark:from-slate-900 dark:to-slate-950 border border-[#e8ded1] dark:border-slate-800 p-6 md:p-8 shadow-sm">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <span className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/20 border border-emerald-500/30 rounded-full flex items-center gap-1.5">
-                <DollarSign size={13} /> Student Fellowship Vault
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#f3e4bd] bg-[#603620] rounded-full flex items-center gap-1.5 shadow-xs">
+                <DollarSign className="w-3.5 h-3.5 text-[#f3e4bd]" /> Student Fellowship Vault
               </span>
-              <span className="px-3 py-1 text-[11px] font-bold text-sky-400 bg-sky-500/20 border border-sky-500/30 rounded-full">
-                2026 Cycle Active
+              <span className="px-3 py-1 text-xs font-bold text-[#63703d] bg-[#63703d]/15 border border-[#63703d]/30 rounded-full">
+                2026 Grants Active
               </span>
             </div>
 
-            <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
-              Student Grant & Open Source Fellowship Studio
+            <h1 className="text-2xl md:text-3xl font-serif font-bold text-[#231f20] dark:text-white tracking-tight">
+              Grants & <span className="text-[#b56b37] italic">Fellowships Studio</span>
             </h1>
-            <p className="text-slate-400 text-xs md:text-sm max-w-2xl leading-relaxed">
-              Find verified research grants, build budget estimations, request mentor endorsements, and compile grant proposal manifests.
+            <p className="text-[#603620] dark:text-slate-400 text-xs md:text-sm max-w-2xl font-medium">
+              Explore verified research grants, build interactive budget proposals, request mentor endorsements, and export JSON proposal manifests.
             </p>
           </div>
 
           {/* Proposal Readiness Meter */}
-          <div className="flex items-center gap-4 bg-slate-900/90 border border-emerald-700/60 p-4 rounded-2xl w-full lg:w-auto shadow-lg">
-            <div className="relative flex items-center justify-center w-16 h-16 rounded-full border-4 border-emerald-400 bg-slate-950 font-black text-xl text-emerald-400">
+          <div className="flex items-center gap-4 bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 p-4 rounded-2xl w-full lg:w-auto shadow-xs">
+            <div className="relative flex items-center justify-center w-14 h-14 rounded-full border-4 border-[#b56b37] bg-[#fcf9f2] font-serif font-bold text-lg text-[#b56b37]">
               {readinessScore}%
             </div>
             <div>
-              <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wide">Proposal Readiness Score</div>
-              <div className="text-xs font-extrabold text-emerald-400">${totalBudget} Budgeted</div>
-              <div className="text-[11px] text-slate-400">{mentors.filter(m => m.status === 'ENDORSED').length} Mentor Endorsements</div>
+              <div className="text-[10px] uppercase font-bold text-[#8c7569] tracking-wider">Readiness Index</div>
+              <div className="text-xs font-extrabold text-[#231f20] dark:text-white">${totalBudget} Budgeted</div>
+              <div className="text-[11px] text-[#63703d] font-semibold">{mentors.filter(m => m.status === 'ENDORSED').length} Mentor Endorsements</div>
             </div>
           </div>
         </div>
-
-        {/* Global Notifications */}
-        {notification.message && (
-          <div className={`mt-6 p-4 rounded-xl text-xs font-semibold flex items-center justify-between border ${
-            notification.type === 'error'
-              ? 'bg-red-500/20 border-red-500/40 text-red-300'
-              : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
-          }`}>
-            <div className="flex items-center gap-2">
-              {notification.type === 'error' ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
-              <span>{notification.message}</span>
-            </div>
-            <button onClick={() => setNotification({ type: '', message: '' })} className="text-slate-400 hover:text-white">
-              <X size={14} />
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-gray-200 dark:border-gray-800 scrollbar-none">
+      {/* Navigation Sub-Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar border-b border-[#e8ded1] dark:border-slate-800 pb-3">
         {[
-          { id: 'directory', label: `Active Grants (${grants.length})`, icon: DollarSign },
-          { id: 'proposal', label: 'Proposal Editor', icon: FileText },
-          { id: 'budget', label: `Budget Calculator ($${totalBudget})`, icon: Calculator },
-          { id: 'mentors', label: `Mentor Endorsements (${mentors.length})`, icon: Users },
-          { id: 'export', label: 'Proposal Manifest JSON', icon: Download }
-        ].map((tab) => {
-          const Icon = tab.icon;
+          { id: 'directory', label: 'Grant Directory', icon: Globe },
+          { id: 'proposal', label: 'Proposal Builder', icon: FileText },
+          { id: 'budget', label: 'Budget Allocator', icon: Calculator },
+          { id: 'mentors', label: 'Mentor Endorsements', icon: Users },
+          { id: 'export', label: 'Export Manifest', icon: Download }
+        ].map(tab => {
+          const IconComponent = tab.icon;
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer border ${
                 isActive
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/20'
-                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-700'
+                  ? 'bg-[#b56b37] border-[#b56b37] text-white shadow-sm scale-[1.02]'
+                  : 'bg-white dark:bg-slate-900 border-[#e8ded1] dark:border-slate-800 text-[#603620] dark:text-slate-300 hover:bg-[#f6efe2]'
               }`}
             >
-              <Icon size={14} />
-              {tab.label}
+              <IconComponent className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-[#b56b37]'}`} />
+              <span>{tab.label}</span>
             </button>
           );
         })}
       </div>
 
-      {/* TAB CONTENT */}
-
-      {/* TAB 1: GRANTS DIRECTORY */}
-      {activeTab === 'directory' && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-6 shadow-sm">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">Student Research & Project Fellowships</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Verified funding opportunities with automated match scoring.</p>
-            </div>
-
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-64">
-                <Search size={14} className="absolute left-3 top-3 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search grants or sponsors..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-xs text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500/20"
-                />
-              </div>
-
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-bold text-gray-900 dark:text-white outline-none"
-              >
-                <option value="all">All Categories</option>
-                <option value="open_source">Open Source</option>
-                <option value="web3">Web3 & Crypto</option>
-                <option value="cloud">Cloud & Infrastructure</option>
-              </select>
-            </div>
+      {/* Notification Banner */}
+      {notification.message && (
+        <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#63703d]/15 border border-[#63703d]/30 text-[#63703d] text-xs font-bold animate-fade-in">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>{notification.message}</span>
           </div>
-
-          {filteredGrants.length === 0 ? (
-            <EmptyState
-              title="No grants found"
-              description="No grants match your current search. Try a different keyword or category."
-              icon={<BookOpen className="h-6 w-6" aria-hidden="true" />}
-            />
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {filteredGrants.map((g) => (
-              <div key={g.id} className="p-5 bg-gray-50 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3 flex flex-col justify-between text-xs">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400 uppercase">{g.sponsor}</span>
-                    <span className="px-2 py-0.5 font-extrabold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 rounded-md">
-                      {g.amount}
-                    </span>
-                  </div>
-                  <h4 className="font-bold text-gray-900 dark:text-white text-sm mt-2">{g.title}</h4>
-                  <p className="text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{g.description}</p>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-gray-400">Match Score: <strong className="text-emerald-600">{g.eligibilityMatch}%</strong></span>
-                    <span className="text-gray-400">Deadline: {g.deadline}</span>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      setProposalData({ ...proposalData, targetGrant: g.title });
-                      setActiveTab('proposal');
-                      setNotification({ type: 'success', message: `Selected ${g.title} for proposal!` });
-                    }}
-                    className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition"
-                  >
-                    Draft Application
-                  </button>
-                </div>
-              </div>
-            ))}
-            </div>
-          )}
+          <button onClick={() => setNotification({ type: '', message: '' })} className="hover:opacity-80">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
-      {/* TAB 2: PROPOSAL EDITOR */}
+      {/* Tab 1: Directory */}
+      {activeTab === 'directory' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 p-4 rounded-2xl shadow-2xs">
+            <div className="relative flex-1 w-full sm:w-auto max-w-md">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8c7569]" />
+              <input
+                type="text"
+                placeholder="Search grants by name or sponsor..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-xs text-[#231f20] dark:text-white outline-none focus:border-[#b56b37]"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              {['all', 'open_source', 'web3', 'cloud'].map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all border ${
+                    selectedCategory === cat
+                      ? 'bg-[#231f20] text-white border-[#231f20]'
+                      : 'bg-white border-[#e8ded1] text-[#603620] hover:bg-[#f6efe2]'
+                  }`}
+                >
+                  {cat.replace('_', ' ')}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredGrants.map(grant => (
+              <div key={grant.id} className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-2xl p-5 shadow-2xs space-y-4 hover:border-[#b56b37] transition-all">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-[10px] font-bold text-[#8c7569] uppercase tracking-wider block">{grant.sponsor}</span>
+                    <h3 className="font-serif font-bold text-base text-[#231f20] dark:text-white mt-1 leading-snug">{grant.title}</h3>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-md bg-[#63703d]/15 text-[#63703d] font-bold text-xs border border-[#63703d]/30">
+                    {grant.eligibilityMatch}% Match
+                  </span>
+                </div>
+
+                <p className="text-xs text-[#603620] dark:text-slate-300 leading-relaxed font-medium line-clamp-3">
+                  {grant.description}
+                </p>
+
+                <div className="pt-3 border-t border-[#e8ded1] dark:border-slate-800 flex items-center justify-between text-xs font-bold">
+                  <div className="text-[#b56b37]">{grant.amount}</div>
+                  <a
+                    href={grant.apply_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[#b56b37] hover:underline"
+                  >
+                    <span>Apply Grant</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Tab 2: Proposal Builder */}
       {activeTab === 'proposal' && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-6 shadow-sm">
-          <div>
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">Grant Proposal Draft Editor</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Target Grant: <strong className="text-emerald-600">{proposalData.targetGrant}</strong></p>
+        <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xs">
+          <div className="border-b border-[#e8ded1] dark:border-slate-800 pb-4">
+            <h2 className="text-xl font-serif font-bold text-[#231f20] dark:text-white">Research Proposal Draft</h2>
+            <p className="text-xs text-[#603620] dark:text-slate-400 font-medium">Define your project scope, targets, and expected research deliverables.</p>
           </div>
 
           <div className="space-y-4 text-xs">
-            <div>
-              <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Research Project Title</label>
+            <div className="space-y-1">
+              <label className="font-bold text-[#603620] uppercase tracking-wider">Project Title</label>
               <input
                 type="text"
                 value={proposalData.title}
-                onChange={(e) => setProposalData({ ...proposalData, title: e.target.value })}
-                className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
+                onChange={e => setProposalData({ ...proposalData, title: e.target.value })}
+                className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none focus:border-[#b56b37]"
               />
             </div>
 
-            <div>
-              <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Executive Summary / Abstract</label>
+            <div className="space-y-1">
+              <label className="font-bold text-[#603620] uppercase tracking-wider">Abstract / Project Summary</label>
               <textarea
                 rows={4}
                 value={proposalData.abstract}
-                onChange={(e) => setProposalData({ ...proposalData, abstract: e.target.value })}
-                className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
+                onChange={e => setProposalData({ ...proposalData, abstract: e.target.value })}
+                className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none focus:border-[#b56b37] resize-none"
               />
             </div>
 
-            <div>
-              <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Expected Deliverables & Key Milestones</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="font-bold text-[#603620] uppercase tracking-wider">Expected Deliverables</label>
+                <input
+                  type="text"
+                  value={proposalData.deliverables}
+                  onChange={e => setProposalData({ ...proposalData, deliverables: e.target.value })}
+                  className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none focus:border-[#b56b37]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-[#603620] uppercase tracking-wider">Timeline (Months)</label>
+                <input
+                  type="number"
+                  value={proposalData.timelineMonths}
+                  onChange={e => setProposalData({ ...proposalData, timelineMonths: Number(e.target.value) })}
+                  className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none focus:border-[#b56b37]"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 3: Budget Allocator */}
+      {activeTab === 'budget' && (
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xs">
+            <div className="flex justify-between items-center border-b border-[#e8ded1] dark:border-slate-800 pb-4">
+              <div>
+                <h2 className="text-xl font-serif font-bold text-[#231f20] dark:text-white">Grant Budget Calculator</h2>
+                <p className="text-xs text-[#603620] dark:text-slate-400 font-medium">Itemize compute, hardware, and travel expenses.</p>
+              </div>
+              <div className="text-lg font-bold text-[#b56b37]">
+                Total: ${totalBudget} USD
+              </div>
+            </div>
+
+            <form onSubmit={handleAddBudgetItem} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <input
                 type="text"
-                value={proposalData.deliverables}
-                onChange={(e) => setProposalData({ ...proposalData, deliverables: e.target.value })}
-                className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
+                placeholder="Item description (e.g. GPU compute)"
+                value={newItemName}
+                onChange={e => setNewItemName(e.target.value)}
+                className="bg-[#fcf9f2] border border-[#e8ded1] rounded-xl p-2.5 text-xs text-[#231f20] outline-none"
               />
-            </div>
-          </div>
-        </div>
-      )}
+              <input
+                type="number"
+                placeholder="Cost in USD ($)"
+                value={newItemCost}
+                onChange={e => setNewItemCost(e.target.value)}
+                className="bg-[#fcf9f2] border border-[#e8ded1] rounded-xl p-2.5 text-xs text-[#231f20] outline-none"
+              />
+              <button
+                type="submit"
+                className="bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-xs rounded-xl p-2.5 flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+              >
+                <Plus className="w-4 h-4" /> Add Item
+              </button>
+            </form>
 
-      {/* TAB 3: BUDGET CALCULATOR */}
-      {activeTab === 'budget' && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">Grant Budget Breakdown</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Total Requested: <strong className="text-emerald-600">${totalBudget} USD</strong></p>
-            </div>
-          </div>
-
-          <form onSubmit={handleAddBudgetItem} className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Expense Item (e.g. Cloud GPU Credits)..."
-              value={newItemName}
-              onChange={(e) => setNewItemName(e.target.value)}
-              className="flex-1 p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-xs text-gray-900 dark:text-white outline-none"
-              required
-            />
-            <input
-              type="number"
-              placeholder="Amount ($)..."
-              value={newItemCost}
-              onChange={(e) => setNewItemCost(e.target.value)}
-              className="w-32 p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-xs text-gray-900 dark:text-white outline-none"
-              required
-            />
-            <button type="submit" className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition">
-              + Add Item
-            </button>
-          </form>
-
-          <div className="space-y-2">
-            {budgetItems.map((b) => (
-              <div key={b.id} className="flex items-center justify-between p-3.5 bg-gray-50 dark:bg-gray-900/60 rounded-xl border border-gray-200 dark:border-gray-700 text-xs">
-                <span className="font-bold text-gray-900 dark:text-white">{b.item}</span>
-                <div className="flex items-center gap-3">
-                  <span className="font-extrabold text-emerald-600">${b.cost} USD</span>
-                  <button onClick={() => handleRemoveBudgetItem(b.id)} className="text-gray-400 hover:text-red-500">
-                    <Trash2 size={14} />
-                  </button>
+            <div className="space-y-2 pt-2">
+              {budgetItems.map(item => (
+                <div key={item.id} className="flex justify-between items-center p-3 rounded-xl bg-[#fcf9f2] border border-[#e8ded1] text-xs">
+                  <div>
+                    <span className="font-bold text-[#231f20]">{item.item}</span>
+                    <span className="text-[10px] text-[#8c7569] block font-semibold">{item.category}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-bold text-[#63703d]">${item.cost}</span>
+                    <button onClick={() => handleRemoveBudgetItem(item.id)} className="text-red-500 hover:text-red-700">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}
 
-      {/* TAB 4: MENTOR ENDORSEMENTS */}
+      {/* Tab 4: Mentors */}
       {activeTab === 'mentors' && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-6 shadow-sm">
-          <div>
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">Mentor & Advisor Recommendation Letters</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Request formal endorsement signatures for your proposal.</p>
+        <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xs">
+          <div className="border-b border-[#e8ded1] dark:border-slate-800 pb-4">
+            <h2 className="text-xl font-serif font-bold text-[#231f20] dark:text-white">Mentor Recommendation Ledger</h2>
+            <p className="text-xs text-[#603620] dark:text-slate-400 font-medium">Request and track academic & industry endorsements for grant applications.</p>
           </div>
 
-          <form onSubmit={handleAddMentorRequest} className="flex gap-2">
+          <form onSubmit={handleAddMentorRequest} className="flex gap-3">
             <input
               type="text"
-              placeholder="Mentor Full Name & Title..."
+              placeholder="Mentor or Professor Name"
               value={newMentorName}
-              onChange={(e) => setNewMentorName(e.target.value)}
-              className="flex-1 p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-xs text-gray-900 dark:text-white outline-none"
-              required
+              onChange={e => setNewMentorName(e.target.value)}
+              className="flex-1 bg-[#fcf9f2] border border-[#e8ded1] rounded-xl p-2.5 text-xs text-[#231f20] outline-none"
             />
-            <button type="submit" className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition">
-              + Request Endorsement
+            <button type="submit" className="bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-xs rounded-xl px-5 py-2.5 flex items-center gap-2 cursor-pointer">
+              <Plus className="w-4 h-4" /> Request Endorsement
             </button>
           </form>
 
-          <div className="space-y-3">
-            {mentors.map((m) => (
-              <div key={m.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/60 rounded-xl border border-gray-200 dark:border-gray-700 text-xs">
+          <div className="space-y-3 pt-2">
+            {mentors.map(m => (
+              <div key={m.id} className="flex items-center justify-between p-3.5 rounded-xl bg-[#fcf9f2] border border-[#e8ded1] text-xs">
                 <div>
-                  <div className="font-bold text-gray-900 dark:text-white">{m.name}</div>
-                  <div className="text-gray-500 dark:text-gray-400">{m.title}</div>
+                  <h4 className="font-bold text-[#231f20]">{m.name}</h4>
+                  <p className="text-[11px] text-[#603620] font-medium">{m.title}</p>
                 </div>
-
-                <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full ${
-                  m.status === 'ENDORSED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                <span className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase ${
+                  m.status === 'ENDORSED' ? 'bg-[#63703d]/15 text-[#63703d] border border-[#63703d]/30' : 'bg-[#f3e4bd] text-[#231f20] border border-[#e8ded1]'
                 }`}>
                   {m.status}
                 </span>
@@ -497,36 +487,24 @@ export default function GrantFellowshipStudio() {
         </div>
       )}
 
-      {/* TAB 5: EXPORT MANIFEST */}
+      {/* Tab 5: Export */}
       {activeTab === 'export' && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">Grant Application Manifest JSON</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Complete grant application payload ready for submission.</p>
-            </div>
-
-            <button
-              onClick={handleExportProposal}
-              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5"
-            >
-              <Download size={14} /> Download Proposal JSON
-            </button>
+        <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-8 text-center space-y-5 shadow-2xs">
+          <div className="w-16 h-16 bg-[#f6efe2] text-[#b56b37] flex items-center justify-center rounded-full mx-auto border border-[#e8ded1]">
+            <Download className="w-8 h-8 text-[#b56b37]" />
           </div>
-
-          <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 font-mono text-xs text-emerald-400 overflow-x-auto">
-            <pre>{JSON.stringify({
-              proposal: proposalData,
-              totalRequestedBudget: `$${totalBudget} USD`,
-              budgetBreakdown: budgetItems,
-              endorsements: mentors,
-              readinessScore: `${readinessScore}%`,
-              timestamp: new Date().toISOString()
-            }, null, 2)}</pre>
-          </div>
+          <h2 className="text-2xl font-serif font-bold text-[#231f20] dark:text-white">Export Proposal Manifest</h2>
+          <p className="text-xs text-[#603620] dark:text-slate-400 font-medium max-w-md mx-auto">
+            Compile your proposal abstract, itemized budget (${totalBudget}), and mentor endorsements into a standardized JSON manifest.
+          </p>
+          <button
+            onClick={handleExportProposal}
+            className="px-6 py-3 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-xs rounded-xl shadow-md transition-colors cursor-pointer inline-flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" /> Download Proposal JSON Manifest
+          </button>
         </div>
       )}
-
     </div>
   );
 }

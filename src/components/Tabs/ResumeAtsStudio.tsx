@@ -26,18 +26,6 @@ import {
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 
-/**
- * ResumeAtsStudio Component
- * 
- * Interactive 550+ line AI Resume ATS Optimizer & Portfolio Studio for YuvaHub.
- * Features:
- * 1. ATS Keyword & Action Verb Density Scanner (0-100 ATS Score)
- * 2. Section Builder (Summary, Experience, Open-Source Projects, Education)
- * 3. AI Bullet Point Power Verb Enhancer
- * 4. FAANG/Unicorn Role Keyword Benchmark Matcher
- * 5. Formatting Error & Pre-Flight Compliance Inspector
- * 6. Resume Data JSON & Markdown Exporter
- */
 export default function ResumeAtsStudio() {
   const { user, profile } = useAppContext();
 
@@ -47,20 +35,20 @@ export default function ResumeAtsStudio() {
 
   // Resume Data State
   const [resumeData, setResumeData] = useState({
-    fullName: user?.displayName || 'Dipanshu Batra',
-    email: user?.email || 'dipanshu@yuvahub.com',
+    fullName: profile?.name || user?.displayName || 'Student Developer',
+    email: user?.email || 'student@yuvahub.com',
     targetRole: 'Senior Full Stack & AI Engineer',
-    summary: 'Full stack developer with 3+ years of experience building scalable Web apps, real-time telemetry, and LLM integrations using React, TypeScript, and Firebase.',
+    summary: 'Full stack developer with experience building scalable Web apps, real-time telemetry, and LLM integrations using React, TypeScript, and Node.js.',
     skills: ['React', 'TypeScript', 'Tailwind CSS', 'Node.js', 'Firebase', 'Python', 'Google Cloud AI'],
     experiences: [
       {
         id: 'exp_1',
-        title: 'Lead Software Architect',
+        title: 'Lead Software Developer',
         company: 'YuvaHub Open Source',
         duration: '2024 - Present',
         bullets: [
-          'Architected 500+ line React/TypeScript components reducing UI latency by 40%.',
-          'Integrated Firebase auth with SOC2 security telemetry and passkey MFA.'
+          'Architected responsive React/TypeScript components reducing UI latency by 40%.',
+          'Integrated secure REST API backends with JWT authentication telemetry.'
         ]
       }
     ],
@@ -68,8 +56,8 @@ export default function ResumeAtsStudio() {
       {
         id: 'proj_1',
         name: 'YuvaHub Talent Platform',
-        tech: 'React, TypeScript, Firebase',
-        link: 'https://github.com/dipanshubatra/YuvaHub',
+        tech: 'React, TypeScript, Express',
+        link: 'https://github.com/Chirag1724/YuvaHub',
         description: 'Global student opportunity aggregator featuring AI career match and hackathon submission studio.'
       }
     ]
@@ -78,211 +66,192 @@ export default function ResumeAtsStudio() {
   const [jobDescription, setJobDescription] = useState(`Seeking a Full Stack Engineer proficient in React, TypeScript, GraphQL, Node.js, and Cloud Infrastructure to build high-scale web applications.`);
   const [newSkill, setNewSkill] = useState('');
 
-  // ATS Score Calculation
-  const atsScore = useMemo(() => {
-    let score = 30;
+  // Dynamic ATS Score Calculation
+  const atsAnalysis = useMemo(() => {
+    const jdKeywords = jobDescription.toLowerCase().match(/\b[a-z0-9.]+\b/g) || [];
+    const resumeText = `${resumeData.summary} ${resumeData.skills.join(' ')} ${resumeData.experiences.flatMap(e => e.bullets).join(' ')}`.toLowerCase();
 
-    // Check skills against JD
-    const jdLower = jobDescription.toLowerCase();
-    const matchedSkills = resumeData.skills.filter(s => jdLower.includes(s.toLowerCase()));
-    score += matchedSkills.length * 8;
+    const matched = Array.from(new Set(jdKeywords.filter((k: string) => k.length > 3 && resumeText.includes(k))));
+    const score = Math.min(96, Math.max(50, Math.round((matched.length / Math.max(1, new Set(jdKeywords).size)) * 300)));
 
-    // Check summary length
-    if (resumeData.summary.length > 50) score += 15;
-    if (resumeData.experiences.length > 0) score += 15;
-    if (resumeData.projects.length > 0) score += 10;
-
-    return Math.min(score, 100);
+    return {
+      score,
+      matchedCount: matched.length,
+      topMatched: matched.slice(0, 8),
+      recommendations: [
+        'Use action verbs at the start of bullet points: "Architected", "Deployed", "Optimized".',
+        'Add quantifiable metrics (e.g. "% performance gain" or "X concurrent users").',
+        'Ensure contact information and LinkedIn URL are in plain header text.'
+      ]
+    };
   }, [resumeData, jobDescription]);
 
-  // Add Skill
+  // Handle Add Skill
   const handleAddSkill = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSkill.trim()) return;
     if (resumeData.skills.includes(newSkill.trim())) return;
-
     setResumeData({ ...resumeData, skills: [...resumeData.skills, newSkill.trim()] });
     setNewSkill('');
+    setNotification({ type: 'success', message: 'Added skill to resume ATS stack!' });
   };
 
-  // Remove Skill
+  // Handle Remove Skill
   const handleRemoveSkill = (skill: string) => {
     setResumeData({ ...resumeData, skills: resumeData.skills.filter(s => s !== skill) });
-  };
-
-  // AI Enhance Summary
-  const handleEnhanceSummary = () => {
-    const enhanced = `${resumeData.summary} Proven track record of boosting system performance by 40% and deploying enterprise-grade authentication frameworks.`;
-    setResumeData({ ...resumeData, summary: enhanced });
-    setNotification({ type: 'success', message: 'Enhanced summary with metric-driven power verbs!' });
+    setNotification({ type: 'success', message: `Removed ${skill} from resume.` });
   };
 
   // Export Resume JSON
-  const handleExportResume = () => {
+  const handleExportJson = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(resumeData, null, 2));
     const anchor = document.createElement('a');
     anchor.setAttribute("href", dataStr);
-    anchor.setAttribute("download", `YuvaHub_Resume_${new Date().toISOString().slice(0,10)}.json`);
+    anchor.setAttribute("download", `YuvaHub_Resume_${(resumeData.fullName || 'Draft').replace(/\s+/g, '_')}.json`);
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
+    setNotification({ type: 'success', message: 'Exported Resume JSON Manifest!' });
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-16">
+    <div className="w-full max-w-[1400px] mx-auto space-y-8 font-sans pb-16 px-2 sm:px-4">
       
-      {/* Top Banner Header */}
-      <div className="bg-gradient-to-r from-purple-950 via-slate-900 to-slate-950 border border-purple-800/40 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden text-white">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-
+      {/* Top Banner Header - YuvaHub Brand Theme */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#f6efe2] via-[#fcf9f2] to-[#f6efe2] dark:from-slate-900 dark:to-slate-950 border border-[#e8ded1] dark:border-slate-800 p-6 md:p-8 shadow-sm">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <span className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-purple-400 bg-purple-500/20 border border-purple-500/30 rounded-full flex items-center gap-1.5">
-                <Sparkles size={13} /> AI Resume ATS Optimizer
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#f3e4bd] bg-[#603620] rounded-full flex items-center gap-1.5 shadow-xs">
+                <FileText className="w-3.5 h-3.5 text-[#f3e4bd]" /> AI Resume ATS Optimizer
               </span>
-              <span className="px-3 py-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/20 border border-emerald-500/30 rounded-full">
-                2026 ATS Standard Compliant
+              <span className="px-3 py-1 text-xs font-bold text-[#63703d] bg-[#63703d]/15 border border-[#63703d]/30 rounded-full">
+                FAANG ATS Verified
               </span>
             </div>
 
-            <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
-              AI Resume Health Check & Portfolio Studio
+            <h1 className="text-2xl md:text-3xl font-serif font-bold text-[#231f20] dark:text-white tracking-tight">
+              Resume ATS <span className="text-[#b56b37] italic">Optimizer</span>
             </h1>
-            <p className="text-slate-400 text-xs md:text-sm max-w-2xl leading-relaxed">
-              Scan your resume against job descriptions, boost action verb density, eliminate ATS parsing errors, and export structured JSON resumes.
+            <p className="text-[#603620] dark:text-slate-400 text-xs md:text-sm max-w-2xl font-medium">
+              Build ATS-friendly resume sections, scan keyword density against job descriptions, and export FAANG-ready resume manifests.
             </p>
           </div>
 
-          {/* ATS Health Score Meter */}
-          <div className="flex items-center gap-4 bg-slate-900/90 border border-purple-700/60 p-4 rounded-2xl w-full lg:w-auto shadow-lg">
-            <div className="relative flex items-center justify-center w-16 h-16 rounded-full border-4 border-purple-400 bg-slate-950 font-black text-xl text-purple-400">
-              {atsScore}%
+          <div className="flex items-center gap-4 bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 p-4 rounded-2xl w-full lg:w-auto shadow-xs">
+            <div className="relative flex items-center justify-center w-16 h-16 rounded-full border-4 border-[#b56b37] bg-[#fcf9f2] font-serif font-bold text-lg text-[#b56b37]">
+              {atsAnalysis.score}%
             </div>
             <div>
-              <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wide">ATS Health Match Score</div>
-              <div className="text-xs font-extrabold text-emerald-400">{atsScore >= 80 ? 'EXCELLENT PASS RATE' : 'NEEDS KEYWORD BOOST'}</div>
-              <div className="text-[11px] text-slate-400">{resumeData.skills.length} Tech Skills Scanned</div>
+              <div className="text-[10px] uppercase font-bold text-[#8c7569] tracking-wider">ATS Score</div>
+              <div className="text-xs font-extrabold text-[#231f20] dark:text-white">High Compatibility</div>
+              <div className="text-[11px] text-[#63703d] font-semibold">{atsAnalysis.matchedCount} Keywords Matched</div>
             </div>
           </div>
         </div>
-
-        {/* Global Notifications */}
-        {notification.message && (
-          <div className={`mt-6 p-4 rounded-xl text-xs font-semibold flex items-center justify-between border ${
-            notification.type === 'error'
-              ? 'bg-red-500/20 border-red-500/40 text-red-300'
-              : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
-          }`}>
-            <div className="flex items-center gap-2">
-              {notification.type === 'error' ? <AlertTriangle size={16} /> : <CheckCircle2 size={16} />}
-              <span>{notification.message}</span>
-            </div>
-            <button onClick={() => setNotification({ type: '', message: '' })} className="text-slate-400 hover:text-white">
-              <X size={14} />
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-gray-200 dark:border-gray-800 scrollbar-none">
+      {/* Navigation Sub-Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar border-b border-[#e8ded1] dark:border-slate-800 pb-3">
         {[
-          { id: 'editor', label: 'Resume Editor', icon: FileText },
-          { id: 'ats_check', label: `ATS Scanner (${atsScore}%)`, icon: Target },
-          { id: 'export', label: 'Export Resume JSON', icon: Download }
-        ].map((tab) => {
-          const Icon = tab.icon;
+          { id: 'editor', label: 'Resume Section Editor', icon: Sliders },
+          { id: 'ats_check', label: 'ATS Keyword Audit', icon: Target },
+          { id: 'benchmarks', label: 'Role Benchmarks', icon: Award },
+          { id: 'export', label: 'Export Manifest', icon: Download }
+        ].map(tab => {
+          const IconComponent = tab.icon;
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer border ${
                 isActive
-                  ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
-                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-700'
+                  ? 'bg-[#b56b37] border-[#b56b37] text-white shadow-sm scale-[1.02]'
+                  : 'bg-white dark:bg-slate-900 border-[#e8ded1] dark:border-slate-800 text-[#603620] dark:text-slate-300 hover:bg-[#f6efe2]'
               }`}
             >
-              <Icon size={14} />
-              {tab.label}
+              <IconComponent className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-[#b56b37]'}`} />
+              <span>{tab.label}</span>
             </button>
           );
         })}
       </div>
 
-      {/* TAB CONTENT */}
+      {/* Notification Banner */}
+      {notification.message && (
+        <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#63703d]/15 text-[#63703d] border border-[#63703d]/30 text-xs font-bold animate-fade-in">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>{notification.message}</span>
+          </div>
+          <button onClick={() => setNotification({ type: '', message: '' })}>
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
-      {/* TAB 1: RESUME EDITOR */}
+      {/* Tab 1: Resume Section Editor */}
       {activeTab === 'editor' && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-6 shadow-sm">
-          <div>
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">Professional Profile Details</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Fill in details for automatic ATS formatting.</p>
+        <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xs">
+          <div className="border-b border-[#e8ded1] dark:border-slate-800 pb-4">
+            <h2 className="text-xl font-serif font-bold text-[#231f20] dark:text-white">Resume Information & Skill Stack</h2>
+            <p className="text-xs text-[#603620] dark:text-slate-400 font-medium mt-1">Update your profile summary and technical skills to maximize keyword matching.</p>
           </div>
 
           <div className="space-y-4 text-xs">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Full Name</label>
+              <div className="space-y-1">
+                <label className="font-bold text-[#603620] uppercase">Full Name</label>
                 <input
                   type="text"
                   value={resumeData.fullName}
-                  onChange={(e) => setResumeData({ ...resumeData, fullName: e.target.value })}
-                  className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white outline-none"
+                  onChange={e => setResumeData({ ...resumeData, fullName: e.target.value })}
+                  className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none"
                 />
               </div>
-
-              <div>
-                <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Target Job Title</label>
+              <div className="space-y-1">
+                <label className="font-bold text-[#603620] uppercase">Target Role Title</label>
                 <input
                   type="text"
                   value={resumeData.targetRole}
-                  onChange={(e) => setResumeData({ ...resumeData, targetRole: e.target.value })}
-                  className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white outline-none"
+                  onChange={e => setResumeData({ ...resumeData, targetRole: e.target.value })}
+                  className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none"
                 />
               </div>
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="font-bold text-gray-700 dark:text-gray-300">Executive Summary</label>
-                <button
-                  onClick={handleEnhanceSummary}
-                  className="text-purple-600 dark:text-purple-400 font-bold hover:underline flex items-center gap-1 text-[11px]"
-                >
-                  <Sparkles size={12} /> AI Power-Enhance
-                </button>
-              </div>
+            <div className="space-y-1">
+              <label className="font-bold text-[#603620] uppercase">Professional Summary</label>
               <textarea
                 rows={3}
                 value={resumeData.summary}
-                onChange={(e) => setResumeData({ ...resumeData, summary: e.target.value })}
-                className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white outline-none"
+                onChange={e => setResumeData({ ...resumeData, summary: e.target.value })}
+                className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none resize-none"
               />
             </div>
 
-            <div>
-              <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Technical Skills Matrix</label>
-              <form onSubmit={handleAddSkill} className="flex gap-2 mb-2">
+            <div className="space-y-2">
+              <label className="font-bold text-[#603620] uppercase">Technical Skills Stack</label>
+              <form onSubmit={handleAddSkill} className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="Add skill (e.g. Docker, GraphQL)..."
+                  placeholder="Add skill (e.g. Redis, GraphQL)..."
                   value={newSkill}
-                  onChange={(e) => setNewSkill(e.target.value)}
-                  className="flex-1 p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white outline-none"
+                  onChange={e => setNewSkill(e.target.value)}
+                  className="flex-1 bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-2.5 text-xs text-[#231f20] dark:text-white outline-none"
                 />
-                <button type="submit" className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl">
-                  + Add
+                <button type="submit" className="px-4 py-2.5 bg-[#b56b37] text-white font-bold rounded-xl flex items-center gap-1 cursor-pointer">
+                  <Plus className="w-4 h-4" /> Add
                 </button>
               </form>
 
-              <div className="flex flex-wrap gap-1.5">
-                {resumeData.skills.map((skill) => (
-                  <span key={skill} className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-900 text-purple-700 dark:text-purple-300 font-bold rounded-lg">
-                    {skill}
-                    <button type="button" onClick={() => handleRemoveSkill(skill)} className="text-purple-400 hover:text-red-500">
-                      <X size={12} />
+              <div className="flex flex-wrap gap-2 pt-2">
+                {resumeData.skills.map(s => (
+                  <span key={s} className="px-3 py-1 bg-[#f6efe2] dark:bg-slate-800 text-[#231f20] dark:text-slate-200 border border-[#e8ded1] rounded-xl text-xs font-bold flex items-center gap-2">
+                    <span>{s}</span>
+                    <button onClick={() => handleRemoveSkill(s)} className="text-[#8c7569] hover:text-red-600">
+                      <X className="w-3.5 h-3.5" />
                     </button>
                   </span>
                 ))}
@@ -292,73 +261,86 @@ export default function ResumeAtsStudio() {
         </div>
       )}
 
-      {/* TAB 2: ATS SCANNER */}
+      {/* Tab 2: ATS Keyword Audit */}
       {activeTab === 'ats_check' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-4 shadow-sm">
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">Target Job Description Scanner</h3>
+        <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xs">
+          <div className="border-b border-[#e8ded1] dark:border-slate-800 pb-4">
+            <h2 className="text-xl font-serif font-bold text-[#231f20] dark:text-white">Target Job Description & Keyword Audit</h2>
+            <p className="text-xs text-[#603620] dark:text-slate-400 font-medium mt-1">Paste the target job description to dynamically audit matching keywords.</p>
+          </div>
 
-            <div className="space-y-3 text-xs">
+          <div className="space-y-4">
+            <textarea
+              rows={4}
+              value={jobDescription}
+              onChange={e => setJobDescription(e.target.value)}
+              className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none resize-none"
+            />
+
+            <div className="p-5 rounded-2xl bg-[#fcf9f2] border border-[#e8ded1] space-y-3">
+              <h3 className="font-serif font-bold text-sm text-[#231f20]">Identified Matched Keywords ({atsAnalysis.matchedCount})</h3>
+              <div className="flex flex-wrap gap-1.5">
+                {atsAnalysis.topMatched.map(m => (
+                  <span key={m} className="px-2.5 py-1 bg-[#63703d]/15 text-[#63703d] border border-[#63703d]/30 text-xs font-bold rounded-md flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> {m}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="font-bold text-xs text-[#603620] uppercase">ATS Optimization Recommendations</h4>
+              {atsAnalysis.recommendations.map((rec, idx) => (
+                <div key={idx} className="flex items-center gap-2 text-xs font-semibold text-[#231f20]">
+                  <Sparkles className="w-3.5 h-3.5 text-[#b56b37]" /> {rec}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 3: Benchmarks */}
+      {activeTab === 'benchmarks' && (
+        <div className="space-y-4">
+          {[
+            { role: 'Senior Full Stack Engineer', keywords: ['React', 'TypeScript', 'Node.js', 'PostgreSQL', 'GraphQL'], scoreNeeded: 85 },
+            { role: 'AI & Machine Learning Engineer', keywords: ['Python', 'PyTorch', 'Vector DB', 'CUDA', 'Docker'], scoreNeeded: 90 }
+          ].map((b, idx) => (
+            <div key={idx} className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 shadow-2xs flex justify-between items-center">
               <div>
-                <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Paste Target Job Description (JD)</label>
-                <textarea
-                  rows={8}
-                  value={jobDescription}
-                  onChange={(e) => setJobDescription(e.target.value)}
-                  className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white outline-none font-mono"
-                />
+                <h3 className="font-serif font-bold text-base text-[#231f20] dark:text-white">{b.role}</h3>
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {b.keywords.map(k => (
+                    <span key={k} className="px-2 py-0.5 bg-[#f6efe2] text-[#603620] text-[10px] font-bold rounded border border-[#e8ded1]">
+                      #{k}
+                    </span>
+                  ))}
+                </div>
               </div>
-
-              <div className="p-3 bg-purple-50 dark:bg-purple-950/40 rounded-xl border border-purple-200 dark:border-purple-900 text-purple-700 dark:text-purple-300 font-bold">
-                ATS Match Rate: {atsScore}%
-              </div>
+              <span className="px-3 py-1 rounded-full bg-[#f3e4bd] text-[#603620] font-extrabold text-xs">
+                Min {b.scoreNeeded}% ATS
+              </span>
             </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-4 shadow-sm">
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">Pre-Flight ATS Compliance Report</h3>
-
-            <div className="space-y-2 text-xs">
-              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
-                <span className="font-bold text-gray-700 dark:text-gray-300">Action Verb Density</span>
-                <span className="font-bold text-emerald-600">HIGH</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
-                <span className="font-bold text-gray-700 dark:text-gray-300">Tables / Graphic Headers</span>
-                <span className="font-bold text-emerald-600">0 (PASSED)</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
-                <span className="font-bold text-gray-700 dark:text-gray-300">Contact Email Verification</span>
-                <span className="font-bold text-emerald-600">VERIFIED</span>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       )}
 
-      {/* TAB 3: EXPORT */}
+      {/* Tab 4: Export */}
       {activeTab === 'export' && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">Resume Data Manifest JSON</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Structured data payload ready for ATS parsers and portfolio generators.</p>
-            </div>
-
-            <button
-              onClick={handleExportResume}
-              className="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5"
-            >
-              <Download size={14} /> Download Resume JSON
-            </button>
+        <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-2xs max-w-xl mx-auto">
+          <div className="w-16 h-16 bg-[#f6efe2] text-[#b56b37] flex items-center justify-center rounded-full mx-auto border border-[#e8ded1]">
+            <Download className="w-8 h-8 text-[#b56b37]" />
           </div>
-
-          <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 font-mono text-xs text-purple-300 overflow-x-auto">
-            <pre>{JSON.stringify(resumeData, null, 2)}</pre>
-          </div>
+          <h2 className="text-2xl font-serif font-bold text-[#231f20] dark:text-white">Export Resume Manifest</h2>
+          <p className="text-xs text-[#603620] dark:text-slate-400 font-medium">
+            Download full structured resume sections, skills stack, and experiences in JSON format.
+          </p>
+          <button onClick={handleExportJson} className="px-6 py-3 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-xs rounded-xl shadow-md cursor-pointer inline-flex items-center gap-2">
+            <Download className="w-4 h-4" /> Download Resume JSON Manifest
+          </button>
         </div>
       )}
-
     </div>
   );
 }

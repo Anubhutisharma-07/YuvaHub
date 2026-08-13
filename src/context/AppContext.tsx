@@ -236,7 +236,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
            setActiveTab('dashboard');
          } else {
            const tabName = path.substring(1);
-           const allTabs = ['opportunities', 'about', 'privacy', 'terms', 'cookies', 'guidelines', 'security', 'support', 'legal', 'dashboard', 'bookmarks', 'submit', 'mentorship', 'community', 'profile', 'settings', 'admin', 'ai_assistant'];
+           const allTabs = ['opportunities', 'about', 'privacy', 'terms', 'cookies', 'guidelines', 'security', 'support', 'legal', 'dashboard', 'bookmarks', 'submit', 'mentorship', 'mentorship_advisory', 'community', 'profile', 'settings', 'admin', 'ai_assistant'];
            if (allTabs.includes(tabName)) {
              setActiveTab(tabName);
            }
@@ -305,7 +305,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (response.ok) {
             const data = await response.json();
             if (data.profile) {
-              setProfile(data.profile as UserProfile);
+              const localOnboarded = typeof localStorage !== 'undefined' && (
+                (currentUser?.uid && localStorage.getItem(`yuvahub-onboarded-${currentUser.uid}`) === 'true') ||
+                (currentUser?.email && localStorage.getItem(`yuvahub-onboarded-${currentUser.email}`) === 'true') ||
+                localStorage.getItem('yuvahub-user-onboarded') === 'true'
+              );
+
+              const mergedProfile: UserProfile = {
+                ...data.profile,
+                onboarded: Boolean(
+                  data.profile.onboarded || 
+                  data.profile.college || 
+                  data.profile.field || 
+                  localOnboarded
+                )
+              };
+
+              setProfile(mergedProfile);
               setBookmarkedIds(data.profile.bookmarks ?? []);
               refreshKarma();
             } else {
@@ -317,11 +333,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         } catch (error) {
           if (!mounted) return;
           console.warn('Auth sync falling back to local user profile:', error);
+          const localOnboarded = typeof localStorage !== 'undefined' && (
+            (currentUser?.uid && localStorage.getItem(`yuvahub-onboarded-${currentUser.uid}`) === 'true') ||
+            (currentUser?.email && localStorage.getItem(`yuvahub-onboarded-${currentUser.email}`) === 'true') ||
+            localStorage.getItem('yuvahub-user-onboarded') === 'true'
+          );
           setProfile({
             uid: currentUser.uid,
             name: currentUser.displayName || currentUser.email?.split('@')[0] || 'User',
             email: currentUser.email || '',
             avatarUrl: currentUser.photoURL || '',
+            onboarded: localOnboarded || true,
           });
           setBookmarkedIds([]);
         }

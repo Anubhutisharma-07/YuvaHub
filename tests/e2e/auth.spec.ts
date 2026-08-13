@@ -6,7 +6,7 @@ test.describe('Public landing page (unauthenticated)', () => {
     await mockFirebaseNetwork(page);
     await page.goto('/');
 
-    await expect(page.getByRole('heading', { level: 1, name: /unlocking student potential/i })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /Unlocking student potential/ })).toBeVisible();
     await expect(
       page.getByPlaceholder('Search Google AI hackathons, SDE roles, Reliance scholarship...'),
     ).toBeVisible();
