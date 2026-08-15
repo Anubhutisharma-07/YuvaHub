@@ -1047,3 +1047,20 @@ export async function fetchProfileCompletenessScore() {
   }
 }
 
+export async function generateFlashcardsBackend(jobDescription: string) {
+  try {
+    const url = `${API_BASE_URL}/ai/flashcards`;
+    const response = await fetchWithRetry(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jobDescription }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Failed to generate flashcards");
+    return result.data?.flashcards || [];
+  } catch (error) {
+    console.warn("generateFlashcardsBackend error:", error);
+    throw error;
+  }
+}
+
