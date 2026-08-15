@@ -18,6 +18,12 @@ export const setupSocketEvents = () => {
       console.log(`[Socket] User ${socket.id} left team_${teamId}`);
     });
 
+    socket.on("draw_event", (data: any) => {
+      // Broadcast to other users. If team/room-based is needed later, we'd use `socket.to(room).emit`.
+      // For now, broadcast to everyone else to satisfy the generic real-time requirement.
+      socket.broadcast.emit("draw_event", data);
+    });
+
     socket.on("disconnect", () => {
       socket.removeAllListeners();
       socket.leaveAll();
