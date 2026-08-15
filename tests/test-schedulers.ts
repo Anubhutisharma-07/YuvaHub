@@ -4,7 +4,10 @@ import { matchOpportunityAndNotify } from '../src/services/opportunityMatcher';
 import dotenv from 'dotenv';
 dotenv.config();
 
-async function testSchedulers() {
+import { describe, it, expect } from 'vitest';
+
+describe('test-schedulers', () => {
+  it('should run schedulers without errors', async () => {
   const uri = process.env.MONGODB_URI || "mongodb://localhost:27017";
   const client = new MongoClient(uri);
 
@@ -35,4 +38,5 @@ async function testSchedulers() {
   }
 }
 
-testSchedulers();
+  });
+});

@@ -1,4 +1,6 @@
 import { Request, Response } from "express";
+import { dbCommand, dbQuery } from "../db.js";
+import { ObjectId } from "mongodb";
 import { generateApplicationDraft } from "../../services/applicationGenerator.js";
 import { addApplicationJob } from "../../queues/applicationQueue.js";
 import { AppError } from "../../lib/AppError.js";
@@ -31,4 +33,49 @@ export const queueApplication = async (req: Request, res: Response) => {
   });
 
   return sendSuccess(res, { jobId: job.id });
+};
+
+export const updateApplicationStatus = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  const userId = req.user?.uid;
+
+  if (!status) {
+    throw AppError.badRequest("Status is required");
+  }
+
+  const result = await dbCommand.collection("applications").updateOne(
+    { _id: new ObjectId(id as string), userId },
+    { 
+      $set: { status, updatedAt: new Date() },
+      $push: {
+        auditLogs: {
+          action: "UPDATED",
+          timestamp: new Date(),
+          message: `Status updated to ${status} via Kanban board`,
+        }
+      }
+    }
+  );
+
+  if (result.matchedCount === 0) {
+    throw AppError.notFound("Application not found or unauthorized");
+  }
+
+  return sendSuccess(res, { message: "Status updated successfully" });
+};
+
+export const getUserApplications = async (req: Request, res: Response) => {
+  const userId = req.user?.uid;
+  
+  if (!userId) {
+    throw AppError.unauthorized("User must be logged in");
+  }
+
+  const applications = await dbQuery.collection("applications")
+    .find({ userId })
+    .sort({ updatedAt: -1 })
+    .toArray();
+
+  return sendSuccess(res, { applications });
 };

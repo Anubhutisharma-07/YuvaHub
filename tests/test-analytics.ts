@@ -40,6 +40,8 @@ function spawnServer(port: number): ChildProcess {
       PORT: String(port),
       FIREBASE_SERVICE_ACCOUNT_BASE64: '',
       FIREBASE_PROJECT_ID: '',
+      JWT_SECRET: 'mock_jwt_secret',
+      JWT_REFRESH_SECRET: 'mock_refresh',
     },
     stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
   });
