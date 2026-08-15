@@ -26,6 +26,7 @@ export interface FallbackOpportunity {
 }
 
 import { ISSUE_536_OPPORTUNITIES } from "./issue536Opportunities";
+import { ISSUE_536_VERIFIED_HACKATHONS } from "./issue536VerifiedHackathons";
 
 const EXISTING_CURATED_FALLBACKS: FallbackOpportunity[] = [
   {
@@ -176,10 +177,12 @@ const EXISTING_CURATED_FALLBACKS: FallbackOpportunity[] = [
   }
 ];
 
-// Issue #536 expands the curated catalog with 50 additional entries.
+// Issue #536 expands the curated catalog with 50 student opportunities plus 20
+// separately verified active hackathons.
 export const CURATED_FALLBACKS: FallbackOpportunity[] = [
   ...EXISTING_CURATED_FALLBACKS,
   ...ISSUE_536_OPPORTUNITIES,
+  ...ISSUE_536_VERIFIED_HACKATHONS,
 ];
 
 export function getFilteredFallbacks(profile: any, maxCount: number = 6, searchQuery?: string): FallbackOpportunity[] {
