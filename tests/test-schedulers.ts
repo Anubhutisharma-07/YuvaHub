@@ -8,35 +8,33 @@ import { describe, it, expect } from 'vitest';
 
 describe('test-schedulers', () => {
   it('should run schedulers without errors', async () => {
-  const uri = process.env.MONGODB_URI || "mongodb://localhost:27017";
-  const client = new MongoClient(uri);
+    const uri = process.env.MONGODB_URI || "mongodb://localhost:27017";
+    const client = new MongoClient(uri);
 
-  try {
-    await client.connect();
-    const db = client.db(process.env.DB_NAME || "yuvahub");
-    
-    console.log("Running deadline checks...");
-    await runDeadlineChecks(db);
-    console.log("Deadline checks finished.");
+    try {
+      await client.connect();
+      const db = client.db(process.env.DB_NAME || "yuvahub");
+      
+      console.log("Running deadline checks...");
+      await runDeadlineChecks(db);
+      console.log("Deadline checks finished.");
 
-    console.log("Running weekly digest...");
-    await runWeeklyDigest(db);
-    console.log("Weekly digest finished.");
+      console.log("Running weekly digest...");
+      await runWeeklyDigest(db);
+      console.log("Weekly digest finished.");
 
-    console.log("Running opportunity matcher...");
-    await matchOpportunityAndNotify(db, {
-      title: "Test Opportunity",
-      category: "hackathon",
-      _id: "test-id"
-    });
-    console.log("Opportunity matcher finished.");
+      console.log("Running opportunity matcher...");
+      await matchOpportunityAndNotify(db, {
+        title: "Test Opportunity",
+        category: "hackathon",
+        _id: "test-id"
+      });
+      console.log("Opportunity matcher finished.");
 
-  } catch (error) {
-    console.error("Error during test:", error);
-  } finally {
-    await client.close();
-  }
-}
-
+    } catch (error) {
+      console.error("Error during test:", error);
+    } finally {
+      await client.close();
+    }
   });
 });
