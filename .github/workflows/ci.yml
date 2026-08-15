@@ -20,7 +20,7 @@ jobs:
           cache: 'npm'
           
       - name: Install dependencies
-        run: npm ci
+        run: npm install
         
       - name: Verify Client Secret Boundaries
         run: npm run verify:client-secrets
@@ -41,7 +41,7 @@ jobs:
           cache: 'npm'
           
       - name: Install dependencies
-        run: npm ci
+        run: npm install
         
       - name: Run lint check
         run: npm run lint
@@ -59,7 +59,7 @@ jobs:
           cache: 'npm'
           
       - name: Install dependencies
-        run: npm ci
+        run: npm install
         
       - name: Run build check
         run: npm run build
@@ -82,7 +82,7 @@ jobs:
           cache: 'npm'
           
       - name: Install dependencies
-        run: npm ci
+        run: npm install
         
       - name: Run unit tests
         env:
@@ -108,7 +108,7 @@ jobs:
           cache: 'npm'
           
       - name: Install dependencies
-        run: npm ci
+        run: npm install
         
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
