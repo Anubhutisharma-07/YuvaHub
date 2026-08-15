@@ -20,6 +20,7 @@ import bookmarkFolderRoutes from "./bookmarkFolderRoutes.js";
 import analyticsRoutes from "./analyticsRoutes.js";
 import recommendationRoutes from "./recommendationRoutes.js";
 import eventRoutes from "./eventRoutes.js";
+import leaderboardRoutes from "./leaderboardRoutes.js";
 import { errorHandler } from "../middlewares/errorHandler.js";
 
 const rootRouter = Router();
@@ -48,6 +49,7 @@ const routes = [
   analyticsRoutes,
   recommendationRoutes,
   eventRoutes,
+  leaderboardRoutes,
 ];
 
 // Mount all routes onto v1Router

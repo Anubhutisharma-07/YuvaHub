@@ -246,6 +246,20 @@ export async function fetchLatestFeed() {
     return { items: [], num_results: 0 };
   }
 }
+
+export async function fetchLeaderboard() {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/leaderboard`, {
+      method: "GET"
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    return await response.json();
+  } catch (error) {
+    console.warn("fetchLeaderboard failed", error);
+    return { data: { leaderboard: [] } };
+  }
+}
+
 export async function fetchApplications(status?: string) {
   const params = new URLSearchParams();
 
