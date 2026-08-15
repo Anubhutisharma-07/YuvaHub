@@ -25,7 +25,9 @@ describe('test-saved-opportunities.ts', () => {
           ENABLE_MOCK_AUTH: 'true',
           FIREBASE_PROJECT_ID: '', // Force Mock Auth Mode
           FIREBASE_SERVICE_ACCOUNT_BASE64: '', // Force Mock Auth Mode
-          NODE_ENV: 'development'
+          NODE_ENV: 'development',
+          JWT_SECRET: 'mock_jwt_secret',
+          JWT_REFRESH_SECRET: 'mock_refresh'
         },
         stdio: 'pipe',
       });

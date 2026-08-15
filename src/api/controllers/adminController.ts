@@ -246,7 +246,7 @@ export const adminDeleteUser = async (req: Request, res: Response) => {
     if (!dbCommand || !dbQuery) {
       throw AppError.serviceUnavailable("Database unavailable");
     }
-    const userId = req.params.id;
+    const userId = req.params.id as string;
     
     // 1. Delete user from Firebase Auth
     const { deleteFirebaseUser } = await import("../middlewares/auth.js");

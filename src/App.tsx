@@ -1,7 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import {
   LayoutDashboard, Globe, PlusCircle, Users, User, Menu, X, Bookmark, Sparkles, MessageSquare, Settings, Sun, Moon, Mic,
-  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert
+  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase
 } from 'lucide-react';
 import { signInWithGoogle, logout } from './lib/firebase';
 import { UserProfile } from './types';
@@ -59,6 +59,7 @@ const HelpCenter = lazy(() => import('./components/Tabs/HelpCenter'));
 const FAQ = lazy(() => import('./components/Tabs/FAQ'));
 const Teams = lazy(() => import('./components/Tabs/Teams'));
 const MockInterviewRoom = lazy(() => import('./pages/MockInterviewRoom'));
+const ApplicationTracker = lazy(() => import('./pages/ApplicationTracker').then(m => ({ default: m.ApplicationTracker })));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
@@ -248,6 +249,7 @@ function App() {
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'opportunities', label: 'Opportunities', icon: Globe },
+        { id: 'application_tracker', label: 'Application Tracker', icon: Briefcase },
         { id: 'opportunity_match', label: 'AI Match Studio', icon: Sparkles, badge: 'AI' },
         { id: 'teams', label: 'Team Builder', icon: Users },
         { id: 'bookmarks', label: 'Bookmarks', icon: Bookmark },
@@ -298,6 +300,7 @@ function App() {
     switch (activeTab) {
       case 'dashboard': return <Dashboard />;
       case 'opportunities': return <Opportunities />;
+      case 'application_tracker': return <ApplicationTracker />;
       case 'teams': return <Teams />;
       case 'bookmarks': return <Bookmarks />;
       case 'ai_assistant': return (

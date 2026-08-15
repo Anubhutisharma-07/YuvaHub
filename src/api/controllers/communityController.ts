@@ -4,7 +4,7 @@ import { AppError } from "../../lib/AppError.js";
 import { ObjectId } from "mongodb";
 import { safeObjectId, normalizeParam, parsePagination } from "../../lib/utils.js";
 import escapeHtml from "escape-html";
-import { sendPaginated, sendSuccess, sendError } from "../../lib/apiResponse.js";
+import { sendPaginated, sendSuccess, sendError, sendBadRequest } from "../../lib/apiResponse.js";
 
 const containsProfanity = (text: string): boolean => {
   const profanityRegex =
@@ -144,7 +144,7 @@ export const deletePost = async (req: Request, res: Response) => {
     // Normalize before any string operation or ObjectId construction.
     const idStr = normalizeParam(req.params.postId);
     if (!idStr) {
-      throw AppError.badRequest("Missing or invalid postId");
+      return sendBadRequest(res, "Missing or invalid postId");
     }
     if (dbCommand) {
       const oid = safeObjectId(idStr);
@@ -163,7 +163,7 @@ export const getPostById = async (req: Request, res: Response) => {
     // deletePost, getComments, createComment, editComment, and upvotePost.
     const idStr = normalizeParam(req.params.postId);
     if (!idStr) {
-      throw AppError.badRequest("Missing or invalid postId");
+      return sendBadRequest(res, "Missing or invalid postId");
     }
     if (!dbCommand || !dbQuery) throw AppError.serviceUnavailable("Database not available");
 
@@ -181,12 +181,12 @@ export const createComment = async (req: Request, res: Response) => {
     // Issue #285: normalize `string | string[]` param before use.
     const postIdStr = normalizeParam(req.params.postId);
     if (!postIdStr) {
-      throw AppError.badRequest("Missing or invalid postId");
+      return sendBadRequest(res, "Missing or invalid postId");
     }
     const { content, author, parentId } = req.body;
 
     if (!content || !author) {
-      throw AppError.badRequest("Missing content or author");
+      return sendBadRequest(res, "Missing content or author");
     }
     if (!dbCommand || !dbQuery) throw AppError.serviceUnavailable("Database not available");
 
@@ -229,12 +229,12 @@ export const editComment = async (req: Request, res: Response) => {
     const postIdStr = normalizeParam(req.params.postId);
     const commentIdStr = normalizeParam(req.params.commentId);
     if (!postIdStr || !commentIdStr) {
-      throw AppError.badRequest("Missing or invalid postId/commentId");
+      return sendBadRequest(res, "Missing or invalid postId/commentId");
     }
     const { content } = req.body;
 
     if (!content) {
-      throw AppError.badRequest("Missing content");
+      return sendBadRequest(res, "Missing content");
     }
     if (!dbCommand || !dbQuery) throw AppError.serviceUnavailable("Database not available");
 
@@ -260,7 +260,7 @@ export const getComments = async (req: Request, res: Response) => {
     // `postId.replace is not a function` if Express delivered an array.
     const postIdStr = normalizeParam(req.params.postId);
     if (!postIdStr) {
-      throw AppError.badRequest("Missing or invalid postId");
+      return sendBadRequest(res, "Missing or invalid postId");
     }
     if (dbQuery) {
       const escapedPostId = postIdStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -298,12 +298,12 @@ export const upvotePost = async (req: Request, res: Response) => {
     // Issue #285: normalize `string | string[]` param before use.
     const idStr = normalizeParam(req.params.postId);
     if (!idStr) {
-      throw AppError.badRequest("Missing or invalid postId");
+      return sendBadRequest(res, "Missing or invalid postId");
     }
     const userId = req.user?.uid;
 
     if (!userId) {
-      throw AppError.badRequest("Missing userId");
+      return sendBadRequest(res, "Missing userId");
     }
     if (!dbCommand || !dbQuery) throw AppError.serviceUnavailable("Database not available");
 

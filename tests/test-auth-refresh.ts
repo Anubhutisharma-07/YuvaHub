@@ -50,7 +50,7 @@ describe('Auth Controller - Refresh Token Rotation', () => {
 
     await authSync(req as any, res as any);
 
-    expect(res.data.status).toBe("success");
+    expect(res.data.success).toBe(true);
     expect(res.data.accessToken).toBeDefined();
     expect(res.data.refreshToken).toBeDefined();
     
@@ -73,7 +73,7 @@ describe('Auth Controller - Refresh Token Rotation', () => {
 
     await refreshTokens(req as any, res as any);
 
-    expect(res.data.status).toBe("success");
+    expect(res.data.success).toBe(true);
     expect(res.data.accessToken).toBeDefined();
     expect(res.data.refreshToken).toBeDefined();
     
@@ -114,7 +114,7 @@ describe('Auth Controller - Refresh Token Rotation', () => {
     const logoutRes = mockRes();
     
     await logout(logoutReq as any, logoutRes as any);
-    expect(logoutRes.data.status).toBe("success");
+    expect(logoutRes.data.success).toBe(true);
 
     // Attempting to refresh with the logged-out token should trigger reuse/revocation
     const refreshReq = mockReq({ refreshToken: activeRefreshToken });
