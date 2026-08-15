@@ -1,6 +1,6 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import {
-  LayoutDashboard, Globe, PlusCircle, Users, User, Menu, X, Bookmark, Sparkles, MessageSquare, Settings, Sun, Moon, Mic,
+  LayoutDashboard, Globe, PlusCircle, Users, User, Menu, X, Bookmark, Sparkles, MessageSquare, Settings, Sun, Moon, Mic, Trophy,
   Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase
 } from 'lucide-react';
 import { signInWithGoogle, logout } from './lib/firebase';
@@ -60,6 +60,7 @@ const FAQ = lazy(() => import('./components/Tabs/FAQ'));
 const Teams = lazy(() => import('./components/Tabs/Teams'));
 const MockInterviewRoom = lazy(() => import('./pages/MockInterviewRoom'));
 const ApplicationTracker = lazy(() => import('./pages/ApplicationTracker').then(m => ({ default: m.ApplicationTracker })));
+const Leaderboard = lazy(() => import('./pages/Leaderboard').then(m => ({ default: m.Leaderboard })));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
@@ -269,6 +270,7 @@ function App() {
     {
       title: "Ecosystem & Community",
       items: [
+        { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
         { id: 'mentorship', label: 'Mentorship', icon: GraduationCap },
         { id: 'bounty_board', label: 'Bounty Board', icon: Coins },
         { id: 'opensource_bounties', label: 'Open Source Bounties', icon: Code2 },
@@ -303,6 +305,7 @@ function App() {
       case 'application_tracker': return <ApplicationTracker />;
       case 'teams': return <Teams />;
       case 'bookmarks': return <Bookmarks />;
+      case 'leaderboard': return <Leaderboard />;
       case 'ai_assistant': return (
         <Suspense fallback={
           <div className="flex flex-col items-center justify-center h-full min-h-[400px] gap-4">
