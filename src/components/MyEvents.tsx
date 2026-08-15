@@ -11,7 +11,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import QRCode from 'qrcode.react';
+import { QRCodeCanvas as QRCode } from 'qrcode.react';
 import {
   Calendar,
   MapPin,
@@ -87,11 +87,12 @@ export function MyEvents() {
     if (!canvas) return;
 
     try {
-      const blob = await new Promise(resolve => canvas.toBlob(resolve));
+      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve));
+      if (!blob) return;
       await navigator.share({
         title: `${event.title} Check-In QR Code`,
         text: `Scan this QR code to check in for ${event.title}`,
-        files: [new File([blob!], `${event.title}-qr.png`, { type: 'image/png' })],
+        files: [new File([blob], `${event.title}-qr.png`, { type: 'image/png' })],
       });
     } catch (err) {
       console.error('Error sharing:', err);
