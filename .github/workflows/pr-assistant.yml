@@ -1,7 +1,7 @@
 name: "PR Assistant"
 on:
   pull_request_target:
-    types: [opened, edited, synchronize]
+    types: [opened, edited]
 
 jobs:
   pr-checks:
@@ -10,62 +10,28 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-      - name: Check PR Title
-        uses: amannn/action-semantic-pull-request@v6
-        id: semantic_check
-        continue-on-error: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          types: |
-            feat
-            fix
-            docs
-            style
-            refactor
-            perf
-            test
-            build
-            ci
-            chore
-            revert
-            Feature
-            [Feature]
-            Update
-            [Update]
-            Bug
-            [Bug]
-            Fix
-            [Fix]
-            Docs
-            [Docs]
-            Chore
-            [Chore]
-            Style
-            [Style]
-            Refactor
-            [Refactor]
-            Perf
-            [Perf]
-            Test
-            [Test]
-          requireScope: false
-          ignoreLabels: |
-            bot
-            ignore-semantic-pull-request
-
-      - name: Validate PR Body and Notify
+      - name: Validate PR Title, Body and Notify
         uses: actions/github-script@v8
         with:
           script: |
+            const title = context.payload.pull_request.title || "";
             const body = context.payload.pull_request.body || "";
             const author = context.payload.pull_request.user.login;
             let errors = [];
             
-            // 1. Check Title (from previous step)
-            const titleFailed = '${{ steps.semantic_check.outcome }}' === 'failure';
-            if (titleFailed) {
-              errors.push("🏷️ - Your PR title doesn't follow the semantic formatting rules! Please update it to start with one of the allowed prefixes (e.g. `feat:`, `fix:`, `chore:`).");
+            // 1. Check Title
+            const validPrefixes = [
+              "feat:", "fix:", "docs:", "style:", "refactor:", "perf:", "test:", "build:", "ci:", "chore:", "revert:",
+              "[Feature]:", "[Fix]:", "[Chore]:", "[Bug]:", "[Update]:", "[Docs]:", "[Style]:", "[Refactor]:", "[Perf]:", "[Test]:",
+              "Feature:", "Fix:", "Bug:", "Update:", "Docs:", "Chore:", "Style:", "Refactor:", "Perf:", "Test:"
+            ];
+            
+            // Also support optional scopes like feat(ui):
+            const hasConventionalScope = /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)\([a-zA-Z0-9_-]+\):/i.test(title);
+            const hasValidPrefix = validPrefixes.some(prefix => title.toLowerCase().startsWith(prefix.toLowerCase()));
+            
+            if (!hasValidPrefix && !hasConventionalScope) {
+              errors.push("🏷️ - Your PR title doesn't follow the formatting rules! Please update it to start with an allowed prefix (e.g. `feat:`, `fix:`, `[Feature]:`, `[Bug]:`).");
             }
             
             // 2. Check Body
