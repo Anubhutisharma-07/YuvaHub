@@ -21,6 +21,7 @@ import analyticsRoutes from "./analyticsRoutes.js";
 import recommendationRoutes from "./recommendationRoutes.js";
 import eventRoutes from "./eventRoutes.js";
 import { errorHandler } from "../middlewares/errorHandler.js";
+import { apiVersionHeaders } from "../versioning/middleware.js";
 
 const rootRouter = Router();
 const v1Router = Router();
@@ -60,9 +61,13 @@ v1Router.get("/health", (_req, res) => {
   res.json({ status: "healthy", timestamp: new Date().toISOString(), architecture: "modular" });
 });
 
-// For dual-version support, mount v1Router on both /api/v1 and /api
-rootRouter.use("/v1", v1Router);
-rootRouter.use("/", v1Router);
+// Canonical versioned namespace. All new endpoints land here by default.
+rootRouter.use("/v1", apiVersionHeaders(), v1Router);
+
+// Graceful legacy alias: forwards unversioned /api/* traffic to v1 while
+// consumers migrate. The versioning middleware marks it as deprecated
+// (Deprecation + Sunset headers) so callers are nudged onto /api/v1.
+rootRouter.use("/", apiVersionHeaders(), v1Router);
 
 // Special alias mappings from server.ts to maintain backward compatibility
 rootRouter.use("/opportunities/search", searchRoutes);
