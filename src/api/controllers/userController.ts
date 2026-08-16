@@ -108,3 +108,43 @@ export const getProfileProgress = async (req: Request, res: Response) => {
     return sendError(res, "Internal Server Error", 500);
   }
 };
+
+export const getPublicProfile = async (req: Request, res: Response) => {
+  try {
+    const uid = req.params.uid;
+    if (!dbQuery) return sendServiceUnavailable(res, "Database not available");
+
+    const user = await dbQuery.collection("users").findOne({ uid });
+    if (!user) {
+      return sendNotFound(res, "User not found");
+    }
+
+    if (!user.isPublicProfile) {
+      return sendNotFound(res, "Profile is private or does not exist");
+    }
+
+    const publicProfile = {
+      uid: user.uid,
+      name: user.name,
+      avatarUrl: user.avatarUrl,
+      bio: user.bio,
+      college: user.college,
+      year: user.year,
+      field: user.field,
+      city: user.city,
+      state: user.state,
+      country: user.country,
+      skills: user.skills,
+      githubUrl: user.githubUrl,
+      linkedinUrl: user.linkedinUrl,
+      portfolioUrl: user.portfolioUrl,
+      badges: user.badges,
+      points: user.points
+    };
+
+    return sendSuccess(res, publicProfile);
+  } catch (err: any) {
+    console.error("GET /api/public/profile error:", err);
+    return sendError(res, "Internal Server Error", 500);
+  }
+};

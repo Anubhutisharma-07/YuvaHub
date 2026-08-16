@@ -49,6 +49,7 @@ export interface UserProfile {
   profileCompleteness?: number;
   points?: number;
   badges?: string[];
+  isPublicProfile?: boolean;
 }
 
 export interface RecommendationPreferences {
