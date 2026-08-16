@@ -90,6 +90,7 @@
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.1",
+    "@opentelemetry/core": "^2.10.0",
     "@playwright/test": "^1.61.1",
     "@types/cors": "^2.8.19",
     "@types/escape-html": "^1.0.4",
@@ -106,6 +107,7 @@
     "@vitest/coverage-v8": "^4.1.10",
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.28.0",
+    "node-fetch": "^3.3.2",
     "rollup-plugin-visualizer": "^5.14.0",
     "tailwindcss": "^4.1.14",
     "typescript": "~5.8.2",

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Calendar, MapPin, FileText, ChevronRight, Clock, ExternalLink, Zap, CheckCircle, Award, Bookmark, Shield, Sparkles, Building2, Coins, ArrowRight, Share2 } from 'lucide-react';
 import { SEO } from '../SEO';
-import { fetchOpportunityById, trackInteraction, predictEligibility, generateApplyAssistBackend, searchOpportunities } from '../../services/apiClient';
+import { fetchOpportunityById, trackInteraction, predictEligibility, generateApplyAssistBackend, searchOpportunities, generateFlashcardsBackend } from '../../services/apiClient';
 import { CURATED_FALLBACKS } from '../../services/staticFallbacks';
 import ShareModal from '../ui/ShareModal';
 import ApplyAssistModal from '../ui/ApplyAssistModal';
+import FlashcardModal from '../ui/FlashcardModal';
 import { OpportunityCard } from '../OpportunityCard';
 import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
@@ -72,6 +73,29 @@ export default function OpportunityDetail() {
   const [isAssistModalOpen, setIsAssistModalOpen] = useState(false);
   const [assistLoading, setAssistLoading] = useState(false);
   const [assistContent, setAssistContent] = useState<string | null>(null);
+
+  // Flashcards State
+  const [isFlashcardModalOpen, setIsFlashcardModalOpen] = useState(false);
+  const [flashcardLoading, setFlashcardLoading] = useState(false);
+  const [flashcards, setFlashcards] = useState<any[]>([]);
+
+  const handlePrepareMe = async () => {
+    if (!opp) return;
+    setIsFlashcardModalOpen(true);
+    setFlashcardLoading(true);
+    
+    try {
+      const jdText = opp.description || opp.title;
+      const result = await generateFlashcardsBackend(jdText);
+      setFlashcards(result);
+    } catch (e) {
+      console.error(e);
+      // Fallback empty array handled in modal
+      setFlashcards([]);
+    } finally {
+      setFlashcardLoading(false);
+    }
+  };
 
   // Helper to slugify opportunity title for SEO paths
   const slugify = (text: string): string => {
@@ -445,6 +469,17 @@ export default function OpportunityDetail() {
               )}
             </div>
 
+            {/* PREPARE ME (AI) BUTTON */}
+            <div className="pt-4 border-t border-[#e8ded1] dark:border-slate-800 space-y-2.5">
+              <button 
+                onClick={handlePrepareMe}
+                className="w-full py-3.5 bg-[#f6efe2] dark:bg-slate-800 hover:bg-[#e8ded1] dark:hover:bg-slate-700 text-[#603620] dark:text-slate-300 font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all border border-[#e8ded1] dark:border-slate-700 cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 text-[#b56b37]" />
+                <span>Prepare Me (AI)</span>
+              </button>
+            </div>
+
             {/* DIRECT OFFICIAL APPLICATION BUTTON - ALWAYS REDIRECTS TO REAL PORTAL */}
             <div className="pt-4 border-t border-[#e8ded1] dark:border-slate-800 space-y-2.5">
               <a 
@@ -497,6 +532,14 @@ export default function OpportunityDetail() {
         onClose={() => setIsAssistModalOpen(false)}
         content={assistContent}
         isLoading={assistLoading}
+        opportunityTitle={opp.title}
+      />
+
+      <FlashcardModal
+        isOpen={isFlashcardModalOpen}
+        onClose={() => setIsFlashcardModalOpen(false)}
+        isLoading={flashcardLoading}
+        flashcards={flashcards}
         opportunityTitle={opp.title}
       />
     </div>
