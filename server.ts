@@ -50,6 +50,7 @@ import { setSocketIO } from "./src/api/socketInstance.js";
 import { setupSocketEvents } from "./src/socket/index.js";
 import { analyticsBuffer } from "./src/api/analytics.js";
 import apiRoutes from "./src/api/routes/index.js";
+import { apiVersionHeaders } from "./src/api/versioning/middleware.js";
 import swaggerSpec from "./src/config/swagger.js";
 import { validateStartupEnv } from "./src/config/envValidation.js";
 
@@ -60,6 +61,12 @@ validateStartupEnv();
 
 const app = express();
 const server = http.createServer(app);
+
+// Version-aware headers for every /api/* request (Issue #674). Registered
+// before all handlers so app-level routes also advertise version/deprecation
+// metadata. Idempotent, so it composes with the versioning middleware that
+// is also mounted inside apiRoutes.
+app.use("/api", apiVersionHeaders());
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,

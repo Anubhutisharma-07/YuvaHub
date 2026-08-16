@@ -7,11 +7,15 @@ const options: swaggerJsdoc.Options = {
       title: "YuvaHub API",
       version: "1.0.0",
       description:
-        "YuvaHub is a community-driven opportunity discovery platform. This API provides endpoints for authentication, opportunities, bookmarks, community forums, mentorship, AI assistance, and more.",
+        "YuvaHub is a community-driven opportunity discovery platform. This API provides endpoints for authentication, opportunities, bookmarks, community forums, mentorship, AI assistance, and more.\n\n**Versioning:** All endpoints live under `/api/v1`. The unversioned `/api` namespace is a deprecated legacy alias and emits `Deprecation` + `Sunset` headers. See the [API versioning & deprecation policy](https://github.com/uditt490-pixel/YuvaHub/blob/main/docs/API_VERSIONING.md) for the support window and sunset cadence.",
+    },
+    externalDocs: {
+      description: "API versioning & deprecation policy",
+      url: "https://github.com/uditt490-pixel/YuvaHub/blob/main/docs/API_VERSIONING.md",
     },
     servers: [
-      { url: "/api/v1", description: "API v1" },
-      { url: "/api", description: "API (legacy)" },
+      { url: "/api/v1", description: "API v1 (current)" },
+      { url: "/api", description: "API (legacy, deprecated — migrate to /api/v1)" },
     ],
     components: {
       securitySchemes: {
