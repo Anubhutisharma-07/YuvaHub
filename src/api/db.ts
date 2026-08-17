@@ -1,5 +1,6 @@
 import { MongoClient } from "mongodb";
 import dotenv from "dotenv";
+import { config } from "../config/env.js";
 import { CURATED_FALLBACKS } from "../services/staticFallbacks.js";
 import { initializeDNLDatabase } from "../services/dnl/metrics.js";
 import { DNLDispatcher } from "../services/dnl/scheduler.js";
@@ -9,10 +10,11 @@ import { initializeSearchSync } from "../services/searchSync.js";
 
 dotenv.config();
 
-const uri = process.env.MONGODB_URI || "";
-const commandUri = process.env.MONGODB_COMMAND_URI || uri;
-const queryUri = process.env.MONGODB_QUERY_URI || uri;
-const dbName = process.env.MONGODB_DB_NAME || "yuvahub";
+const uri = config.MONGODB_URI;
+// Using the same URI for command and query unless explicitly separated in env
+const commandUri = uri;
+const queryUri = uri;
+const dbName = config.MONGODB_DB_NAME;
 
 /** Interval (ms) between MongoDB reconnection attempts after fallback to MockDB. */
 const RECONNECT_INTERVAL_MS = 30_000;
@@ -52,8 +54,8 @@ async function attemptReconnect(): Promise<boolean> {
   try {
     await Promise.all([commandClient.connect(), queryClient.connect()]);
 
-    const newCommandDb = commandClient.db(process.env.MONGODB_COMMAND_DB || dbName);
-    const newQueryDb = queryClient.db(process.env.MONGODB_QUERY_DB || dbName);
+    const newCommandDb = commandClient.db(dbName);
+    const newQueryDb = queryClient.db(dbName);
 
     // Atomic swap — all live bindings (e.g. from server.ts) will see
     // the new instances on their next access.
@@ -343,43 +345,29 @@ onReconnect(async () => {
 // ── Main initializer ────────────────────────────────────────────────
 
 export async function initializeDatabase(): Promise<void> {
-  if (commandUri && queryUri) {
-    const commandClient = new MongoClient(commandUri);
-    const queryClient = new MongoClient(queryUri);
+  const commandClient = new MongoClient(commandUri);
+  const queryClient = new MongoClient(queryUri);
 
-    try {
-      await Promise.all([commandClient.connect(), queryClient.connect()]);
-      dbCommand = commandClient.db(process.env.MONGODB_COMMAND_DB || dbName);
-      dbQuery = queryClient.db(process.env.MONGODB_QUERY_DB || dbName);
-      console.log(`[Database] Connected to Command and Query MongoDB pools`);
-      setupDNL(dbCommand);
-      initializeSearchSync(dbQuery).catch(err => console.error('[SearchSync] Non-fatal init error:', err));
-
-      dbCommand.collection("opportunities").createIndex({ created_at: -1, source_quality_score: -1 })
-        .then(() => console.log(`[Database] Created compound index on opportunities`))
-        .catch((err: any) => console.error(`[Database] Failed to create index:`, err));
-
-      dbQuery.collection("users").createIndex({ uid: 1 }, { unique: true, sparse: true })
-        .then(() => console.log(`[Database] Created unique index on users.uid`))
-        .catch((err: any) => console.error(`[Database] Failed to create index on users.uid:`, err));
-      dbCommand.collection("users").createIndex({ firebaseUid: 1 }, { unique: true, sparse: true })
-        .then(() => console.log(`[Database] Created unique sparse index on users.firebaseUid`))
-        .catch((err: any) => console.error(`[Database] Failed to create unique index:`, err));
-    } catch (err) {
-      console.error("[Database] Connection failed, falling back to Mock Data:", err);
-      dbCommand = new MockDB();
-      dbQuery = dbCommand;
-      setupDNL(dbCommand);
-      initializeSearchSync(dbQuery).catch(err => console.error('[SearchSync] Non-fatal init error:', err));
-      // Kick off the background reconnection loop so the system can
-      // recover once MongoDB comes back online.
-      startReconnectLoop();
-    }
-  } else {
-    console.log("[Database] No MONGODB_URI provided. Running in Offline Mock mode.");
-    dbCommand = new MockDB();
-    dbQuery = dbCommand;
+  try {
+    await Promise.all([commandClient.connect(), queryClient.connect()]);
+    dbCommand = commandClient.db(dbName);
+    dbQuery = queryClient.db(dbName);
+    console.log(`[Database] Connected to Command and Query MongoDB pools`);
     setupDNL(dbCommand);
     initializeSearchSync(dbQuery).catch(err => console.error('[SearchSync] Non-fatal init error:', err));
+
+    dbCommand.collection("opportunities").createIndex({ created_at: -1, source_quality_score: -1 })
+      .then(() => console.log(`[Database] Created compound index on opportunities`))
+      .catch((err: any) => console.error(`[Database] Failed to create index:`, err));
+
+    dbQuery.collection("users").createIndex({ uid: 1 }, { unique: true, sparse: true })
+      .then(() => console.log(`[Database] Created unique index on users.uid`))
+      .catch((err: any) => console.error(`[Database] Failed to create index on users.uid:`, err));
+    dbCommand.collection("users").createIndex({ firebaseUid: 1 }, { unique: true, sparse: true })
+      .then(() => console.log(`[Database] Created unique sparse index on users.firebaseUid`))
+      .catch((err: any) => console.error(`[Database] Failed to create unique index:`, err));
+  } catch (err) {
+    console.error("[FATAL] MongoDB connection failed. Halting startup.", err);
+    process.exit(1);
   }
 }

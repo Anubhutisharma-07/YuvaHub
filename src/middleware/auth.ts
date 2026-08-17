@@ -3,51 +3,32 @@ import { initializeApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { dbCommand } from '../api/db.js';
 import jwt from 'jsonwebtoken';
+import { config } from '../config/env.js';
 
 let isFirebaseInitialized = false;
 
-const isDevelopment = process.env.NODE_ENV === 'development';
-const mockAuthEnabled = process.env.ENABLE_MOCK_AUTH === 'true';
-const mockValidToken = process.env.MOCK_VALID_TOKEN || 'MOCK_VALID_TOKEN';
+const isDevelopment = config.NODE_ENV === 'development';
+const mockAuthEnabled = config.ENABLE_MOCK_AUTH === 'true';
+const mockValidToken = config.MOCK_VALID_TOKEN;
 
 // Initialize Firebase Admin
 try {
-  if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
-    const serviceAccount = JSON.parse(
-      Buffer.from(
-        process.env.FIREBASE_SERVICE_ACCOUNT_BASE64,
-        'base64',
-      ).toString('utf8'),
-    );
+  const serviceAccount = JSON.parse(
+    Buffer.from(
+      config.FIREBASE_SERVICE_ACCOUNT_BASE64,
+      'base64',
+    ).toString('utf8'),
+  );
 
-    initializeApp({
-      credential: cert(serviceAccount),
-    });
+  initializeApp({
+    credential: cert(serviceAccount),
+  });
 
-    isFirebaseInitialized = true;
-    console.log(
-      '[Auth] Firebase Admin initialized with provided service account.',
-    );
-  } else if (process.env.FIREBASE_PROJECT_ID) {
-    initializeApp({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-    });
-
-    isFirebaseInitialized = true;
-    console.log(
-      '[Auth] Firebase Admin initialized with Application Default Credentials / Project ID.',
-    );
-  } else if (isDevelopment && mockAuthEnabled) {
-    console.warn(
-      '[Auth] WARNING: Firebase credentials not found. Mock authentication is ENABLED for development.',
-    );
-  } else {
-    console.warn(
-      '[Auth] Firebase credentials not found. Mock authentication is disabled.',
-    );
-  }
+  isFirebaseInitialized = true;
+  console.log('[Auth] Firebase Admin initialized with provided service account.');
 } catch (error) {
-  console.error('[Auth] Firebase Admin initialization error:', error);
+  console.error('[FATAL] Firebase Admin initialization error. Halting startup.', error);
+  process.exit(1);
 }
 
 // Extend Request interface to include the user
@@ -76,9 +57,9 @@ export const authenticateUser = (db?: any) => {
       let isCustomToken = false;
 
       // 1. Try Custom JWT first
-      const jwtSecret = process.env.JWT_SECRET;
+      const jwtSecret = config.JWT_SECRET;
 
-      if (process.env.NODE_ENV === 'production' && !jwtSecret) {
+      if (config.NODE_ENV === 'production' && !jwtSecret) {
         return res.status(503).json({
           error: 'Authentication service unavailable. JWT_SECRET must be configured in production.',
         });

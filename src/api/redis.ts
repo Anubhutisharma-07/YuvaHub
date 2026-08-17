@@ -1,9 +1,7 @@
-﻿import Redis from "ioredis";
+import Redis from "ioredis";
 import rateLimit, { MemoryStore } from "express-rate-limit";
 import { RedisStore } from "rate-limit-redis";
-import dotenv from "dotenv";
-
-dotenv.config();
+import { config } from "../config/env.js";
 
 declare global {
   var REDIS_AVAILABLE: boolean;
@@ -13,7 +11,7 @@ global.REDIS_AVAILABLE = false;
 export let redisClient: Redis;
 
 try {
-  redisClient = new Redis(process.env.REDIS_URL || "redis://127.0.0.1:6379", {
+  redisClient = new Redis(config.REDIS_URL || "redis://127.0.0.1:6379", {
     maxRetriesPerRequest: null,
     enableReadyCheck: false,
     enableOfflineQueue: false,

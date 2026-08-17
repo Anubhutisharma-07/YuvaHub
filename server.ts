@@ -20,30 +20,14 @@ import { eventBus } from "./src/events/eventBus.js";
 import { createNotificationConsumer } from "./src/consumers/notificationConsumer.js";
 import { createOpportunityScrapedConsumer } from "./src/consumers/opportunityScrapedConsumer.js";
 import swaggerSpec from "./src/config/swagger.js";
+import { config } from "./src/config/env.js";
 
 dotenv.config();
 
-// ---------------------------------------------------------------------------
-// JWT Secret Validation — fail fast in production
-// ---------------------------------------------------------------------------
-const { JWT_SECRET, JWT_REFRESH_SECRET, NODE_ENV } = process.env;
-
-if (NODE_ENV === 'production') {
-  const MISSING: string[] = [];
-  if (!JWT_SECRET) MISSING.push('JWT_SECRET');
-  if (!JWT_REFRESH_SECRET) MISSING.push('JWT_REFRESH_SECRET');
-
-  if (MISSING.length > 0) {
-    console.error(`[FATAL] ${MISSING.join(' and ')} must be explicitly set in production mode.`);
-    process.exit(1);
-  }
-} else {
-  if (!JWT_SECRET) console.warn('[WARN] JWT_SECRET not set. Using auto-generated secrets for development only.');
-  if (!JWT_REFRESH_SECRET) console.warn('[WARN] JWT_REFRESH_SECRET not set. Using auto-generated secrets for development only.');
-}
+// JWT secrets are now validated in src/config/env.js at boot time.
 
 Sentry.init({
-  dsn: process.env.SENTRY_DSN,
+  dsn: config.SENTRY_DSN,
   tracesSampleRate: 1.0,
 });
 
@@ -53,7 +37,7 @@ const server = http.createServer(app);
 // Socket.IO Configuration
 const io = new SocketIOServer(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || "*",
+    origin: config.FRONTEND_URL || "*",
     methods: ["GET", "POST"],
   },
 });
@@ -75,7 +59,7 @@ app.use("/api", apiRoutes);
 // â”€â”€ SEO Routes (root-level for crawler discovery) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 app.get("/robots.txt", (req: Request, res: Response) => {
-  const baseUrl = process.env.APP_URL || "https://yuvahub.xyz";
+  const baseUrl = config.APP_URL || "https://yuvahub.xyz";
   const robotsTxt = [
     "User-agent: *",
     "Allow: /",
@@ -127,7 +111,7 @@ function escapeXml(unsafe: string): string {
 
 app.get("/sitemap.xml", async (req: Request, res: Response) => {
   try {
-    const baseUrl = process.env.APP_URL || "https://yuvahub.xyz";
+    const baseUrl = config.APP_URL || "https://yuvahub.xyz";
     const staticPaths = [
       "",
       "/opportunities",
@@ -214,7 +198,7 @@ app.use((req: Request, res: Response) => {
   res.status(404).json({ success: false, error: "Endpoint not found" });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = config.PORT || 5000;
 
 async function startServer() {
   try {
@@ -246,7 +230,7 @@ async function startServer() {
       });
 
     // 5. Start Background Services
-    if (process.env.NODE_ENV !== "test") {
+    if (config.NODE_ENV !== "test") {
       setInterval(() => runDeadlineChecks(dbCommand), 24 * 60 * 60 * 1000);
       setInterval(() => runWeeklyDigest(dbCommand), 7 * 24 * 60 * 60 * 1000);
     }
@@ -257,7 +241,7 @@ async function startServer() {
 }
 
 // Only auto-start the server when not running in test mode
-if (process.env.NODE_ENV !== "test") {
+if (config.NODE_ENV !== "test") {
   startServer();
 }
 

@@ -4,6 +4,7 @@ import path from "path";
 import fs from "fs";
 import crypto from "crypto";
 import { dbCommand, dbQuery } from "../db.js";
+import { config } from "../../config/env.js";
 // @ts-ignore
 import multer from "multer";
 
@@ -83,9 +84,9 @@ export const handleSignatureRequest = async (req: any, res: any) => {
       }
     }
 
-    const apiSecret = process.env.CLOUDINARY_API_SECRET || "";
+    const apiSecret = config.CLOUDINARY_API_SECRET || "";
     if (!apiSecret) {
-      if (process.env.NODE_ENV !== "production") {
+      if (config.NODE_ENV !== "production") {
         return res.json({
           signature: "dummy_signature",
           timestamp,
@@ -106,8 +107,8 @@ export const handleSignatureRequest = async (req: any, res: any) => {
       timestamp,
       folder,
       allowed_formats: paramsToSign.allowed_formats,
-      apiKey: process.env.CLOUDINARY_API_KEY,
-      cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+      apiKey: config.CLOUDINARY_API_KEY,
+      cloudName: config.CLOUDINARY_CLOUD_NAME,
     });
 
   } catch (err: any) {
