@@ -26,7 +26,7 @@ export default function ResumeVersionManager() {
       });
       if (res.ok) {
         const data = await res.json();
-        setResumes(data.resumes || []);
+        setResumes(data.resumes ?? data.items ?? data.data ?? []);
       }
     } catch (err: any) {
       console.error("Failed to fetch resumes:", err);

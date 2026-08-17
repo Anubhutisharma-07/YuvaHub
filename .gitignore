@@ -14,3 +14,9 @@ playwright-report/
 
 # Firebase configuration
 firebase-applet-config.json
+
+# Bundle Visualizer Output
+stats.html
+
+# Test Outputs
+tests/test-output.pdf

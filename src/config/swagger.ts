@@ -7,11 +7,15 @@ const options: swaggerJsdoc.Options = {
       title: "YuvaHub API",
       version: "1.0.0",
       description:
-        "YuvaHub is a community-driven opportunity discovery platform. This API provides endpoints for authentication, opportunities, bookmarks, community forums, mentorship, AI assistance, and more.",
+        "YuvaHub is a community-driven opportunity discovery platform. This API provides endpoints for authentication, opportunities, bookmarks, community forums, mentorship, AI assistance, and more.\n\n**Versioning:** All endpoints live under `/api/v1`. The unversioned `/api` namespace is a deprecated legacy alias and emits `Deprecation` + `Sunset` headers. See the [API versioning & deprecation policy](https://github.com/uditt490-pixel/YuvaHub/blob/main/docs/API_VERSIONING.md) for the support window and sunset cadence.",
+    },
+    externalDocs: {
+      description: "API versioning & deprecation policy",
+      url: "https://github.com/uditt490-pixel/YuvaHub/blob/main/docs/API_VERSIONING.md",
     },
     servers: [
-      { url: "/api/v1", description: "API v1" },
-      { url: "/api", description: "API (legacy)" },
+      { url: "/api/v1", description: "API v1 (current)" },
+      { url: "/api", description: "API (legacy, deprecated — migrate to /api/v1)" },
     ],
     components: {
       securitySchemes: {
@@ -668,6 +672,260 @@ const options: swaggerJsdoc.Options = {
           summary: "Update session status",
           security: [{ bearerAuth: [] }],
           responses: { 200: { description: "Session status updated" } },
+        },
+      },
+
+      // ─── Advisory Board & Mentor Studio ─────────────────────────────────────
+      "/mentors": {
+        get: {
+          tags: ["Mentorship"],
+          summary: "List verified mentors",
+          parameters: [
+            { name: "search", in: "query", schema: { type: "string" }, description: "Search by name, company, role or skill" },
+            { name: "skills", in: "query", schema: { type: "string" }, description: "Comma separated skills filter" },
+            { name: "page", in: "query", schema: { type: "number" } },
+            { name: "limit", in: "query", schema: { type: "number" } },
+          ],
+          responses: { 200: { description: "Paginated list of approved mentors" } },
+        },
+      },
+      "/mentors/{uid}": {
+        get: {
+          tags: ["Mentorship"],
+          summary: "Get mentor detail with upcoming office hours",
+          parameters: [{ name: "uid", in: "path", required: true, schema: { type: "string" } }],
+          responses: { 200: { description: "Mentor profile + upcoming slots" }, 404: { description: "Mentor not found" } },
+        },
+      },
+      "/mentor-studio/profile": {
+        get: {
+          tags: ["Mentorship"],
+          summary: "Get my mentor profile",
+          security: [{ bearerAuth: [] }],
+          responses: { 200: { description: "Mentor profile" } },
+        },
+        put: {
+          tags: ["Mentorship"],
+          summary: "Create or update my mentor profile",
+          security: [{ bearerAuth: [] }],
+          requestBody: { content: { "application/json": { schema: { type: "object" } } } },
+          responses: { 200: { description: "Updated mentor profile" } },
+        },
+      },
+      "/mentor-studio/availability": {
+        get: {
+          tags: ["Mentorship"],
+          summary: "List my availability slots",
+          security: [{ bearerAuth: [] }],
+          responses: { 200: { description: "Paginated availability slots" } },
+        },
+        post: {
+          tags: ["Mentorship"],
+          summary: "Bulk publish availability slots",
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    slots: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          date: { type: "string", example: "2026-08-20" },
+                          startTime: { type: "string", example: "17:00" },
+                          endTime: { type: "string", example: "18:00" },
+                        },
+                        required: ["date", "startTime", "endTime"],
+                      },
+                    },
+                  },
+                  required: ["slots"],
+                },
+              },
+            },
+          },
+          responses: { 201: { description: "Created slots + conflicts" } },
+        },
+      },
+      "/mentor-studio/availability/{slotId}": {
+        delete: {
+          tags: ["Mentorship"],
+          summary: "Remove (cancel) an availability slot",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: "slotId", in: "path", required: true, schema: { type: "string" } }],
+          responses: { 200: { description: "Slot cancelled" } },
+        },
+      },
+      "/mentor-studio/sessions/{id}": {
+        get: {
+          tags: ["Mentorship"],
+          summary: "Get session detail (participants only)",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+          responses: { 200: { description: "Session with notes & action items" } },
+        },
+      },
+      "/mentor-studio/sessions/{id}/status": {
+        patch: {
+          tags: ["Mentorship"],
+          summary: "Transition session status",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+          requestBody: {
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    status: { type: "string", enum: ["pending", "confirmed", "in_progress", "completed", "cancelled", "no_show"] },
+                  },
+                  required: ["status"],
+                },
+              },
+            },
+          },
+          responses: { 200: { description: "Updated session" } },
+        },
+      },
+      "/mentor-studio/sessions/{id}/notes": {
+        post: {
+          tags: ["Mentorship"],
+          summary: "Add a session note",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+          requestBody: {
+            content: {
+              "application/json": {
+                schema: { type: "object", properties: { content: { type: "string" } }, required: ["content"] },
+              },
+            },
+          },
+          responses: { 201: { description: "Created note" } },
+        },
+      },
+      "/mentor-studio/sessions/{id}/action-items": {
+        post: {
+          tags: ["Mentorship"],
+          summary: "Add an action item",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+          requestBody: {
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    title: { type: "string" },
+                    assignee: { type: "string", enum: ["mentor", "student", "both"] },
+                    priority: { type: "string", enum: ["low", "medium", "high"] },
+                  },
+                  required: ["title"],
+                },
+              },
+            },
+          },
+          responses: { 201: { description: "Created action item" } },
+        },
+      },
+      "/mentor-studio/sessions/{id}/feedback": {
+        post: {
+          tags: ["Mentorship"],
+          summary: "Submit feedback for a completed session",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+          requestBody: {
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    rating: { type: "number", minimum: 1, maximum: 5 },
+                    comment: { type: "string" },
+                  },
+                  required: ["rating"],
+                },
+              },
+            },
+          },
+          responses: { 200: { description: "Feedback submitted" } },
+        },
+      },
+      "/mentor-studio/analytics": {
+        get: {
+          tags: ["Mentorship"],
+          summary: "Get my mentorship analytics",
+          security: [{ bearerAuth: [] }],
+          responses: { 200: { description: "Student + mentor analytics" } },
+        },
+      },
+      "/mentor-applications": {
+        post: {
+          tags: ["Mentorship"],
+          summary: "Apply to become a mentor",
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    name: { type: "string" },
+                    email: { type: "string" },
+                    linkedinUrl: { type: "string" },
+                    collegeCompany: { type: "string" },
+                    field: { type: "string" },
+                    experienceYears: { type: "number" },
+                    skills: { type: "array", items: { type: "string" } },
+                    whyMentor: { type: "string" },
+                  },
+                  required: ["name", "email", "whyMentor"],
+                },
+              },
+            },
+          },
+          responses: { 201: { description: "Application submitted" } },
+        },
+        get: {
+          tags: ["Mentorship"],
+          summary: "List mentor applications (admin)",
+          security: [{ bearerAuth: [] }],
+          responses: { 200: { description: "Paginated applications" } },
+        },
+      },
+      "/mentor-applications/me": {
+        get: {
+          tags: ["Mentorship"],
+          summary: "Get my latest mentor application",
+          security: [{ bearerAuth: [] }],
+          responses: { 200: { description: "My application" } },
+        },
+      },
+      "/mentor-applications/{applicationId}/review": {
+        patch: {
+          tags: ["Mentorship"],
+          summary: "Approve or reject an application (admin)",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: "applicationId", in: "path", required: true, schema: { type: "string" } }],
+          requestBody: {
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    decision: { type: "string", enum: ["approved", "rejected"] },
+                    reviewNote: { type: "string" },
+                  },
+                  required: ["decision"],
+                },
+              },
+            },
+          },
+          responses: { 200: { description: "Application reviewed" } },
         },
       },
 

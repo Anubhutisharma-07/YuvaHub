@@ -101,3 +101,16 @@ export async function initializeSearchSync(db: Db) {
     }
   }
 }
+
+/** Close the active change stream. Called during graceful shutdown. */
+export async function stopSearchSync(): Promise<void> {
+  if (activeChangeStream) {
+    try {
+      await activeChangeStream.close();
+      activeChangeStream = null;
+      console.log('[SearchSync] Change stream closed.');
+    } catch (err) {
+      console.error('[SearchSync] Error closing change stream:', err);
+    }
+  }
+}

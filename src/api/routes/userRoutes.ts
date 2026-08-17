@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { syncUser, deleteAccount, getSavedOpportunities, getProfileProgress } from "../controllers/userController.js";
-import { authMiddleware } from "../../middleware/auth.js";
+import { syncUser, deleteAccount, getSavedOpportunities, getProfileProgress, getPublicProfile } from "../controllers/userController.js";
+import { authMiddleware } from "../middlewares/auth.js";
 
 const router = Router();
 
@@ -8,5 +8,6 @@ router.get("/users/me/saved-opportunities", authMiddleware, getSavedOpportunitie
 router.get("/user/sync", authMiddleware, syncUser);
 router.delete("/user", authMiddleware, deleteAccount);
 router.get("/users/me/profile-progress", authMiddleware, getProfileProgress);
+router.get("/public/profile/:uid", getPublicProfile);
 
 export default router;

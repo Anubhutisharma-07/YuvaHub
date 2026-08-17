@@ -11,6 +11,40 @@ export default function SettingsTab() {
   const [privDirectory, setPrivDirectory] = useState(true);
   const [privWins, setPrivWins] = useState(true);
 
+  const handlePublicProfileToggle = async (enabled: boolean) => {
+    if (syncing) return;
+    setSyncing(true);
+    setSyncError(null);
+
+    const updatedProfile = {
+      ...profile,
+      isPublicProfile: enabled
+    };
+
+    try {
+      setProfile(updatedProfile as any);
+      const token = await user.getIdToken(true);
+      const res = await fetch("/api/v1/auth/sync", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(updatedProfile)
+      });
+
+      if (!res.ok) {
+        throw new Error(`Sync failed with status: ${res.status}`);
+      }
+    } catch (err: any) {
+      console.error("[Settings] Public profile toggle failed:", err);
+      setSyncError("Failed to save privacy preference.");
+      setProfile(profile);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   if (!user) {
     return (
       <div className="p-12 text-center text-gray-500 dark:text-gray-400">
@@ -232,6 +266,11 @@ export default function SettingsTab() {
             <h3 className="text-base font-serif font-bold text-[#231f20]">Privacy Controls</h3>
           </div>
           <div className="space-y-4">
+            <ToggleOption 
+              label="Make Profile Public (shareable via /p/username)" 
+              checked={profile?.isPublicProfile || false} 
+              onChange={handlePublicProfileToggle} 
+            />
             <ToggleOption label="Show profile in mentor directory" checked={privDirectory} onChange={setPrivDirectory} />
             <ToggleOption label="Show wins in community feed" checked={privWins} onChange={setPrivWins} />
             <div className="pt-4 border-t border-[#e8ded1] flex justify-between items-center">

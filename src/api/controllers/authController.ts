@@ -4,13 +4,13 @@ import fs from "fs";
 import { dbCommand, dbQuery } from "../db.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import { sendUnauthorized, sendBadRequest, sendServiceUnavailable, sendError } from "../../lib/apiResponse.js";
+import { AppError } from "../../lib/AppError.js";
+import { sendSuccess, sendBadRequest, sendUnauthorized, sendServiceUnavailable, sendError } from "../../lib/apiResponse.js";
 
 export const authSync = async (req: Request, res: Response) => {
-  try {
     const authHeader = req.headers.authorization;
     if (typeof authHeader !== 'string' || !authHeader.startsWith("Bearer ")) {
-      return sendUnauthorized(res, "Missing token");
+      throw AppError.unauthorized("Unauthorized: Missing token");
     }
 
     const idToken = authHeader.substring(7);
@@ -38,11 +38,11 @@ export const authSync = async (req: Request, res: Response) => {
           avatarUrl = payload.picture || "";
         }
       } catch (e) {
-        return sendBadRequest(res, "Invalid mock token format");
+        throw AppError.unauthorized("Unauthorized: Invalid mock token format");
       }
 
       if (!uid) {
-        return sendUnauthorized(res, "Mock validation failed");
+        throw AppError.unauthorized("Unauthorized: Mock validation failed");
       }
     } else if (firebaseApiKey) {
       // 2. Validate Firebase ID Token using Google Identity Toolkit API
@@ -56,12 +56,12 @@ export const authSync = async (req: Request, res: Response) => {
       if (!verifyRes.ok) {
         const errData = await verifyRes.json().catch(() => ({}));
         console.error("[Auth] Firebase token verification failed:", errData);
-        return sendUnauthorized(res, "Invalid token");
+        throw AppError.unauthorized("Unauthorized: Invalid token");
       }
 
       const data = await verifyRes.json();
       if (!data.users || data.users.length === 0) {
-        return sendUnauthorized(res, "User not found in token payload");
+        throw AppError.unauthorized("Unauthorized: User not found in token payload");
       }
 
       const firebaseUser = data.users[0];
@@ -70,13 +70,12 @@ export const authSync = async (req: Request, res: Response) => {
       name = firebaseUser.displayName || "";
       avatarUrl = firebaseUser.photoUrl || "";
     } else {
-      return sendServiceUnavailable(res, "Authentication service not configured");
+      throw AppError.unauthorized("Authentication service not configured");
     }
 
     // 3. Sync profile with MongoDB
     if (!dbCommand || !dbQuery) {
-      return res.json({
-        status: "success",
+      return sendSuccess(res, {
         profile: {
           uid,
           name,
@@ -186,7 +185,7 @@ export const authSync = async (req: Request, res: Response) => {
         generatedRefreshSecret,
         { expiresIn: '7d' }
       );
-      return { accessToken, refreshToken };
+      return sendSuccess(res, { accessToken, refreshToken });
     }
 
     // Generate custom JWTs
@@ -221,61 +220,51 @@ export const authSync = async (req: Request, res: Response) => {
       );
     }
 
-    res.json({
-      status: "success",
+    return sendSuccess(res, {
       profile: updatedProfile,
       accessToken,
       refreshToken
     });
-
-  } catch (err: any) {
-    console.error("[Auth] Error syncing user:", err);
-    sendError(res, "Internal Server Error during auth sync", 500);
-  }
 };
 
 export const refreshTokens = async (req: Request, res: Response) => {
   try {
     const { refreshToken } = req.body;
     if (!refreshToken) {
-      return res.status(400).json({ error: "Refresh token is required" });
+      return sendBadRequest(res, "Refresh token is required");
     }
 
     const refreshSecret = process.env.JWT_REFRESH_SECRET;
     const jwtSecret = process.env.JWT_SECRET;
 
     if (process.env.NODE_ENV === 'production' && (!refreshSecret || !jwtSecret)) {
-      return res.status(503).json({
-        error: 'Authentication service unavailable. JWT secrets must be configured in production.',
-      });
+      return sendServiceUnavailable(res, 'Authentication service unavailable. JWT secrets must be configured in production.');
     }
 
     if (!refreshSecret || !jwtSecret) {
-      return res.status(503).json({
-        error: 'Authentication service unavailable. JWT secrets not configured.',
-      });
+      return sendServiceUnavailable(res, 'Authentication service unavailable. JWT secrets not configured.');
     }
 
     let decoded: any;
     try {
       decoded = jwt.verify(refreshToken, refreshSecret);
     } catch (e) {
-      return res.status(401).json({ error: "Invalid or expired refresh token" });
+      return sendUnauthorized(res, "Invalid or expired refresh token");
     }
 
     if (!decoded || !decoded.uid) {
-      return res.status(401).json({ error: "Invalid refresh token payload" });
+      return sendUnauthorized(res, "Invalid refresh token payload");
     }
 
     if (!dbCommand) {
-      return res.status(500).json({ error: "Database not connected" });
+      return sendError(res, "Database not connected", 500);
     }
 
     const usersCollection = dbCommand.collection("users");
     const user = await usersCollection.findOne({ uid: decoded.uid });
 
     if (!user) {
-      return res.status(401).json({ error: "User not found" });
+      return sendUnauthorized(res, "User not found");
     }
 
     const hashedIncomingToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
@@ -289,7 +278,7 @@ export const refreshTokens = async (req: Request, res: Response) => {
         { $set: { hashedRefreshTokens: [] } }
       );
       console.warn(`[Auth] Refresh token reuse detected for user ${decoded.uid}. Revoked all sessions.`);
-      return res.status(401).json({ error: "Session revoked due to token reuse" });
+      return sendUnauthorized(res, "Session revoked due to token reuse");
     }
 
     // Generate new tokens
@@ -323,14 +312,13 @@ export const refreshTokens = async (req: Request, res: Response) => {
       }
     );
 
-    res.json({
-      status: "success",
+    return sendSuccess(res, {
       accessToken: newAccessToken,
       refreshToken: newRefreshToken
     });
   } catch (error) {
     console.error("[Auth] Error refreshing token:", error);
-    res.status(500).json({ error: "Internal server error" });
+    return sendError(res, "Internal server error", 500);
   }
 };
 
@@ -338,15 +326,13 @@ export const logout = async (req: Request, res: Response) => {
   try {
     const { refreshToken } = req.body;
     if (!refreshToken) {
-      return res.status(400).json({ error: "Refresh token is required" });
+      return sendBadRequest(res, "Refresh token is required");
     }
 
     const refreshSecret = process.env.JWT_REFRESH_SECRET;
 
     if (process.env.NODE_ENV === 'production' && !refreshSecret) {
-      return res.status(503).json({
-        error: 'Authentication service unavailable. JWT_REFRESH_SECRET must be configured in production.',
-      });
+      return sendServiceUnavailable(res, 'Authentication service unavailable. JWT_REFRESH_SECRET must be configured in production.');
     }
 
     let decoded: any;
@@ -356,7 +342,7 @@ export const logout = async (req: Request, res: Response) => {
       try {
         decoded = jwt.verify(refreshToken, refreshSecret);
       } catch (e) {
-        return res.json({ status: "success", message: "Logged out" });
+        return sendSuccess(res, { message: "Logged out" });
       }
     }
 
@@ -370,9 +356,101 @@ export const logout = async (req: Request, res: Response) => {
       );
     }
 
-    res.json({ status: "success", message: "Logged out successfully" });
+    return sendSuccess(res, { message: "Logged out successfully" });
   } catch (error) {
     console.error("[Auth] Error during logout:", error);
-    res.status(500).json({ error: "Internal server error" });
+    return sendError(res, "Internal server error", 500);
+  }
+};
+
+export const login = async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return sendUnauthorized(res, "Invalid email or password");
+    }
+
+    const firebaseApiKey = process.env.VITE_FIREBASE_API_KEY || "";
+    if (!firebaseApiKey) {
+      return sendServiceUnavailable(res, "Authentication service not configured");
+    }
+
+    const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${firebaseApiKey}`;
+    const verifyRes = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, returnSecureToken: true })
+    });
+
+    if (!verifyRes.ok) {
+      return sendUnauthorized(res, "Invalid email or password");
+    }
+
+    const data = await verifyRes.json();
+    return sendSuccess(res, { message: "Login successful", token: data.idToken });
+  } catch (error) {
+    console.error("[Auth] Login error:", error);
+    return sendUnauthorized(res, "Invalid email or password");
+  }
+};
+
+export const signup = async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return sendBadRequest(res, "Email and password are required");
+    }
+
+    const firebaseApiKey = process.env.VITE_FIREBASE_API_KEY || "";
+    if (!firebaseApiKey) {
+      return sendServiceUnavailable(res, "Authentication service not configured");
+    }
+
+    const url = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${firebaseApiKey}`;
+    const verifyRes = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, returnSecureToken: true })
+    });
+
+    if (!verifyRes.ok) {
+      const errData = await verifyRes.json().catch(() => ({}));
+      const errMsg = errData?.error?.message || "";
+      if (errMsg === "EMAIL_EXISTS") {
+        return sendSuccess(res, { message: "Account creation initiated. Check your email for further instructions." });
+      }
+      return sendBadRequest(res, "Registration failed. Please try again.");
+    }
+
+    return sendSuccess(res, { message: "Account creation initiated. Check your email for further instructions." });
+  } catch (error) {
+    console.error("[Auth] Signup error:", error);
+    return sendBadRequest(res, "Registration failed. Please try again.");
+  }
+};
+
+export const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return sendSuccess(res, { message: "If that email is registered, a password reset link has been sent." });
+    }
+
+    const firebaseApiKey = process.env.VITE_FIREBASE_API_KEY || "";
+    if (!firebaseApiKey) {
+      return sendServiceUnavailable(res, "Authentication service not configured");
+    }
+
+    const url = `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${firebaseApiKey}`;
+    const verifyRes = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ requestType: "PASSWORD_RESET", email })
+    });
+
+    return sendSuccess(res, { message: "If that email is registered, a password reset link has been sent." });
+  } catch (error) {
+    console.error("[Auth] Forgot password error:", error);
+    return sendSuccess(res, { message: "If that email is registered, a password reset link has been sent." });
   }
 };

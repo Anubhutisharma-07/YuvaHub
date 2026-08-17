@@ -9,7 +9,7 @@ import {
   getCompleteness,
   checkAlerts
 } from "../controllers/recommendationController.js";
-import { authMiddleware } from "../../middleware/auth.js";
+import { authMiddleware } from "../middlewares/auth.js";
 
 const router = Router();
 

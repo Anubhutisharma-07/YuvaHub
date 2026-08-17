@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { z } from "zod";
 import { createScholarship, getScholarships, getScholarshipById, updateScholarship, deleteScholarship, validateEligibility } from "../controllers/scholarshipController.js";
-import { authMiddleware, adminOnly } from "../../middleware/auth.js";
+import { authMiddleware, adminOnly } from "../middlewares/auth.js";
 import { cacheMiddleware } from "../middlewares/cacheMiddleware.js";
-import { validateRequest } from "../../middlewares/validateRequest.js";
+import { validateRequest } from "../middlewares/validateRequest.js";
 import { ScholarshipSchema } from "../../models/scholarshipSchema.js";
 
 const router = Router();

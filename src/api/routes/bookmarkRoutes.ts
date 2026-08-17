@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getBookmarks, addBookmark, deleteBookmark } from "../controllers/bookmarkController.js";
-import { authMiddleware } from "../../middleware/auth.js";
+import { authMiddleware } from "../middlewares/auth.js";
 
 const router = Router();
 

@@ -1,8 +1,10 @@
 import { Request, Response } from "express";
 import { dbCommand, dbQuery } from "../db.js";
+import { AppError } from "../../lib/AppError.js";
 import { ObjectId } from "mongodb";
-import { safeObjectId, normalizeParam } from "../../lib/utils.js";
+import { safeObjectId, normalizeParam, parsePagination } from "../../lib/utils.js";
 import escapeHtml from "escape-html";
+import { sendPaginated, sendSuccess, sendError, sendBadRequest } from "../../lib/apiResponse.js";
 
 const containsProfanity = (text: string): boolean => {
   const profanityRegex =
@@ -12,6 +14,7 @@ const containsProfanity = (text: string): boolean => {
 
 export const getPosts = async (req: Request, res: Response) => {
   try {
+    const { page, limit, skip } = parsePagination(req.query);
     const sort = req.query.sort === "trending" ? "trending" : "latest";
     const sortOption: any =
       sort === "trending" ? { upvotes: -1, createdAt: -1 } : { createdAt: -1 };
@@ -21,10 +24,12 @@ export const getPosts = async (req: Request, res: Response) => {
         .collection("posts")
         .find({})
         .sort(sortOption)
-        .limit(50)
+        .skip(skip)
+        .limit(limit)
         .toArray();
       if (posts.length > 0) {
-        return res.json(posts);
+        const total = await dbQuery.collection("posts").countDocuments({});
+        return sendPaginated(res, posts, page, limit, total);
       }
     }
 
@@ -79,29 +84,23 @@ export const getPosts = async (req: Request, res: Response) => {
     if (sort === "trending") {
       mockPosts.sort((a, b) => b.upvotes - a.upvotes);
     }
-    res.json(mockPosts);
+    const sliced = mockPosts.slice(skip, skip + limit);
+    return sendPaginated(res, sliced, page, limit, mockPosts.length);
   } catch (err) {
     console.error("Fetch Posts Error:", err);
-    res.status(500).json({ error: "Internal Server Error" });
+    return sendError(res, "Internal Server Error", 500);
   }
 };
 
 export const createPost = async (req: Request, res: Response) => {
-  try {
     const { title, content, author, type, tags, uid } = req.body;
     const userUid = req.user?.uid || uid || "user_anon";
     if (!content || (!author && !req.user?.name)) {
-      return res
-        .status(400)
-        .json({ error: "Missing post content or author name" });
+      throw AppError.badRequest("Missing post content or author name");
     }
 
     if (containsProfanity(title || "") || containsProfanity(content)) {
-      return res
-        .status(400)
-        .json({
-          error: "Post contains inappropriate language or prohibited keywords.",
-        });
+      throw AppError.badRequest("Post contains inappropriate language or prohibited keywords.");
     }
 
     const post = {
@@ -122,31 +121,30 @@ export const createPost = async (req: Request, res: Response) => {
 
     if (dbCommand) {
       const result = await dbCommand.collection("posts").insertOne(post);
-      return res
-        .status(201)
-        .json({
+      return sendSuccess(
+        res,
+        {
           ...post,
           _id: result.insertedId,
           id: result.insertedId.toString(),
-        });
+        },
+        201,
+      );
     }
 
-    res
-      .status(201)
-      .json({ ...post, _id: "post_" + Date.now(), id: "post_" + Date.now() });
-  } catch (err) {
-    console.error("Create Post Error:", err);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+    return sendSuccess(
+      res,
+      { ...post, _id: "post_" + Date.now(), id: "post_" + Date.now() },
+      201,
+    );
 };
 
 export const deletePost = async (req: Request, res: Response) => {
-  try {
     // Issue #285: route params can be `string | string[]` at runtime.
     // Normalize before any string operation or ObjectId construction.
     const idStr = normalizeParam(req.params.postId);
     if (!idStr) {
-      return res.status(400).json({ error: "Missing or invalid postId" });
+      return sendBadRequest(res, "Missing or invalid postId");
     }
     if (dbCommand) {
       const oid = safeObjectId(idStr);
@@ -155,54 +153,42 @@ export const deletePost = async (req: Request, res: Response) => {
         .collection("posts")
         .deleteOne({ $or: [{ _id: queryId }, { id: idStr }] });
     }
-    res.json({ success: true, message: "Post deleted successfully" });
-  } catch (err) {
-    console.error("Delete Post Error:", err);
-    res.status(500).json({ error: "Failed to delete post" });
-  }
+    sendSuccess(res, { message: "Post deleted successfully" });
 };
 
 export const getPostById = async (req: Request, res: Response) => {
-  try {
     // Issue #285: normalize `string | string[]` param BEFORE checking DB
     // availability — an invalid param is a client error (400) regardless of
     // whether the database is connected.  This matches the order used by
     // deletePost, getComments, createComment, editComment, and upvotePost.
     const idStr = normalizeParam(req.params.postId);
     if (!idStr) {
-      return res.status(400).json({ error: "Missing or invalid postId" });
+      return sendBadRequest(res, "Missing or invalid postId");
     }
-    if (!dbCommand || !dbQuery)
-      return res.status(503).json({ error: "Database not available" });
+    if (!dbCommand || !dbQuery) throw AppError.serviceUnavailable("Database not available");
 
     const oid = safeObjectId(idStr);
     const queryId = oid || idStr;
 
     const post = await dbQuery.collection("posts").findOne({ _id: queryId });
     if (!post) {
-      return res.status(404).json({ error: "Post not found" });
+      throw AppError.notFound("Post not found");
     }
-    res.json(post);
-  } catch (err) {
-    console.error("Fetch Post Error:", err);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+    sendSuccess(res, post);
 };
 
 export const createComment = async (req: Request, res: Response) => {
-  try {
     // Issue #285: normalize `string | string[]` param before use.
     const postIdStr = normalizeParam(req.params.postId);
     if (!postIdStr) {
-      return res.status(400).json({ error: "Missing or invalid postId" });
+      return sendBadRequest(res, "Missing or invalid postId");
     }
     const { content, author, parentId } = req.body;
 
     if (!content || !author) {
-      return res.status(400).json({ error: "Missing content or author" });
+      return sendBadRequest(res, "Missing content or author");
     }
-    if (!dbCommand || !dbQuery)
-      return res.status(503).json({ error: "Database not available" });
+    if (!dbCommand || !dbQuery) throw AppError.serviceUnavailable("Database not available");
 
     const commentId = new ObjectId();
     let path = "";
@@ -214,7 +200,7 @@ export const createComment = async (req: Request, res: Response) => {
         .collection("comments")
         .findOne({ _id: parentQueryId });
       if (!parentComment) {
-        return res.status(404).json({ error: "Parent comment not found" });
+        throw AppError.notFound("Parent comment not found");
       }
       path = parentComment.path + commentId.toString() + ",";
     } else {
@@ -235,28 +221,22 @@ export const createComment = async (req: Request, res: Response) => {
     };
 
     await dbCommand.collection("comments").insertOne(comment);
-    res.status(201).json(comment);
-  } catch (err) {
-    console.error("Create Comment Error:", err);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+    return sendSuccess(res, comment, 201);
 };
 
 export const editComment = async (req: Request, res: Response) => {
-  try {
     // Issue #285: normalize both `:postId` and `:commentId` params.
     const postIdStr = normalizeParam(req.params.postId);
     const commentIdStr = normalizeParam(req.params.commentId);
     if (!postIdStr || !commentIdStr) {
-      return res.status(400).json({ error: "Missing or invalid postId/commentId" });
+      return sendBadRequest(res, "Missing or invalid postId/commentId");
     }
     const { content } = req.body;
 
     if (!content) {
-      return res.status(400).json({ error: "Missing content" });
+      return sendBadRequest(res, "Missing content");
     }
-    if (!dbCommand || !dbQuery)
-      return res.status(503).json({ error: "Database not available" });
+    if (!dbCommand || !dbQuery) throw AppError.serviceUnavailable("Database not available");
 
     const oid = safeObjectId(commentIdStr);
     const queryId = oid || commentIdStr;
@@ -269,23 +249,18 @@ export const editComment = async (req: Request, res: Response) => {
 
     const updatedComment = (result as any)?.value || result;
     if (!updatedComment) {
-      return res.status(404).json({ error: "Comment not found" });
+      throw AppError.notFound("Comment not found");
     }
-    res.json(updatedComment);
-  } catch (err) {
-    console.error("Edit Comment Error:", err);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+    sendSuccess(res, updatedComment);
 };
 
 export const getComments = async (req: Request, res: Response) => {
-  try {
     // Issue #285: normalize `string | string[]` param BEFORE calling
     // `.replace()` on it — the old code would crash with
     // `postId.replace is not a function` if Express delivered an array.
     const postIdStr = normalizeParam(req.params.postId);
     if (!postIdStr) {
-      return res.status(400).json({ error: "Missing or invalid postId" });
+      return sendBadRequest(res, "Missing or invalid postId");
     }
     if (dbQuery) {
       const escapedPostId = postIdStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -295,46 +270,42 @@ export const getComments = async (req: Request, res: Response) => {
         .toArray();
 
       if (comments.length > 0) {
-        return res.json(comments);
+        return sendSuccess(res, { comments });
       }
     }
 
-    res.json([
-      {
-        _id: "c_101",
-        postId: postIdStr,
-        author: "Neha Sharma",
-        content: "Great resource! Thanks for sharing the roadmap repo.",
-        createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-      },
-      {
-        _id: "c_102",
-        postId: postIdStr,
-        author: "Vikas Kumar",
-        content: "Super helpful! Added to my study bookmarks.",
-        createdAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-      },
-    ]);
-  } catch (err) {
-    console.error("Fetch Comments Error:", err);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+    sendSuccess(res, {
+      comments: [
+        {
+          _id: "c_101",
+          postId: postIdStr,
+          author: "Neha Sharma",
+          content: "Great resource! Thanks for sharing the roadmap repo.",
+          createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+        },
+        {
+          _id: "c_102",
+          postId: postIdStr,
+          author: "Vikas Kumar",
+          content: "Super helpful! Added to my study bookmarks.",
+          createdAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+        },
+      ],
+    });
 };
 
 export const upvotePost = async (req: Request, res: Response) => {
-  try {
     // Issue #285: normalize `string | string[]` param before use.
     const idStr = normalizeParam(req.params.postId);
     if (!idStr) {
-      return res.status(400).json({ error: "Missing or invalid postId" });
+      return sendBadRequest(res, "Missing or invalid postId");
     }
     const userId = req.user?.uid;
 
     if (!userId) {
-      return res.status(400).json({ error: "Missing userId" });
+      return sendBadRequest(res, "Missing userId");
     }
-    if (!dbCommand || !dbQuery)
-      return res.status(503).json({ error: "Database not available" });
+    if (!dbCommand || !dbQuery) throw AppError.serviceUnavailable("Database not available");
 
     const oid = safeObjectId(idStr);
     const queryId = oid || idStr;
@@ -349,16 +320,10 @@ export const upvotePost = async (req: Request, res: Response) => {
     if (result.matchedCount === 0) {
       const post = await dbQuery.collection("posts").findOne({ _id: queryId });
       if (!post) {
-        return res.status(404).json({ error: "Post not found" });
+        throw AppError.notFound("Post not found");
       }
-      return res
-        .status(409)
-        .json({ error: "User has already upvoted this post" });
+      throw AppError.conflict("User has already upvoted this post");
     }
 
-    res.json({ success: true, message: "Post upvoted successfully" });
-  } catch (err) {
-    console.error("Upvote Post Error:", err);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+    sendSuccess(res, { message: "Post upvoted successfully" });
 };

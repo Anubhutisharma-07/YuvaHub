@@ -159,6 +159,19 @@ export async function cacheGet<T = unknown>(
   }
 }
 
+export async function cacheDel(...keys: string[]): Promise<boolean> {
+  if (!keys.length || !redisClient || redisClient.status !== "ready") {
+    return false;
+  }
+  try {
+    await redisClient.del(...keys);
+    return true;
+  } catch (err) {
+    console.error(`[Cache] Redis del error for keys ${keys.join(", ")}:`, err);
+    return false;
+  }
+}
+
 export async function getOrSet<T>(
   key: string,
   factory: () => Promise<T>,

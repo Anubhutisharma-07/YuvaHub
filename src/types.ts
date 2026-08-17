@@ -47,6 +47,9 @@ export interface UserProfile {
   interests?: string[];
   recommendationPreferences?: RecommendationPreferences;
   profileCompleteness?: number;
+  points?: number;
+  badges?: string[];
+  isPublicProfile?: boolean;
 }
 
 export interface RecommendationPreferences {
