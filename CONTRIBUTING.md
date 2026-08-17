@@ -291,17 +291,28 @@ git merge upstream/main
 ├── src/
 │   ├── api/
 │   │   ├── controllers/   # Express route handlers (one file per feature)
-│   │   ├── middleware/    # Auth, rate-limiting, validation middleware
+│   │   ├── middlewares/   # Auth, rate-limiting, validation, and observability middleware
 │   │   ├── routes/        # Express router definitions
+│   │   ├── services/      # Internal API services
+│   │   ├── versioning/    # API versioning registry & headers
 │   │   └── db.ts          # MongoDB connection helpers
-│   ├── components/        # React UI components
+│   ├── components/        # React UI components (about, admin, dashboard, tabs, ui)
 │   ├── config/            # App-wide config (swagger, env validation, etc.)
 │   ├── consumers/         # RabbitMQ event consumers
+│   ├── context/           # React context providers
 │   ├── events/            # EventBus abstraction
 │   ├── hooks/             # React custom hooks
+│   ├── lib/               # Utility libraries (apiResponse, utils, firebase)
+│   ├── models/            # Zod & database schemas
 │   ├── pages/             # React page components (one per route)
+│   ├── queues/            # BullMQ background job queues
+│   ├── routes/            # Client routing
+│   ├── scrapers/          # Scraper adapters and definitions
 │   ├── services/          # Background services (search sync, scrapers, DNL)
-│   └── socket/            # Socket.IO event setup
+│   ├── socket/            # Socket.IO event setup
+│   ├── types/             # Shared TypeScript type definitions
+│   ├── utils/             # Helper utilities
+│   └── workers/           # Background workers (email, push, scrapers, mentorship)
 ├── firestore-tests/       # Firebase Firestore rules emulator tests
 ├── functions/             # Firebase Cloud Functions
 ├── scripts/               # Utility scripts (secret boundary checks, etc.)

@@ -3,7 +3,7 @@ import { getOpportunities, getTrendingOpportunities, semanticSearch, getLatestOp
 import { authMiddleware, adminOnly } from "../middlewares/auth.js";
 import { cacheMiddleware } from "../middlewares/cacheMiddleware.js";
 import { markdownNegotiation } from "../middlewares/markdownNegotiation.js";
-import { validateRequest } from "../../middleware/validateRequest.js";
+import { validateRequest } from "../middlewares/validateRequest.js";
 import { z } from "zod";
 
 const submitOpportunitySchema = z.object({

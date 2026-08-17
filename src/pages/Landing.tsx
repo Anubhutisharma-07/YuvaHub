@@ -8,14 +8,14 @@ import { gsap } from 'gsap';
 import { signInWithGoogle, signInWithGithub } from '../lib/firebase';
 import { useAppContext } from '../context/AppContext';
 import LandingNavbar from '../components/LandingNavbar';
-import AboutTab from '../components/Tabs/About';
-import Privacy from '../components/Tabs/Privacy';
-import Terms from '../components/Tabs/Terms';
-import Security from '../components/Tabs/Security';
-import HelpCenter from '../components/Tabs/HelpCenter';
-import Support from '../components/Tabs/Support';
-import Legal from '../components/Tabs/Legal';
-import FAQ from '../components/Tabs/FAQ';
+import AboutTab from '../components/tabs/About';
+import Privacy from '../components/tabs/Privacy';
+import Terms from '../components/tabs/Terms';
+import Security from '../components/tabs/Security';
+import HelpCenter from '../components/tabs/HelpCenter';
+import Support from '../components/tabs/Support';
+import Legal from '../components/tabs/Legal';
+import FAQ from '../components/tabs/FAQ';
 
 // Reusable Animated Stat Counter Component
 function StatCounter({ targetNumber, suffix = '', prefix = '', duration = 2 }: { targetNumber: number; suffix?: string; prefix?: string; duration?: number }) {
