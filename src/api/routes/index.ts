@@ -21,6 +21,7 @@ import analyticsRoutes from "./analyticsRoutes.js";
 import recommendationRoutes from "./recommendationRoutes.js";
 import eventRoutes from "./eventRoutes.js";
 import leaderboardRoutes from "./leaderboardRoutes.js";
+import experienceRoutes from "./experienceRoutes.js";
 import { errorHandler } from "../middlewares/errorHandler.js";
 import { apiVersionHeaders } from "../versioning/middleware.js";
 
@@ -51,6 +52,7 @@ const routes = [
   recommendationRoutes,
   eventRoutes,
   leaderboardRoutes,
+  experienceRoutes,
 ];
 
 // Mount all routes onto v1Router

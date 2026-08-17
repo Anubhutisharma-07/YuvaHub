@@ -1,7 +1,10 @@
 import { z } from 'zod';
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({ 
+  path: process.env.NODE_ENV === 'test' ? '.env.test' : '.env',
+  override: process.env.NODE_ENV === 'test' 
+});
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -31,6 +34,12 @@ const envSchema = z.object({
   CLOUDINARY_API_KEY: z.string().optional(),
   CLOUDINARY_API_SECRET: z.string().optional(),
   CLOUDINARY_CLOUD_NAME: z.string().optional(),
+
+  START_NODE_SCRAPER: z.enum(['true', 'false']).optional(),
+  MONGODB_COMMAND_URI: z.string().optional(),
+  MONGODB_QUERY_URI: z.string().optional(),
+  MONGODB_COMMAND_DB: z.string().optional(),
+  MONGODB_QUERY_DB: z.string().optional(),
 });
 
 const _env = envSchema.safeParse(process.env);

@@ -23,7 +23,7 @@ export const authSync = async (req: Request, res: Response) => {
     let name = "";
     let avatarUrl = "";
 
-    const useMockAuth = process.env.NODE_ENV === "development" && process.env.ENABLE_MOCK_AUTH === "true";
+    const useMockAuth = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test") && process.env.ENABLE_MOCK_AUTH === "true";
 
     if (useMockAuth) {
       // Mock verification for local offline development without a Firebase API key
