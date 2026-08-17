@@ -1,7 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import {
   LayoutDashboard, Globe, PlusCircle, Users, User, Menu, X, Bookmark, Sparkles, MessageSquare, Settings, Sun, Moon, Mic, Trophy,
-  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase
+  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock
 } from 'lucide-react';
 import { signInWithGoogle, logout } from './lib/firebase';
 import { UserProfile } from './types';
@@ -61,6 +61,7 @@ const Teams = lazy(() => import('./components/Tabs/Teams'));
 const MockInterviewRoom = lazy(() => import('./pages/MockInterviewRoom'));
 const ApplicationTracker = lazy(() => import('./pages/ApplicationTracker').then(m => ({ default: m.ApplicationTracker })));
 const Leaderboard = lazy(() => import('./pages/Leaderboard').then(m => ({ default: m.Leaderboard })));
+const FocusRoom = lazy(() => import('./pages/FocusRoom').then(m => ({ default: m.FocusRoom })));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
@@ -153,6 +154,8 @@ const getSeoPropsForTab = (tab: string) => {
       return { title: "Admin Dashboard | YuvaHub", description: "YuvaHub administrative operations control panel." };
     case 'ai_assistant':
       return { title: "AI Assistant | YuvaHub", description: "Interact with our intelligent career assistant for optimization and guidance." };
+    case 'focus_room':
+      return { title: "Global Focus Room | YuvaHub", description: "Join the global Pomodoro focus room and study with other students." };
     case 'faq':
       return { title: "Help Center & FAQ | YuvaHub", description: "Find answers to common questions, troubleshoot issues, and learn how to use YuvaHub effectively." };
     default:
@@ -272,6 +275,7 @@ function App() {
       items: [
         { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
         { id: 'mentorship', label: 'Mentorship', icon: GraduationCap },
+        { id: 'focus_room', label: 'Global Focus Room', icon: Clock },
         { id: 'bounty_board', label: 'Bounty Board', icon: Coins },
         { id: 'opensource_bounties', label: 'Open Source Bounties', icon: Code2 },
         { id: 'community', label: 'Community Forum', icon: MessageSquare },
@@ -337,6 +341,7 @@ function App() {
       case 'star_interview': return <StarInterviewStudio />;
       case 'submit': return <SubmitOpportunity />;
       case 'mentorship': return <MentorshipAdvisoryStudio />;
+      case 'focus_room': return <FocusRoom />;
       case 'bounty_board': return <BountyBoard />;
       case 'community': return <Community />;
       case 'profile': return <Profile />;
