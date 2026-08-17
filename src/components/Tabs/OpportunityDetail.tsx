@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Calendar, MapPin, FileText, ChevronRight, Clock, ExternalLink, Zap, CheckCircle, Award, Bookmark, Shield, Sparkles, Building2, Coins, ArrowRight, Share2 } from 'lucide-react';
 import { SEO } from '../SEO';
-import { fetchOpportunityById, trackInteraction, predictEligibility, generateApplyAssistBackend, searchOpportunities, generateFlashcardsBackend } from '../../services/apiClient';
+import { fetchOpportunityById, trackInteraction, predictEligibility, generateApplyAssistBackend, generateFlashcardsBackend, fetchSimilarOpportunities } from '../../services/apiClient';
 import { CURATED_FALLBACKS } from '../../services/staticFallbacks';
 import ShareModal from '../ui/ShareModal';
 import ApplyAssistModal from '../ui/ApplyAssistModal';
@@ -154,13 +154,9 @@ export default function OpportunityDetail() {
         
         // Fetch related opportunities
         try {
-          const cat = item.category || item.type || "";
-          const results = await searchOpportunities(cat, undefined);
-          if (results && results.results) {
-            const filtered = results.results
-              .filter((related: any) => related.id !== item.id)
-              .slice(0, 3);
-            setRelatedOpps(filtered);
+          const results = await fetchSimilarOpportunities(item.id || item._id);
+          if (results && results.items) {
+            setRelatedOpps(results.items);
           }
         } catch (relatedErr) {
           console.warn("Could not load related opportunities", relatedErr);
@@ -504,7 +500,7 @@ export default function OpportunityDetail() {
       {relatedOpps.length > 0 && (
         <section className="pt-8 border-t border-[#e8ded1] dark:border-slate-800">
           <h2 className="text-xl font-serif font-bold text-[#231f20] dark:text-white mb-6">
-            Related Opportunities
+            You might also like...
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {relatedOpps.map((item) => (

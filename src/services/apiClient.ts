@@ -247,6 +247,22 @@ export async function fetchLatestFeed() {
   }
 }
 
+export async function fetchSimilarOpportunities(id: string) {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/opportunities/${id}/similar`, {
+      method: 'GET'
+    });
+
+    if (!response.ok) throw new Error("API_ERROR");
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.warn("fetchSimilarOpportunities failed", error);
+    return { items: [] };
+  }
+}
+
 export async function fetchLeaderboard() {
   try {
     const response = await fetchWithRetry(`${API_BASE_URL}/leaderboard`, {
