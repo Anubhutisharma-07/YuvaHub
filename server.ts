@@ -768,7 +768,7 @@ async function bootstrap() {
       shutdownTimers.push(setInterval(() => runWeeklyDigest(dbCommand), 7 * 24 * 60 * 60 * 1000));
 
       // Node.js Central Ingestion
-      if (process.env.START_NODE_SCRAPER === "true") {
+      if ((process.env as any).START_NODE_SCRAPER === "true") {
         console.log("[Scraper] Central Ingestion daemon enabled");
         import("child_process").then(({ spawn }) => {
           spawn("npx", ["tsx", "scrape-cli.ts"], {

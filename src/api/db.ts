@@ -9,10 +9,10 @@ import { initializeSearchSync } from "../services/searchSync.js";
 
 dotenv.config();
 
-const uri = process.env.MONGODB_URI || "";
-const commandUri = process.env.MONGODB_COMMAND_URI || uri;
-const queryUri = process.env.MONGODB_QUERY_URI || uri;
-const dbName = process.env.MONGODB_DB_NAME || "yuvahub";
+const uri = (process.env as any).MONGODB_URI || "";
+const commandUri = (process.env as any).MONGODB_COMMAND_URI || uri;
+const queryUri = (process.env as any).MONGODB_QUERY_URI || uri;
+const dbName = (process.env as any).MONGODB_DB_NAME || "yuvahub";
 
 /** Interval (ms) between MongoDB reconnection attempts after fallback to MockDB. */
 const RECONNECT_INTERVAL_MS = 30_000;
@@ -54,8 +54,8 @@ async function attemptReconnect(): Promise<boolean> {
   try {
     await Promise.all([commandClient.connect(), queryClient.connect()]);
 
-    const newCommandDb = commandClient.db(process.env.MONGODB_COMMAND_DB || dbName);
-    const newQueryDb = queryClient.db(process.env.MONGODB_QUERY_DB || dbName);
+    const newCommandDb = commandClient.db((process.env as any).MONGODB_COMMAND_DB || dbName);
+    const newQueryDb = queryClient.db((process.env as any).MONGODB_QUERY_DB || dbName);
 
     // Atomic swap — all live bindings (e.g. from server.ts) will see
     // the new instances on their next access.
@@ -385,8 +385,8 @@ export async function initializeDatabase(): Promise<void> {
 
     try {
       await Promise.all([commandClient.connect(), queryClient.connect()]);
-      dbCommand = commandClient.db(process.env.MONGODB_COMMAND_DB || dbName);
-      dbQuery = queryClient.db(process.env.MONGODB_QUERY_DB || dbName);
+      dbCommand = commandClient.db((process.env as any).MONGODB_COMMAND_DB || dbName);
+      dbQuery = queryClient.db((process.env as any).MONGODB_QUERY_DB || dbName);
       console.log(`[Database] Connected to Command and Query MongoDB pools`);
       setupDNL(dbCommand);
       initializeSearchSync(dbQuery).catch(err => console.error('[SearchSync] Non-fatal init error:', err));
