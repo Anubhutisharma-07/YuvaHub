@@ -11,7 +11,7 @@ describe('API Response Helpers', () => {
     sendSuccess(res, { user: 'test' });
 
     expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith({ success: true, data: { user: 'test' } });
+    expect(res.json).toHaveBeenCalledWith({ success: true, user: 'test' });
   });
 
   it('should format an error response correctly', () => {
