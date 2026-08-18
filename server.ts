@@ -25,7 +25,7 @@ import { createNotificationConsumer } from "./src/consumers/notificationConsumer
 import { runDeadlineChecks, runWeeklyDigest } from "./src/services/deadlineScheduler.js";
 import { ScholarshipSchema, AIEvaluationResponseSchema } from "./src/models/scholarshipSchema.js";
 import { isToxic, createToxicityMiddleware } from "./src/services/toxicity.js";
-import { authenticateUser, deleteFirebaseUser } from "./src/middleware/auth.js";
+import { authenticateUser, deleteFirebaseUser } from "./src/api/middlewares/auth.js";
 import { meiliClient, initializeSearchSync, stopSearchSync } from "./src/services/searchSync.js";
 import { ExpressAdapter } from '@bull-board/express';
 import { createBullBoard } from '@bull-board/api';
@@ -51,7 +51,7 @@ import { setupSocketEvents } from "./src/socket/index.js";
 import { analyticsBuffer } from "./src/api/analytics.js";
 import apiRoutes from "./src/api/routes/index.js";
 import diagnosticsRoutes from "./src/api/routes/diagnostics.js";
-import { requestLogger } from "./src/middleware/observability.js";
+import { requestLogger } from "./src/api/middlewares/observability.js";
 import { apiVersionHeaders } from "./src/api/versioning/middleware.js";
 import swaggerSpec from "./src/config/swagger.js";
 import { validateStartupEnv } from "./src/config/envValidation.js";

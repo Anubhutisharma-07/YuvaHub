@@ -42,7 +42,7 @@ export default function Opportunities() {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 8;
 
-  const fetchData = async (q: string, isRetry = false) => {
+  const fetchData = async (q: string, targetPage = 1, isRetry = false) => {
     isRetry ? setRetrying(true) : setLoading(true);
     setError(null);
     try {
@@ -73,11 +73,12 @@ export default function Opportunities() {
       const results = await searchOpportunities(
         q || "",
         filterPayload,
-        undefined,
+        targetPage,
+        ITEMS_PER_PAGE,
         sortBy
       );
       setSearchData(results);
-      setCurrentPage(1);
+      setCurrentPage(targetPage);
     } catch (err) {
       console.error("[Opportunities] Failed to load:", err);
       setError('Unable to load opportunities. Please try again.');
@@ -89,7 +90,7 @@ export default function Opportunities() {
 
   useEffect(() => {
     const handler = setTimeout(() => {
-      fetchData(searchQuery);
+      fetchData(searchQuery, 1);
     }, 350);
 
     return () => clearTimeout(handler);
@@ -117,16 +118,13 @@ export default function Opportunities() {
   };
 
   const filteredResults = searchData?.results ?? [];
-  const totalItems = filteredResults.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
-  const paginatedResults = filteredResults.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+  const totalItems = searchData?.pagination?.totalItems ?? searchData?.meta?.total_found ?? filteredResults.length;
+  const totalPages = searchData?.pagination?.totalPages ?? Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
+  const paginatedResults = filteredResults;
 
   const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setCurrentPage(newPage);
+    if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
+      fetchData(searchQuery, newPage);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -443,7 +441,7 @@ export default function Opportunities() {
             loading={loading}
             error={error}
             empty={filteredResults.length === 0}
-            onRetry={() => void fetchData(searchQuery, true)}
+            onRetry={() => void fetchData(searchQuery, currentPage, true)}
             retrying={retrying}
             skeletonCount={4}
             emptyTitle="No opportunities found"
@@ -464,38 +462,54 @@ export default function Opportunities() {
 
           {/* Clean Pagination */}
           {!loading && filteredResults.length > 0 && totalPages > 1 && (
-            <div className="flex items-center justify-between pt-6 border-t border-[#e8ded1] dark:border-slate-800 text-xs">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-[#e8ded1] dark:border-slate-800 text-xs">
               <span className="text-[#8c7569]">
-                Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
+                Showing <strong>{(currentPage - 1) * ITEMS_PER_PAGE + 1}</strong> - <strong>{Math.min(currentPage * ITEMS_PER_PAGE, totalItems)}</strong> of <strong>{totalItems}</strong> opportunities (Page {currentPage} of {totalPages})
               </span>
 
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="p-1.5 rounded-lg border border-[#e8ded1] dark:border-slate-800 bg-white dark:bg-slate-900 disabled:opacity-40"
+                  className="p-1.5 rounded-lg border border-[#e8ded1] dark:border-slate-800 bg-white dark:bg-slate-900 disabled:opacity-40 hover:bg-[#f6efe2] transition-colors"
+                  aria-label="Previous Page"
                 >
                   <ChevronLeft className="w-4 h-4 text-[#231f20] dark:text-slate-300" />
                 </button>
 
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => handlePageChange(p)}
-                    className={`w-7 h-7 rounded-lg text-xs font-bold ${
-                      currentPage === p
-                        ? 'bg-[#231f20] text-white'
-                        : 'bg-white border border-[#e8ded1] text-[#603620] hover:bg-[#f6efe2]'
-                    }`}
-                  >
-                    {p}
-                  </button>
-                ))}
+                {(() => {
+                  const getPages = () => {
+                    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+                    if (currentPage <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
+                    if (currentPage >= totalPages - 3) return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+                    return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+                  };
+                  return getPages().map((p, idx) => {
+                    if (p === '...') {
+                      return <span key={`ellipsis-${idx}`} className="px-1 text-[#8c7569]">...</span>;
+                    }
+                    const pageNum = Number(p);
+                    return (
+                      <button
+                        key={`page-${pageNum}`}
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`min-w-[28px] h-7 px-2 rounded-lg text-xs font-bold transition-colors ${
+                          currentPage === pageNum
+                            ? 'bg-[#231f20] text-white'
+                            : 'bg-white border border-[#e8ded1] text-[#603620] hover:bg-[#f6efe2]'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  });
+                })()}
 
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="p-1.5 rounded-lg border border-[#e8ded1] dark:border-slate-800 bg-white dark:bg-slate-900 disabled:opacity-40"
+                  className="p-1.5 rounded-lg border border-[#e8ded1] dark:border-slate-800 bg-white dark:bg-slate-900 disabled:opacity-40 hover:bg-[#f6efe2] transition-colors"
+                  aria-label="Next Page"
                 >
                   <ChevronRight className="w-4 h-4 text-[#231f20] dark:text-slate-300" />
                 </button>
