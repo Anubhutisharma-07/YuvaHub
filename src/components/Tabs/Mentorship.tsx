@@ -91,7 +91,6 @@ export default function Mentorship() {
           >
             <span className="flex items-center gap-1.5"><Bot className="w-3.5 h-3.5" /> AI Mentor</span>
           </button>
-          </div>
         </div>
       </header>
 
