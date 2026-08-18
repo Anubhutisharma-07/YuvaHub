@@ -603,15 +603,18 @@ export async function searchOpportunities(
     isFree?: boolean;
     verifiedOnly?: boolean;
   },
-  cursor?: string,
+  page: number = 1,
+  limit: number = 12,
   sortBy: string = 'Most relevant'
 ) {
-  const cacheKey = generateCacheKey('search', { query: query.toLowerCase().trim(), ...filters, cursor, sortBy });
+  const cacheKey = generateCacheKey('search', { query: query.toLowerCase().trim(), ...filters, page, limit, sortBy });
 
   try {
     const searchParams = new URLSearchParams();
     searchParams.append('q', query);
     searchParams.append('sortBy', sortBy);
+    searchParams.append('page', page.toString());
+    searchParams.append('limit', limit.toString());
 
     if (filters) {
       if (filters.types && filters.types.length > 0) {
@@ -642,8 +645,6 @@ export async function searchOpportunities(
         searchParams.append('verifiedOnly', String(filters.verifiedOnly));
       }
     }
-
-    if (cursor) searchParams.append('cursor', cursor);
 
     const url = `${API_BASE_URL}/search?${searchParams.toString()}`;
 
