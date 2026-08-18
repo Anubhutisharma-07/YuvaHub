@@ -441,7 +441,7 @@ export default function Opportunities() {
             loading={loading}
             error={error}
             empty={filteredResults.length === 0}
-            onRetry={() => void fetchData(searchQuery, true)}
+            onRetry={() => void fetchData(searchQuery, currentPage, true)}
             retrying={retrying}
             skeletonCount={4}
             emptyTitle="No opportunities found"
