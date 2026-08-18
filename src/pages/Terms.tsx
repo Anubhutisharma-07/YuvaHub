@@ -1,1 +1,1 @@
-export { default } from '../components/Tabs/Terms';
+export { default } from '../components/tabs/Terms';
