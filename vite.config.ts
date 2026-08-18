@@ -17,7 +17,6 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       tailwindcss(),
-      viteSingleFile(),
       sentryVitePlugin({
         org: env.SENTRY_ORG || process.env.SENTRY_ORG,
         project: env.SENTRY_PROJECT || process.env.SENTRY_PROJECT,
@@ -37,7 +36,7 @@ export default defineConfig(({ mode }) => {
       'process.env.VITE_EMAILJS_PUBLIC_KEY': JSON.stringify(env.VITE_EMAILJS_PUBLIC_KEY),
     },
     build: {
-      sourcemap: true,
+      sourcemap: mode !== "production",
     },
     resolve: {
       alias: {
