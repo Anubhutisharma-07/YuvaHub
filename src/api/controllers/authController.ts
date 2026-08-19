@@ -74,6 +74,10 @@ export const authSync = async (req: Request, res: Response) => {
     }
 
     // 3. Sync profile with MongoDB
+    const adminEmailsEnv = process.env.ADMIN_EMAILS || "uditt490@gmail.com";
+    const adminEmails = adminEmailsEnv.split(",").map(e => e.trim().toLowerCase());
+    const isAdmin = email && adminEmails.includes(email.toLowerCase());
+
     if (!dbCommand || !dbQuery) {
       return sendSuccess(res, {
         profile: {
@@ -81,7 +85,7 @@ export const authSync = async (req: Request, res: Response) => {
           name,
           email,
           avatarUrl,
-          role: email === "uditt490@gmail.com" ? "admin" : "student"
+          role: isAdmin ? "admin" : "student"
         }
       });
     }
@@ -89,7 +93,7 @@ export const authSync = async (req: Request, res: Response) => {
     const usersCollection = dbCommand.collection("users");
     const existingUser = await usersCollection.findOne({ uid });
 
-    const role = email === "uditt490@gmail.com" ? "admin" : "student";
+    const role = isAdmin ? "admin" : "student";
 
     let updatedProfile;
     if (existingUser) {

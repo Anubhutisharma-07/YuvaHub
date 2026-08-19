@@ -77,7 +77,7 @@ app.use("/api", apiVersionHeaders());
 Sentry.init({
   dsn: config.SENTRY_DSN,
   tracesSampleRate: 1.0,
-});
+} as any);
 // --- Application Tracker API ---
 
 
