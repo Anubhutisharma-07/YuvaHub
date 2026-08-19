@@ -1,1 +1,1 @@
-export { default } from '../components/Tabs/Guidelines';
+export { default } from '../components/tabs/Guidelines';

@@ -1,15 +1,12 @@
 import { GoogleGenAI } from "@google/genai";
+import { config } from "../config/env.js";
 
 let _genAI: GoogleGenAI | null = null;
 
 export function getGenAI(): GoogleGenAI | null {
   if (!_genAI) {
-    if (!process.env.GEMINI_API_KEY) {
-      console.warn("GEMINI_API_KEY not set. AI features will fallback.");
-      return null;
-    }
     _genAI = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY,
+      apiKey: config.GEMINI_API_KEY,
       httpOptions: {
         headers: {
           'User-Agent': 'aistudio-build',
