@@ -160,18 +160,23 @@ export default function Community() {
     }
 
     setActiveCommentPostId(postId);
-    if (!commentsMap[postId]) {
+
+    const hasCache = !!commentsMap[postId];
+    if (!hasCache) {
       setLoadingCommentsPostId(postId);
-      try {
-        const res = await fetch(`/api/v1/posts/${postId}/comments`);
-        if (res.ok) {
-          const data = await res.json();
-          const comments = Array.isArray(data) ? data : (data.comments ?? []);
-          setCommentsMap(prev => ({ ...prev, [postId]: comments }));
-        }
-      } catch (err) {
-        console.error('Error loading comments:', err);
-      } finally {
+    }
+
+    try {
+      const res = await fetch(`/api/v1/posts/${postId}/comments`);
+      if (res.ok) {
+        const data = await res.json();
+        const comments = Array.isArray(data) ? data : (data.comments ?? []);
+        setCommentsMap(prev => ({ ...prev, [postId]: comments }));
+      }
+    } catch (err) {
+      console.error('Error loading comments:', err);
+    } finally {
+      if (!hasCache) {
         setLoadingCommentsPostId(null);
       }
     }
