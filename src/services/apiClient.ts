@@ -246,6 +246,36 @@ export async function fetchLatestFeed() {
     return { items: [], num_results: 0 };
   }
 }
+
+export async function fetchSimilarOpportunities(id: string) {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/opportunities/${id}/similar`, {
+      method: 'GET'
+    });
+
+    if (!response.ok) throw new Error("API_ERROR");
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.warn("fetchSimilarOpportunities failed", error);
+    return { items: [] };
+  }
+}
+
+export async function fetchLeaderboard() {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/leaderboard`, {
+      method: "GET"
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    return await response.json();
+  } catch (error) {
+    console.warn("fetchLeaderboard failed", error);
+    return { data: { leaderboard: [] } };
+  }
+}
+
 export async function fetchApplications(status?: string) {
   const params = new URLSearchParams();
 
@@ -573,15 +603,18 @@ export async function searchOpportunities(
     isFree?: boolean;
     verifiedOnly?: boolean;
   },
-  cursor?: string,
+  page: number = 1,
+  limit: number = 12,
   sortBy: string = 'Most relevant'
 ) {
-  const cacheKey = generateCacheKey('search', { query: query.toLowerCase().trim(), ...filters, cursor, sortBy });
+  const cacheKey = generateCacheKey('search', { query: query.toLowerCase().trim(), ...filters, page, limit, sortBy });
 
   try {
     const searchParams = new URLSearchParams();
     searchParams.append('q', query);
     searchParams.append('sortBy', sortBy);
+    searchParams.append('page', page.toString());
+    searchParams.append('limit', limit.toString());
 
     if (filters) {
       if (filters.types && filters.types.length > 0) {
@@ -612,8 +645,6 @@ export async function searchOpportunities(
         searchParams.append('verifiedOnly', String(filters.verifiedOnly));
       }
     }
-
-    if (cursor) searchParams.append('cursor', cursor);
 
     const url = `${API_BASE_URL}/search?${searchParams.toString()}`;
 
@@ -1044,6 +1075,23 @@ export async function fetchProfileCompletenessScore() {
   } catch (error) {
     console.warn("fetchProfileCompletenessScore fallback:", error);
     return null;
+  }
+}
+
+export async function generateFlashcardsBackend(jobDescription: string) {
+  try {
+    const url = `${API_BASE_URL}/ai/flashcards`;
+    const response = await fetchWithRetry(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jobDescription }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Failed to generate flashcards");
+    return result.data?.flashcards || [];
+  } catch (error) {
+    console.warn("generateFlashcardsBackend error:", error);
+    throw error;
   }
 }
 

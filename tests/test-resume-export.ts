@@ -40,14 +40,14 @@ describe('Resume PDF Export', () => {
     mockReq.user = null;
     await handleExportResumeToPDF(mockReq, mockRes);
     expect(mockRes.status).toHaveBeenCalledWith(401);
-    expect(mockRes.json).toHaveBeenCalledWith({ error: 'Unauthorized' });
+    expect(mockRes.json).toHaveBeenCalledWith({ success: false, error: 'Unauthorized' });
   });
 
   it('should return 404 if user profile is not found', async () => {
     mockUsersCol.findOne.mockResolvedValue(null);
     await handleExportResumeToPDF(mockReq, mockRes);
     expect(mockRes.status).toHaveBeenCalledWith(404);
-    expect(mockRes.json).toHaveBeenCalledWith({ error: 'User profile not found' });
+    expect(mockRes.json).toHaveBeenCalledWith({ success: false, error: 'User profile not found' });
   });
 
   it('should generate PDF and return as buffer stream', async () => {

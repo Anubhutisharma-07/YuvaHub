@@ -8,6 +8,9 @@ export const ApplicationStatusSchema = z.enum([
   "submitted",
   "failed",
   "retrying",
+  "interviewing",
+  "offer",
+  "rejected",
 ]);
 
 export type ApplicationStatus = z.infer<

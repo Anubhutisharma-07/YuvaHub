@@ -4,8 +4,9 @@ import { useSocket } from '../context/SocketContext';
 import VoiceOrb from '../components/VoiceOrb';
 import {
   Mic, MicOff, Square, Play, Volume2, CheckCircle2, RotateCcw,
-  Sparkles, Brain, FileText
+  Sparkles, Brain, FileText, MessageSquare, PenTool
 } from 'lucide-react';
+import Whiteboard from '../components/Whiteboard';
 
 // Web Speech API Types
 declare global {
@@ -35,6 +36,7 @@ const MockInterviewRoom: React.FC = () => {
   const [voiceInputFallback, setVoiceInputFallback] = useState(false); // show text input when voice fails
   const [textAnswer, setTextAnswer] = useState('');        // text fallback answer
   const [isAiThinking, setIsAiThinking] = useState(false); // AI generating response
+  const [activeTab, setActiveTab] = useState<'chat' | 'whiteboard'>('chat'); // chat or whiteboard view
 
   const recognitionRef = useRef<any>(null);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
@@ -512,100 +514,120 @@ Your response:`;
           >
             {/* Header */}
             <div className="px-5 py-3.5 border-b border-[#e8ded1] dark:border-slate-800 flex items-center justify-between flex-shrink-0">
-              <h2 className="font-serif font-bold text-sm text-[#231f20] dark:text-white">Interview Transcript</h2>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setActiveTab('chat')}
+                  className={`font-serif font-bold text-sm flex items-center gap-1.5 transition-colors ${activeTab === 'chat' ? 'text-[#231f20] dark:text-white border-b-2 border-[#b56b37] pb-1' : 'text-[#8c7569] dark:text-slate-500 hover:text-[#231f20] dark:hover:text-slate-300 pb-1'}`}
+                >
+                  <MessageSquare className="w-4 h-4" /> Transcript
+                </button>
+                <button
+                  onClick={() => setActiveTab('whiteboard')}
+                  className={`font-serif font-bold text-sm flex items-center gap-1.5 transition-colors ${activeTab === 'whiteboard' ? 'text-[#231f20] dark:text-white border-b-2 border-[#b56b37] pb-1' : 'text-[#8c7569] dark:text-slate-500 hover:text-[#231f20] dark:hover:text-slate-300 pb-1'}`}
+                >
+                  <PenTool className="w-4 h-4" /> Whiteboard
+                </button>
+              </div>
               <span className="text-[10px] font-bold text-[#8c7569] uppercase tracking-wider">{history.length} exchanges</span>
             </div>
 
             {/* Messages — scrolls internally */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-4 min-h-0">
-              {history.length === 0 && (
-                <div className="h-full flex flex-col items-center justify-center gap-2 text-center">
-                  <Brain className="w-8 h-8 text-[#e8ded1]" />
-                  <p className="text-xs text-[#8c7569] font-medium">The interviewer will speak first.<br />Your responses will appear here.</p>
-                </div>
-              )}
-
-              {history.map((msg, idx) => (
-                <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} animate-fade-in`}>
-                  <span className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${msg.role === 'user' ? 'text-[#b56b37]' : 'text-[#63703d]'}`}>
-                    {msg.role === 'user' ? 'You' : 'AI Interviewer'}
-                  </span>
-                  <div
-                    className={`max-w-[85%] px-4 py-3 rounded-2xl text-xs font-medium leading-relaxed ${
-                      msg.role === 'user'
-                        ? 'bg-[#b56b37] text-white rounded-br-sm'
-                        : 'bg-[#fcf9f2] dark:bg-slate-800 text-[#231f20] dark:text-slate-200 border border-[#e8ded1] dark:border-slate-700 rounded-bl-sm'
-                    }`}
-                  >
-                    {msg.content}
-                  </div>
-                </div>
-              ))}
-
-              {/* Live interim speech preview */}
-              {currentSpeech && (
-                <div className="flex flex-col items-end animate-fade-in">
-                  <span className="text-[10px] font-bold uppercase tracking-wider mb-1 text-[#b56b37]">You (Speaking...)</span>
-                  <div className="max-w-[85%] px-4 py-3 rounded-2xl rounded-br-sm text-xs font-medium bg-[#b56b37]/50 text-white italic">
-                    {currentSpeech}
-                  </div>
-                </div>
-              )}
-
-              {/* AI Thinking indicator — shows while Gemini generates a response */}
-              {isAiThinking && (
-                <div className="flex flex-col items-start animate-fade-in">
-                  <span className="text-[10px] font-bold uppercase tracking-wider mb-1 text-[#63703d]">AI Interviewer</span>
-                  <div className="px-4 py-3 rounded-2xl rounded-bl-sm bg-[#fcf9f2] border border-[#e8ded1] flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#63703d] animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#63703d] animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#63703d] animate-bounce" style={{ animationDelay: '300ms' }} />
-                  </div>
-                </div>
-              )}
-
-              <div ref={transcriptEndRef} />
-            </div>
-
-            {/* Voice Error Banner + Text Fallback — pinned to bottom of chat panel */}
-            {voiceError && (
-              <div className="border-t border-amber-200 bg-amber-50 p-3 flex-shrink-0">
-                <div className="flex items-start gap-2 mb-2">
-                  <MicOff className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-[10px] font-semibold text-amber-800 leading-relaxed">{voiceError}</p>
-                </div>
-                {voiceInputFallback && (
-                  <div className="flex gap-2">
-                    <textarea
-                      rows={2}
-                      value={textAnswer}
-                      onChange={e => setTextAnswer(e.target.value)}
-                      placeholder="Type your answer and press Enter or Send..."
-                      className="flex-1 bg-white border border-amber-200 rounded-xl p-2.5 text-xs text-[#231f20] outline-none resize-none focus:border-[#b56b37] transition-colors"
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' && !e.shiftKey && textAnswer.trim()) {
-                          e.preventDefault();
-                          handleUserSpeechFinal(textAnswer.trim());
-                          setTextAnswer('');
-                        }
-                      }}
-                    />
-                    <button
-                      disabled={!textAnswer.trim()}
-                      onClick={() => {
-                        if (textAnswer.trim()) {
-                          handleUserSpeechFinal(textAnswer.trim());
-                          setTextAnswer('');
-                        }
-                      }}
-                      className="px-3 py-2 bg-[#b56b37] hover:bg-[#96552a] disabled:opacity-40 text-white font-bold text-xs rounded-xl cursor-pointer self-end transition-colors"
-                    >
-                      Send
-                    </button>
+            <div className={`flex-1 flex-col overflow-hidden min-h-0 ${activeTab === 'chat' ? 'flex' : 'hidden'}`}>
+              <div className="flex-1 overflow-y-auto p-5 space-y-4 min-h-0">
+                {history.length === 0 && (
+                  <div className="h-full flex flex-col items-center justify-center gap-2 text-center">
+                    <Brain className="w-8 h-8 text-[#e8ded1]" />
+                    <p className="text-xs text-[#8c7569] font-medium">The interviewer will speak first.<br />Your responses will appear here.</p>
                   </div>
                 )}
+
+                {history.map((msg, idx) => (
+                  <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} animate-fade-in`}>
+                    <span className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${msg.role === 'user' ? 'text-[#b56b37]' : 'text-[#63703d]'}`}>
+                      {msg.role === 'user' ? 'You' : 'AI Interviewer'}
+                    </span>
+                    <div
+                      className={`max-w-[85%] px-4 py-3 rounded-2xl text-xs font-medium leading-relaxed ${
+                        msg.role === 'user'
+                          ? 'bg-[#b56b37] text-white rounded-br-sm'
+                          : 'bg-[#fcf9f2] dark:bg-slate-800 text-[#231f20] dark:text-slate-200 border border-[#e8ded1] dark:border-slate-700 rounded-bl-sm'
+                      }`}
+                    >
+                      {msg.content}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Live interim speech preview */}
+                {currentSpeech && (
+                  <div className="flex flex-col items-end animate-fade-in">
+                    <span className="text-[10px] font-bold uppercase tracking-wider mb-1 text-[#b56b37]">You (Speaking...)</span>
+                    <div className="max-w-[85%] px-4 py-3 rounded-2xl rounded-br-sm text-xs font-medium bg-[#b56b37]/50 text-white italic">
+                      {currentSpeech}
+                    </div>
+                  </div>
+                )}
+
+                {/* AI Thinking indicator — shows while Gemini generates a response */}
+                {isAiThinking && (
+                  <div className="flex flex-col items-start animate-fade-in">
+                    <span className="text-[10px] font-bold uppercase tracking-wider mb-1 text-[#63703d]">AI Interviewer</span>
+                    <div className="px-4 py-3 rounded-2xl rounded-bl-sm bg-[#fcf9f2] border border-[#e8ded1] flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#63703d] animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#63703d] animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#63703d] animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
+                )}
+
+                <div ref={transcriptEndRef} />
               </div>
-            )}
+
+              {/* Voice Error Banner + Text Fallback — pinned to bottom of chat panel */}
+              {voiceError && (
+                <div className="border-t border-amber-200 bg-amber-50 p-3 flex-shrink-0">
+                  <div className="flex items-start gap-2 mb-2">
+                    <MicOff className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-[10px] font-semibold text-amber-800 leading-relaxed">{voiceError}</p>
+                  </div>
+                  {voiceInputFallback && (
+                    <div className="flex gap-2">
+                      <textarea
+                        rows={2}
+                        value={textAnswer}
+                        onChange={e => setTextAnswer(e.target.value)}
+                        placeholder="Type your answer and press Enter or Send..."
+                        className="flex-1 bg-white border border-amber-200 rounded-xl p-2.5 text-xs text-[#231f20] outline-none resize-none focus:border-[#b56b37] transition-colors"
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && !e.shiftKey && textAnswer.trim()) {
+                            e.preventDefault();
+                            handleUserSpeechFinal(textAnswer.trim());
+                            setTextAnswer('');
+                          }
+                        }}
+                      />
+                      <button
+                        disabled={!textAnswer.trim()}
+                        onClick={() => {
+                          if (textAnswer.trim()) {
+                            handleUserSpeechFinal(textAnswer.trim());
+                            setTextAnswer('');
+                          }
+                        }}
+                        className="px-3 py-2 bg-[#b56b37] hover:bg-[#96552a] disabled:opacity-40 text-white font-bold text-xs rounded-xl cursor-pointer self-end transition-colors"
+                      >
+                        Send
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Whiteboard view */}
+            <div className={`flex-1 w-full h-full min-h-0 ${activeTab === 'whiteboard' ? 'block' : 'hidden'}`}>
+              <Whiteboard />
+            </div>
           </div>
         </div>
       )}

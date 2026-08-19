@@ -6,7 +6,6 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
     baseURL: 'http://localhost:5173',
@@ -28,7 +27,7 @@ export default defineConfig({
     }
   ],
   webServer: {
-    command: 'npm run dev',
+    command: process.env.CI ? 'npm run start' : 'npm run dev',
     url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
     // Deterministic environment for the E2E suite. The app boots against a
@@ -39,6 +38,7 @@ export default defineConfig({
     // values below take precedence over any committed .env.
     env: {
       ...process.env,
+      PORT: '5173',
       NODE_ENV: 'development',
       SKIP_ENV_VALIDATION: 'true',
       ENABLE_MOCK_AUTH: 'true',

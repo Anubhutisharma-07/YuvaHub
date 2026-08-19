@@ -65,11 +65,17 @@ export async function generatedContentProxyWithRetry(
 
       if (!res.ok) {
         lastError = `AI Service temporary issue (${res.status} ${res.statusText})`;
+        isRetryable = true;
+        if (attempt <= maxRetries) {
+          if (options.onRetry) options.onRetry(attempt, lastError);
+          await new Promise((resolve) => setTimeout(resolve, 600 * attempt));
+          continue;
+        }
         return {
           text: expectJson ? "[]" : "AI assistant is preparing data. Using curated fallbacks.",
           success: false,
           error: lastError,
-          isRetryable: false,
+          isRetryable: true,
           attemptsUsed: attempt
         };
       }

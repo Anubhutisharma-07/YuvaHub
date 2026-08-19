@@ -1,7 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import {
-  LayoutDashboard, Globe, PlusCircle, Users, User, Menu, X, Bookmark, Sparkles, MessageSquare, Settings, Sun, Moon, Mic,
-  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert
+  LayoutDashboard, Globe, PlusCircle, Users, User, Menu, X, Bookmark, Sparkles, MessageSquare, Settings, Sun, Moon, Mic, Trophy,
+  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock
 } from 'lucide-react';
 import { signInWithGoogle, logout } from './lib/firebase';
 import { UserProfile } from './types';
@@ -15,50 +15,54 @@ import BackToTopButton from './components/ui/BackToTopButton';
 import AccessibilityEnhancer from './components/accessibility/AccessibilityEnhancer';
 
 // Route components are lazy-loaded to reduce the initial bundle size (code splitting)
-const Dashboard = lazy(() => import('./components/Tabs/Dashboard'));
-const Opportunities = lazy(() => import('./components/Tabs/Opportunities'));
-const SubmitOpportunity = lazy(() => import('./components/Tabs/SubmitOpportunity'));
-const Mentorship = lazy(() => import('./components/Tabs/Mentorship'));
-const Profile = lazy(() => import('./components/Tabs/Profile'));
-const Community = lazy(() => import('./components/Tabs/Community'));
-const Bookmarks = lazy(() => import('./components/Tabs/Bookmarks'));
-const SettingsTab = lazy(() => import('./components/Tabs/Settings'));
-const AdminDashboard = lazy(() => import('./components/Admin/AdminDashboard'));
-const OpportunityDetail = lazy(() => import('./components/Tabs/OpportunityDetail'));
-const AIAssistant = lazy(() => import('./components/Tabs/AIAssistant'));
+const Dashboard = lazy(() => import('./components/tabs/Dashboard'));
+const Opportunities = lazy(() => import('./components/tabs/Opportunities'));
+const SubmitOpportunity = lazy(() => import('./components/tabs/SubmitOpportunity'));
+const Mentorship = lazy(() => import('./components/tabs/Mentorship'));
+const Profile = lazy(() => import('./components/tabs/Profile'));
+const Community = lazy(() => import('./components/tabs/Community'));
+const Bookmarks = lazy(() => import('./components/tabs/Bookmarks'));
+const SettingsTab = lazy(() => import('./components/tabs/Settings'));
+const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
+const OpportunityDetail = lazy(() => import('./components/tabs/OpportunityDetail'));
+const AIAssistant = lazy(() => import('./components/tabs/AIAssistant'));
 const OnboardingFlow = lazy(() => import('./components/OnboardingFlow'));
 const SplashAuth = lazy(() => import('./components/SplashAuth'));
-const Security = lazy(() => import('./components/Tabs/Security'));
-const Legal = lazy(() => import('./components/Tabs/Legal'));
-const Support = lazy(() => import('./components/Tabs/Support'));
+const Security = lazy(() => import('./components/tabs/Security'));
+const Legal = lazy(() => import('./components/tabs/Legal'));
+const Support = lazy(() => import('./components/tabs/Support'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const Terms = lazy(() => import('./pages/Terms'));
 const Cookies = lazy(() => import('./pages/Cookies'));
-const Guidelines = lazy(() => import('./components/Tabs/Guidelines'));
-const AboutTab = lazy(() => import('./components/Tabs/About'));
+const Guidelines = lazy(() => import('./components/tabs/Guidelines'));
+const AboutTab = lazy(() => import('./components/tabs/About'));
 const HelpCenterPage = lazy(() => import('./pages/HelpCenter'));
 const GettingStartedDetail = lazy(() => import('./pages/GettingStartedDetail'));
-const BountyBoard = lazy(() => import('./components/Tabs/BountyBoard'));
-const AuthSecurityCenter = lazy(() => import('./components/Tabs/AuthSecurityCenter'));
-const CareerMatchStudio = lazy(() => import('./components/Tabs/CareerMatchStudio'));
-const HackathonStudio = lazy(() => import('./components/Tabs/HackathonStudio'));
-const DeveloperApiPortal = lazy(() => import('./components/Tabs/DeveloperApiPortal'));
-const GrantFellowshipStudio = lazy(() => import('./components/Tabs/GrantFellowshipStudio'));
-const CampusAlumniHub = lazy(() => import('./components/Tabs/CampusAlumniHub'));
-const ResumeAtsStudio = lazy(() => import('./components/Tabs/ResumeAtsStudio'));
-const InterviewPrepStudio = lazy(() => import('./components/Tabs/InterviewPrepStudio'));
-const OpenSourceBountyStudio = lazy(() => import('./components/Tabs/OpenSourceBountyStudio'));
-const OpportunityMatchStudio = lazy(() => import('./components/Tabs/OpportunityMatchStudio'));
-const TechEcosystemStudio = lazy(() => import('./components/Tabs/TechEcosystemStudio'));
-const HackathonJudgeStudio = lazy(() => import('./components/Tabs/HackathonJudgeStudio'));
-const MentorshipAdvisoryStudio = lazy(() => import('./components/Tabs/MentorshipAdvisoryStudio'));
-const ResearchGrantPortal = lazy(() => import('./components/Tabs/ResearchGrantPortal'));
-const ProjectShowcaseVault = lazy(() => import('./components/Tabs/ProjectShowcaseVault'));
-const StarInterviewStudio = lazy(() => import('./components/Tabs/StarInterviewStudio'));
-const HelpCenter = lazy(() => import('./components/Tabs/HelpCenter'));
-const FAQ = lazy(() => import('./components/Tabs/FAQ'));
-const Teams = lazy(() => import('./components/Tabs/Teams'));
+const BountyBoard = lazy(() => import('./components/tabs/BountyBoard'));
+const AuthSecurityCenter = lazy(() => import('./components/tabs/AuthSecurityCenter'));
+const CareerMatchStudio = lazy(() => import('./components/tabs/CareerMatchStudio'));
+const HackathonStudio = lazy(() => import('./components/tabs/HackathonStudio'));
+const DeveloperApiPortal = lazy(() => import('./components/tabs/DeveloperApiPortal'));
+const GrantFellowshipStudio = lazy(() => import('./components/tabs/GrantFellowshipStudio'));
+const CampusAlumniHub = lazy(() => import('./components/tabs/CampusAlumniHub'));
+const ResumeAtsStudio = lazy(() => import('./components/tabs/ResumeAtsStudio'));
+const InterviewPrepStudio = lazy(() => import('./components/tabs/InterviewPrepStudio'));
+const OpenSourceBountyStudio = lazy(() => import('./components/tabs/OpenSourceBountyStudio'));
+const OpportunityMatchStudio = lazy(() => import('./components/tabs/OpportunityMatchStudio'));
+const TechEcosystemStudio = lazy(() => import('./components/tabs/TechEcosystemStudio'));
+const HackathonJudgeStudio = lazy(() => import('./components/tabs/HackathonJudgeStudio'));
+const MentorshipAdvisoryStudio = lazy(() => import('./components/tabs/MentorshipAdvisoryStudio'));
+const ResearchGrantPortal = lazy(() => import('./components/tabs/ResearchGrantPortal'));
+const ProjectShowcaseVault = lazy(() => import('./components/tabs/ProjectShowcaseVault'));
+const StarInterviewStudio = lazy(() => import('./components/tabs/StarInterviewStudio'));
+const HelpCenter = lazy(() => import('./components/tabs/HelpCenter'));
+const FAQ = lazy(() => import('./components/tabs/FAQ'));
+const Teams = lazy(() => import('./components/tabs/Teams'));
 const MockInterviewRoom = lazy(() => import('./pages/MockInterviewRoom'));
+const ApplicationTracker = lazy(() => import('./pages/ApplicationTracker').then(m => ({ default: m.ApplicationTracker })));
+const Leaderboard = lazy(() => import('./pages/Leaderboard').then(m => ({ default: m.Leaderboard })));
+const FocusRoom = lazy(() => import('./pages/FocusRoom').then(m => ({ default: m.FocusRoom })));
+const ExperiencesHub = lazy(() => import('./components/tabs/ExperiencesHub'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
@@ -151,6 +155,8 @@ const getSeoPropsForTab = (tab: string) => {
       return { title: "Admin Dashboard | YuvaHub", description: "YuvaHub administrative operations control panel." };
     case 'ai_assistant':
       return { title: "AI Assistant | YuvaHub", description: "Interact with our intelligent career assistant for optimization and guidance." };
+    case 'focus_room':
+      return { title: "Global Focus Room | YuvaHub", description: "Join the global Pomodoro focus room and study with other students." };
     case 'faq':
       return { title: "Help Center & FAQ | YuvaHub", description: "Find answers to common questions, troubleshoot issues, and learn how to use YuvaHub effectively." };
     default:
@@ -248,6 +254,7 @@ function App() {
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'opportunities', label: 'Opportunities', icon: Globe },
+        { id: 'application_tracker', label: 'Application Tracker', icon: Briefcase },
         { id: 'opportunity_match', label: 'AI Match Studio', icon: Sparkles, badge: 'AI' },
         { id: 'teams', label: 'Team Builder', icon: Users },
         { id: 'bookmarks', label: 'Bookmarks', icon: Bookmark },
@@ -267,8 +274,11 @@ function App() {
     {
       title: "Ecosystem & Community",
       items: [
+        { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
         { id: 'mentorship', label: 'Mentorship', icon: GraduationCap },
+        { id: 'focus_room', label: 'Global Focus Room', icon: Clock },
         { id: 'bounty_board', label: 'Bounty Board', icon: Coins },
+        { id: 'interview_experiences', label: 'Interview Experiences', icon: MessageSquare },
         { id: 'opensource_bounties', label: 'Open Source Bounties', icon: Code2 },
         { id: 'community', label: 'Community Forum', icon: MessageSquare },
         { id: 'campus_alumni', label: 'Campus & Alumni Hub', icon: Building2 },
@@ -299,8 +309,10 @@ function App() {
     switch (activeTab) {
       case 'dashboard': return <Dashboard />;
       case 'opportunities': return <Opportunities />;
+      case 'application_tracker': return <ApplicationTracker />;
       case 'teams': return <Teams />;
       case 'bookmarks': return <Bookmarks />;
+      case 'leaderboard': return <Leaderboard />;
       case 'ai_assistant': return (
         <Suspense fallback={
           <div className="flex flex-col items-center justify-center h-full min-h-[400px] gap-4">
@@ -332,7 +344,9 @@ function App() {
       case 'star_interview': return <StarInterviewStudio />;
       case 'submit': return <SubmitOpportunity />;
       case 'mentorship': return <MentorshipAdvisoryStudio />;
+      case 'focus_room': return <FocusRoom />;
       case 'bounty_board': return <BountyBoard />;
+      case 'interview_experiences': return <ExperiencesHub />;
       case 'community': return <Community />;
       case 'profile': return <Profile />;
       case 'settings': return <SettingsTab />;
