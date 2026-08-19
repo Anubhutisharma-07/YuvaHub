@@ -6,7 +6,7 @@ import { z } from "zod";
 import { getGenAI } from "../genai.js";
 import { ScholarshipSchema, AIEvaluationResponseSchema } from "../../models/scholarshipSchema.js";
 import { Type } from "@google/genai";
-import { sendPaginated, sendSuccess } from "../../lib/apiResponse.js";
+import { sendPaginated, sendSuccess, sendBadRequest } from "../../lib/apiResponse.js";
 
 export const createScholarship = async (req: Request, res: Response) => {
   if (!dbCommand) throw AppError.serviceUnavailable("Database not available");
@@ -43,7 +43,7 @@ export const getScholarshipById = async (req: Request, res: Response) => {
   // even when the database is offline.
   const idStr = normalizeParam(req.params.id);
   if (!idStr) {
-    throw AppError.badRequest("Missing or invalid id");
+    return sendBadRequest(res, "Missing or invalid id");
   }
   if (!dbCommand || !dbQuery) throw AppError.serviceUnavailable("Database not available");
   const collection = dbQuery.collection("scholarships");
@@ -59,7 +59,7 @@ export const updateScholarship = async (req: Request, res: Response) => {
   // availability check.
   const idStr = normalizeParam(req.params.id);
   if (!idStr) {
-    throw AppError.badRequest("Missing or invalid id");
+    return sendBadRequest(res, "Missing or invalid id");
   }
   if (!dbCommand || !dbQuery) throw AppError.serviceUnavailable("Database not available");
   const parsedData = { ...req.body, updated_at: new Date() };
@@ -76,7 +76,7 @@ export const deleteScholarship = async (req: Request, res: Response) => {
   // availability check.
   const idStr = normalizeParam(req.params.id);
   if (!idStr) {
-    throw AppError.badRequest("Missing or invalid id");
+    return sendBadRequest(res, "Missing or invalid id");
   }
   if (!dbCommand || !dbQuery) throw AppError.serviceUnavailable("Database not available");
   const collection = dbCommand.collection("scholarships");

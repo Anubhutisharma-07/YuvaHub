@@ -8,6 +8,7 @@ import { AppError } from "../../lib/AppError.js";
 import { sendSuccess } from "../../lib/apiResponse.js";
 // @ts-ignore
 import multer from "multer";
+import { config } from "../../config/env.js";
 
 // --- SECURITY UTILITIES & CONFIGURATIONS ---
 
@@ -84,9 +85,9 @@ export const handleSignatureRequest = async (req: any, res: any) => {
     }
   }
 
-  const apiSecret = process.env.CLOUDINARY_API_SECRET || "";
+  const apiSecret = config.CLOUDINARY_API_SECRET || "";
   if (!apiSecret) {
-    if (process.env.NODE_ENV !== "production") {
+    if (config.NODE_ENV !== "production") {
       return sendSuccess(res, {
         signature: "dummy_signature",
         timestamp,
@@ -107,8 +108,8 @@ export const handleSignatureRequest = async (req: any, res: any) => {
     timestamp,
     folder,
     allowed_formats: paramsToSign.allowed_formats,
-    apiKey: process.env.CLOUDINARY_API_KEY,
-    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    apiKey: config.CLOUDINARY_API_KEY,
+    cloudName: config.CLOUDINARY_CLOUD_NAME,
   });
 };
 

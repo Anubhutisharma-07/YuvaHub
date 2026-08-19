@@ -25,7 +25,7 @@ import { createNotificationConsumer } from "./src/consumers/notificationConsumer
 import { runDeadlineChecks, runWeeklyDigest } from "./src/services/deadlineScheduler.js";
 import { ScholarshipSchema, AIEvaluationResponseSchema } from "./src/models/scholarshipSchema.js";
 import { isToxic, createToxicityMiddleware } from "./src/services/toxicity.js";
-import { authenticateUser, deleteFirebaseUser } from "./src/middleware/auth.js";
+import { authenticateUser, deleteFirebaseUser } from "./src/api/middlewares/auth.js";
 import { meiliClient, initializeSearchSync, stopSearchSync } from "./src/services/searchSync.js";
 import { ExpressAdapter } from '@bull-board/express';
 import { createBullBoard } from '@bull-board/api';
@@ -50,8 +50,12 @@ import { setSocketIO } from "./src/api/socketInstance.js";
 import { setupSocketEvents } from "./src/socket/index.js";
 import { analyticsBuffer } from "./src/api/analytics.js";
 import apiRoutes from "./src/api/routes/index.js";
+import diagnosticsRoutes from "./src/api/routes/diagnostics.js";
+import { requestLogger } from "./src/api/middlewares/observability.js";
+import { apiVersionHeaders } from "./src/api/versioning/middleware.js";
 import swaggerSpec from "./src/config/swagger.js";
 import { validateStartupEnv } from "./src/config/envValidation.js";
+import { config } from "./src/config/env.js";
 
 dotenv.config();
 
@@ -59,10 +63,19 @@ dotenv.config();
 validateStartupEnv();
 
 const app = express();
+
+// 1. Observability
+app.use(requestLogger);
 const server = http.createServer(app);
 
+// Version-aware headers for every /api/* request (Issue #674). Registered
+// before all handlers so app-level routes also advertise version/deprecation
+// metadata. Idempotent, so it composes with the versioning middleware that
+// is also mounted inside apiRoutes.
+app.use("/api", apiVersionHeaders());
+
 Sentry.init({
-  dsn: process.env.SENTRY_DSN,
+  dsn: config.SENTRY_DSN,
   tracesSampleRate: 1.0,
 });
 // --- Application Tracker API ---
@@ -479,7 +492,7 @@ const chatRateLimiter = rateLimit({
 // Socket.IO Configuration
 const io = new SocketIOServer(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || "*",
+    origin: config.FRONTEND_URL || "*",
     methods: ["GET", "POST"],
 
   },
@@ -501,7 +514,7 @@ app.use("/api", apiRoutes);
 
 // SEO Routes (root-level for crawler discovery)
 app.get("/robots.txt", (req: Request, res: Response) => {
-  const baseUrl = process.env.APP_URL || "https://yuvahub.xyz";
+  const baseUrl = config.APP_URL || "https://yuvahub.xyz";
   const robotsTxt = [
     "User-agent: *",
     "Allow: /",
@@ -551,7 +564,7 @@ function escapeXml(unsafe: string): string {
 
 app.get("/sitemap.xml", async (req: Request, res: Response) => {
   try {
-    const baseUrl = process.env.APP_URL || "https://yuvahub.xyz";
+    const baseUrl = config.APP_URL || "https://yuvahub.xyz";
     const staticPaths = [
       "",
       "/opportunities",
@@ -638,7 +651,7 @@ app.use((req: Request, res: Response) => {
   res.status(404).json({ success: false, error: "Endpoint not found" });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = config.PORT || 5000;
 
 // ── Graceful Shutdown ─────────────────────────────────────────────────
 let isShuttingDown = false;
@@ -756,12 +769,12 @@ async function bootstrap() {
       });
 
     // 5. Start Background Services
-    if (process.env.NODE_ENV !== "test") {
+    if (config.NODE_ENV !== "test") {
       shutdownTimers.push(setInterval(() => runDeadlineChecks(dbCommand), 24 * 60 * 60 * 1000));
       shutdownTimers.push(setInterval(() => runWeeklyDigest(dbCommand), 7 * 24 * 60 * 60 * 1000));
 
       // Node.js Central Ingestion
-      if (process.env.START_NODE_SCRAPER === "true") {
+      if (config.START_NODE_SCRAPER === "true") {
         console.log("[Scraper] Central Ingestion daemon enabled");
         import("child_process").then(({ spawn }) => {
           spawn("npx", ["tsx", "scrape-cli.ts"], {
@@ -779,7 +792,7 @@ async function bootstrap() {
 }
 
 // Only auto-start the server when not running in test mode
-if (process.env.NODE_ENV !== "test") {
+if (config.NODE_ENV !== "test") {
   bootstrap();
 }
 
@@ -1124,7 +1137,7 @@ async function getAuthenticatedUser(req: any) {
 
   // Try to verify as a standard JWT first (for our RBAC custom tokens)
   try {
-    const decoded = jwt.verify(idToken, process.env.JWT_SECRET || "yuvahub-secret-key") as any;
+    const decoded = jwt.verify(idToken, config.JWT_SECRET || "yuvahub-secret-key") as any;
     uid = decoded.sub || decoded.user_id || decoded.uid;
     email = decoded.email || "";
     role = decoded.role || "user";
@@ -1248,7 +1261,7 @@ const handleSignatureRequest = async (req: any, res: any) => {
       }
     }
 
-    const apiSecret = process.env.CLOUDINARY_API_SECRET || "";
+    const apiSecret = config.CLOUDINARY_API_SECRET || "";
     if (!apiSecret) {
       return res.status(500).json({ error: "Cloudinary API Secret not configured." });
     }
@@ -1260,8 +1273,8 @@ const handleSignatureRequest = async (req: any, res: any) => {
       timestamp,
       folder,
       allowed_formats: paramsToSign.allowed_formats,
-      apiKey: process.env.CLOUDINARY_API_KEY,
-      cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+      apiKey: config.CLOUDINARY_API_KEY,
+      cloudName: config.CLOUDINARY_CLOUD_NAME,
     });
 
   } catch (err: any) {
@@ -2714,7 +2727,7 @@ app.get(["/opportunity/:id", "/opportunity/:id/:slug"], async (req, res) => {
   }
 
   const distPath = path.join(process.cwd(), "dist");
-  const indexPath = process.env.NODE_ENV !== "production"
+  const indexPath = config.NODE_ENV !== "production"
     ? path.join(process.cwd(), "index.html")
     : path.join(distPath, "index.html");
 

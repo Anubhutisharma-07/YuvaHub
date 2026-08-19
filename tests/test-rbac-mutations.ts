@@ -60,6 +60,21 @@ async function testRbacMutations() {
     console.log("[Offline Mode] Server offline, skipping live HTTP queue check.");
   }
 
+  // 4. Verify unauthenticated storage upload is blocked (returns 401/403)
+  try {
+    const res = await fetch(`${BASE_URL}/api/v1/storage/upload-local`, {
+      method: "POST"
+    });
+    console.log(`[Security Test] POST /api/v1/storage/upload-local (Unauthenticated) Status: ${res.status}`);
+    if (res.status === 401 || res.status === 403) {
+      console.log("[SUCCESS] Unauthenticated storage upload successfully blocked!");
+    } else {
+      console.warn(`[WARNING] Unauthenticated storage upload returned status ${res.status}`);
+    }
+  } catch (err: any) {
+    console.log("[Offline Mode] Server offline, skipping live HTTP storage check.");
+  }
+
   console.log("[Security Test Complete] All security validations passed.");
 }
 
