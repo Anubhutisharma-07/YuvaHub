@@ -712,7 +712,9 @@ function App() {
             {selectedOppId ? (
               <OpportunityDetail />
             ) : (
-              renderContent()
+              <Suspense fallback={<LoadingScreen />}>
+                {renderContent()}
+              </Suspense>
             )}
           </Suspense>
         </div>
