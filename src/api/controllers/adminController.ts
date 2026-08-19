@@ -246,7 +246,21 @@ export const adminDeleteUser = async (req: Request, res: Response) => {
     if (!dbCommand || !dbQuery) {
       throw AppError.serviceUnavailable("Database unavailable");
     }
-    const userId = req.params.id;
+    const userId = req.params.id as string;
+    
+    // 1. Delete user from Firebase Auth
+    const { deleteFirebaseUser } = await import("../middlewares/auth.js");
+    await deleteFirebaseUser(userId);
+
+    // 2. Delete user's MongoDB document
+    await dbCommand.collection("users").deleteOne({ firebaseUid: userId });
+
+    // 3. Clear user's refresh tokens / sessions
+    await dbCommand.collection("users").updateOne(
+      { firebaseUid: userId },
+      { $set: { hashedRefreshTokens: [] } }
+    );
+
     return sendSuccess(res, { message: `User ${userId} deleted successfully.` });
 };
 

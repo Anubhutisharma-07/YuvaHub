@@ -486,4 +486,49 @@ Constraints:
   }
 };
 
+export const generateFlashcards = async (req: Request, res: Response) => {
+  try {
+    const { jobDescription } = req.body;
+    if (!jobDescription || typeof jobDescription !== "string" || jobDescription.trim().length < 20) {
+      return sendBadRequest(res, "Please provide a valid job description (min 20 characters).");
+    }
+
+    const ai = getGenAI();
+    if (!ai) {
+      return sendError(res, "AI service unavailable", 503);
+    }
+
+    const prompt = `Based on the following Job Description, generate exactly 10 highly technical interview questions and answers. 
+    Return STRICTLY as a JSON array in the format: [{"question": "...", "answer": "..."}]. Do not include markdown or other text.
+    
+    Job Description:
+    ${jobDescription}`;
+
+    const response = await generateWithTimeout(
+      ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json"
+        }
+      })
+    );
+
+    let responseText = response.text || "[]";
+    let flashcards = [];
+    try {
+      flashcards = JSON.parse(responseText);
+    } catch (e) {
+      console.error("Failed to parse flashcards JSON", e);
+      return sendError(res, "Failed to parse AI response", 500);
+    }
+
+    return sendSuccess(res, { flashcards });
+  } catch (err) {
+    console.error("/api/ai/flashcards error:", err);
+    return sendError(res, "Internal Server Error", 500);
+  }
+};
+
+
 

@@ -1,4 +1,4 @@
-﻿import { Request, Response } from "express";
+import { Request, Response } from "express";
 import {
   addActionItem as addActionItemToSession,
   addNote as addNoteToSession,
@@ -45,7 +45,7 @@ export const listMentors = async (req: Request, res: Response) => {
 };
 
 export const getMentorDetailHandler = async (req: Request, res: Response) => {
-  const mentor = await getMentorDetail(req.params.uid);
+  const mentor = await getMentorDetail(req.params.uid as string);
   return sendSuccess(res, { mentor });
 };
 
@@ -88,14 +88,14 @@ export const createAvailability = async (req: Request, res: Response) => {
 export const removeAvailabilitySlot = async (req: Request, res: Response) => {
   const uid = getUid(req);
   if (!uid) throw AppError.unauthorized("Not authenticated");
-  const removed = await deleteAvailabilitySlot({ slotId: req.params.slotId, mentorUid: uid });
+  const removed = await deleteAvailabilitySlot({ slotId: req.params.slotId as string, mentorUid: uid });
   return sendSuccess(res, { removed });
 };
 
 export const getSessionDetail = async (req: Request, res: Response) => {
   const uid = getUid(req);
   if (!uid) throw AppError.unauthorized("Not authenticated");
-  const session = await getSession(req.params.id);
+  const session = await getSession(req.params.id as string);
   if (!session) throw AppError.notFound("Session not found");
   if (
     session.studentUid !== uid &&
@@ -111,7 +111,7 @@ export const updateSessionStatusById = async (req: Request, res: Response) => {
   const uid = getUid(req);
   if (!uid) throw AppError.unauthorized("Not authenticated");
   const session = await transitionSessionStatus({
-    sessionId: req.params.id,
+    sessionId: req.params.id as string,
     actorUid: uid,
     actorRole: req.user?.role,
     status: req.body.status,
@@ -122,7 +122,7 @@ export const updateSessionStatusById = async (req: Request, res: Response) => {
 export const addNote = async (req: Request, res: Response) => {
   const uid = getUid(req);
   if (!uid) throw AppError.unauthorized("Not authenticated");
-  const note = await addNoteToSession({ sessionId: req.params.id, actorUid: uid, content: req.body.content });
+  const note = await addNoteToSession({ sessionId: req.params.id as string, actorUid: uid, content: req.body.content });
   return sendSuccess(res, { note }, 201);
 };
 
@@ -130,9 +130,9 @@ export const updateNote = async (req: Request, res: Response) => {
   const uid = getUid(req);
   if (!uid) throw AppError.unauthorized("Not authenticated");
   const note = await updateNoteInSession({
-    sessionId: req.params.id,
+    sessionId: req.params.id as string,
     actorUid: uid,
-    noteId: req.params.noteId,
+    noteId: req.params.noteId as string,
     content: req.body.content,
   });
   return sendSuccess(res, { note });
@@ -141,7 +141,7 @@ export const updateNote = async (req: Request, res: Response) => {
 export const removeNote = async (req: Request, res: Response) => {
   const uid = getUid(req);
   if (!uid) throw AppError.unauthorized("Not authenticated");
-  const result = await deleteNoteFromSession({ sessionId: req.params.id, actorUid: uid, noteId: req.params.noteId });
+  const result = await deleteNoteFromSession({ sessionId: req.params.id as string, actorUid: uid, noteId: req.params.noteId as string });
   return sendSuccess(res, { result });
 };
 
@@ -149,7 +149,7 @@ export const addActionItem = async (req: Request, res: Response) => {
   const uid = getUid(req);
   if (!uid) throw AppError.unauthorized("Not authenticated");
   const item = await addActionItemToSession({
-    sessionId: req.params.id,
+    sessionId: req.params.id as string,
     actorUid: uid,
     title: req.body.title,
     assignee: req.body.assignee,
@@ -162,9 +162,9 @@ export const updateActionItem = async (req: Request, res: Response) => {
   const uid = getUid(req);
   if (!uid) throw AppError.unauthorized("Not authenticated");
   const item = await updateActionItemInSession({
-    sessionId: req.params.id,
+    sessionId: req.params.id as string,
     actorUid: uid,
-    itemId: req.params.actionId,
+    itemId: req.params.actionId as string,
     patch: req.body,
   });
   return sendSuccess(res, { item });
@@ -174,7 +174,7 @@ export const submitFeedback = async (req: Request, res: Response) => {
   const uid = getUid(req);
   if (!uid) throw AppError.unauthorized("Not authenticated");
   const feedback = await submitFeedbackForSession({
-    sessionId: req.params.id,
+    sessionId: req.params.id as string,
     actorUid: uid,
     rating: req.body.rating,
     comment: req.body.comment,
@@ -217,7 +217,7 @@ export const reviewApplicationHandler = async (req: Request, res: Response) => {
   const uid = getUid(req);
   if (!uid) throw AppError.unauthorized("Not authenticated");
   const application = await reviewApplication({
-    applicationId: req.params.applicationId,
+    applicationId: req.params.applicationId as string,
     decision: req.body.decision,
     reviewNote: req.body.reviewNote,
     reviewerUid: uid,

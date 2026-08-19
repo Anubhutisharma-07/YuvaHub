@@ -9,6 +9,13 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+# 1.5 Auto-sync pnpm-lock.yaml if package.json is staged
+if git diff --cached --name-only | grep -q "^package.json$"; then
+  echo "👉 package.json changed. Automatically updating pnpm-lock.yaml..."
+  npx pnpm install --lockfile-only --ignore-scripts
+  git add pnpm-lock.yaml
+fi
+
 # 2. Verify Client Secret Boundaries
 echo "👉 Scanning for exposed client secrets..."
 node scripts/verify-client-secrets.mjs

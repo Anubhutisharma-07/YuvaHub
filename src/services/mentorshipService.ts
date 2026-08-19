@@ -909,6 +909,8 @@ export async function createMentorApplication(
     applicantUid,
     name: input.name,
     email: input.email,
+    avatarUrl: "",
+    reviewNote: "",
     linkedinUrl: input.linkedinUrl || "",
     collegeCompany: input.collegeCompany || "",
     field: input.field || "",

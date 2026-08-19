@@ -1,1 +1,1 @@
-export { default } from '../components/Tabs/Cookies';
+export { default } from '../components/tabs/Cookies';
