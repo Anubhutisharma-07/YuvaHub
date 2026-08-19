@@ -22,7 +22,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `Thank you @${context.actor} for creating this issue! A maintainer will review it shortly.`
+              body: `Thank you @${context.payload.issue.user.login} for creating this issue! A maintainer will review it shortly.`
             });
             github.rest.issues.addLabels({
               issue_number: context.issue.number,
@@ -40,7 +40,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `Thank you @${context.actor} for opening this pull request! A maintainer will review your changes shortly.`
+              body: `Thank you @${context.payload.pull_request.user.login} for opening this pull request! A maintainer will review your changes shortly.`
             });
             github.rest.issues.addLabels({
               issue_number: context.issue.number,
@@ -58,5 +58,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `Thank you @${context.actor} for your contribution! Your pull request has been successfully merged. 🎉`
+              body: `Thank you @${context.payload.pull_request.user.login} for your contribution! Your pull request has been successfully merged. 🎉`
             })

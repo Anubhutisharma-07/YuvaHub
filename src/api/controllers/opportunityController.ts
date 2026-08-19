@@ -524,3 +524,77 @@ export const updateOpportunity = async (req: Request, res: Response) => {
 
     return sendSuccess(res, { updated: result.modifiedCount > 0 });
 };
+
+export const getSimilarOpportunities = async (req: Request, res: Response) => {
+    if (!dbQuery) {
+        return sendSuccess(res, { items: [] });
+    }
+
+    const paramId = req.params.id;
+    const rawId: string = Array.isArray(paramId) ? paramId[0] : (paramId || '');
+    const oid = safeObjectId(rawId);
+    
+    // Check if we can find the source opportunity
+    const sourceQuery = oid 
+      ? { _id: oid } 
+      : { $or: [{ id: rawId }, { dedupe_hash: rawId }] };
+
+    const sourceOpp = await dbQuery.collection("opportunities").findOne(sourceQuery);
+    if (!sourceOpp) {
+        return sendSuccess(res, { items: [] });
+    }
+
+    const tags = Array.isArray(sourceOpp.tags) ? sourceOpp.tags : [];
+    const category = sourceOpp.category || sourceOpp.opportunity_type || "";
+
+    const matchQuery: any = {
+        $and: [
+            { _id: { $ne: sourceOpp._id } },
+            {
+                $or: []
+            },
+            {
+                // Ensure we only show open/active ones, same logic as trending
+                $or: [
+                    { endDate: { $gte: new Date() } },
+                    { startDate: { $gte: new Date() } },
+                    { deadlineDate: { $gte: new Date() } },
+                    { deadline: { $regex: "days left|weeks left|rolling|active|open", $options: "i" } },
+                    { deadline: { $not: /closed|expired/i } },
+                    { endDate: { $exists: false }, startDate: { $exists: false }, deadlineDate: { $exists: false }, deadline: { $exists: false } }
+                ]
+            }
+        ]
+    };
+
+    if (tags.length > 0) {
+        matchQuery.$and[1].$or.push({ tags: { $in: tags } });
+    }
+    if (category) {
+        matchQuery.$and[1].$or.push({ category: category });
+        matchQuery.$and[1].$or.push({ opportunity_type: category });
+    }
+
+    // If there are no tags or category, just remove the specific matching criteria 
+    // to fallback to generic recent opportunities
+    if (matchQuery.$and[1].$or.length === 0) {
+        matchQuery.$and.splice(1, 1);
+    }
+
+    const items = await dbQuery.collection("opportunities")
+        .find(matchQuery)
+        .sort({ created_at: -1 })
+        .limit(3)
+        .toArray();
+
+    const formattedItems = items.map(item => {
+        const mapped = {
+            ...item,
+            id: item._id ? item._id.toString() : item.id
+        };
+        if (mapped._id) delete mapped._id;
+        return mapped;
+    });
+
+    return sendSuccess(res, { items: formattedItems });
+};

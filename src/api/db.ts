@@ -6,13 +6,14 @@ import { DNLDispatcher } from "../services/dnl/scheduler.js";
 import { DevpostAdapter } from "../services/dnl/adapters/DevpostAdapter.js";
 import { InternshalaAdapter } from "../services/dnl/adapters/InternshalaAdapter.js";
 import { initializeSearchSync } from "../services/searchSync.js";
+import { config } from "../config/env.js";
 
 dotenv.config();
 
-const uri = process.env.MONGODB_URI || "";
-const commandUri = process.env.MONGODB_COMMAND_URI || uri;
-const queryUri = process.env.MONGODB_QUERY_URI || uri;
-const dbName = process.env.MONGODB_DB_NAME || "yuvahub";
+const uri = config.MONGODB_URI || "";
+const commandUri = config.MONGODB_COMMAND_URI || uri;
+const queryUri = config.MONGODB_QUERY_URI || uri;
+const dbName = config.MONGODB_DB_NAME || "yuvahub";
 
 /** Interval (ms) between MongoDB reconnection attempts after fallback to MockDB. */
 const RECONNECT_INTERVAL_MS = 30_000;
@@ -54,8 +55,8 @@ async function attemptReconnect(): Promise<boolean> {
   try {
     await Promise.all([commandClient.connect(), queryClient.connect()]);
 
-    const newCommandDb = commandClient.db(process.env.MONGODB_COMMAND_DB || dbName);
-    const newQueryDb = queryClient.db(process.env.MONGODB_QUERY_DB || dbName);
+    const newCommandDb = commandClient.db(config.MONGODB_COMMAND_DB || dbName);
+    const newQueryDb = queryClient.db(config.MONGODB_QUERY_DB || dbName);
 
     // Atomic swap — all live bindings (e.g. from server.ts) will see
     // the new instances on their next access.
@@ -385,8 +386,8 @@ export async function initializeDatabase(): Promise<void> {
 
     try {
       await Promise.all([commandClient.connect(), queryClient.connect()]);
-      dbCommand = commandClient.db(process.env.MONGODB_COMMAND_DB || dbName);
-      dbQuery = queryClient.db(process.env.MONGODB_QUERY_DB || dbName);
+      dbCommand = commandClient.db(config.MONGODB_COMMAND_DB || dbName);
+      dbQuery = queryClient.db(config.MONGODB_QUERY_DB || dbName);
       console.log(`[Database] Connected to Command and Query MongoDB pools`);
       setupDNL(dbCommand);
       initializeSearchSync(dbQuery).catch(err => console.error('[SearchSync] Non-fatal init error:', err));

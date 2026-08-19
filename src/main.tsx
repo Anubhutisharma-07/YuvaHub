@@ -1,6 +1,7 @@
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
+import PublicPortfolio from './pages/PublicPortfolio.tsx';
 import CustomCursor from './components/CustomCursor.tsx';
 import { AppProvider } from './context/AppContext.tsx';
 import { SocketProvider } from './context/SocketContext.tsx';
@@ -20,14 +21,20 @@ Sentry.init({
   replaysOnErrorSampleRate: 1.0, // If you're not already sampling the entire session, change the sample rate to 100% when sampling sessions where errors occur.
 });
 
+const isPublicPortfolio = window.location.pathname.startsWith('/p/');
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AppProvider>
-      <SocketProvider>
-        <CustomCursor />
-        <App />
-      </SocketProvider>
-    </AppProvider>
+    {isPublicPortfolio ? (
+      <PublicPortfolio />
+    ) : (
+      <AppProvider>
+        <SocketProvider>
+          <CustomCursor />
+          <App />
+        </SocketProvider>
+      </AppProvider>
+    )}
   </StrictMode>,
 );
 

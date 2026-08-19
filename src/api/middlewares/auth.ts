@@ -3,19 +3,20 @@ import { initializeApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { dbCommand, dbQuery } from '../db.js';
 import jwt from 'jsonwebtoken';
+import { config } from "../../config/env.js";
 
 let isFirebaseInitialized = false;
 
-const isDevelopment = process.env.NODE_ENV === 'development';
-const mockAuthEnabled = process.env.ENABLE_MOCK_AUTH === 'true';
-const mockValidToken = process.env.MOCK_VALID_TOKEN || 'MOCK_VALID_TOKEN';
+const isDevelopment = config.NODE_ENV === 'development';
+const mockAuthEnabled = config.ENABLE_MOCK_AUTH === 'true';
+const mockValidToken = config.MOCK_VALID_TOKEN || 'MOCK_VALID_TOKEN';
 
 // Initialize Firebase Admin
 try {
-  if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
+  if (config.FIREBASE_SERVICE_ACCOUNT_BASE64) {
     const serviceAccount = JSON.parse(
       Buffer.from(
-        process.env.FIREBASE_SERVICE_ACCOUNT_BASE64,
+        config.FIREBASE_SERVICE_ACCOUNT_BASE64,
         'base64',
       ).toString('utf8'),
     );
@@ -28,9 +29,9 @@ try {
     console.log(
       '[Auth] Firebase Admin initialized with provided service account.',
     );
-  } else if (process.env.FIREBASE_PROJECT_ID) {
+  } else if (config.FIREBASE_PROJECT_ID) {
     initializeApp({
-      projectId: process.env.FIREBASE_PROJECT_ID,
+      projectId: config.FIREBASE_PROJECT_ID,
     });
 
     isFirebaseInitialized = true;
@@ -76,9 +77,9 @@ export const authenticateUser = (db?: any) => {
       let isCustomToken = false;
 
       // 1. Try Custom JWT first
-      const jwtSecret = process.env.JWT_SECRET;
+      const jwtSecret = config.JWT_SECRET;
 
-      if (process.env.NODE_ENV === 'production' && !jwtSecret) {
+      if (config.NODE_ENV === 'production' && !jwtSecret) {
         return res.status(503).json({
           error: 'Authentication service unavailable. JWT_SECRET must be configured in production.',
         });
