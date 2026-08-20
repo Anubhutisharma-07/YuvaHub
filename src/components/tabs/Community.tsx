@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Trophy, Megaphone, HelpCircle, Link as LinkIcon, Send, Heart, 
   MessageSquare, Loader2, Sparkles, Trash2, ChevronDown, ChevronUp, 
-  AlertTriangle, Flame, Clock, Tag, UserCheck, Shield
+  AlertTriangle, Flame, Clock, Tag, UserCheck, Shield, BarChart2
 } from 'lucide-react';
 import { UserProfile } from '../../types';
 import { EmptyState, ErrorState, SkeletonCard } from '../ui/states';
@@ -33,7 +33,7 @@ interface Post {
 }
 
 export default function Community() {
-  const { user, profile } = useAppContext();
+  const { user, profile, setActiveTab } = useAppContext();
   const [posts, setPosts] = useState<Post[]>([]);
   const [sortOption, setSortOption] = useState<'latest' | 'trending'>('latest');
 
@@ -254,7 +254,13 @@ export default function Community() {
         </div>
 
         {/* Sorting Tabs */}
-        <div className="flex items-center gap-1.5 bg-[#fcf9f2] dark:bg-slate-800 p-1.5 rounded-2xl border border-[#e8ded1] dark:border-slate-700 text-xs shrink-0">
+        <div className="flex items-center gap-1.5 bg-[#fcf9f2] dark:bg-slate-800 p-1.5 rounded-2xl border border-[#e8ded1] dark:border-slate-700 text-xs shrink-0 flex-wrap">
+          <button
+            onClick={() => setActiveTab('poll_studio')}
+            className="px-3.5 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 cursor-pointer text-[#603620] dark:text-slate-300 hover:bg-[#f6efe2]"
+          >
+            <BarChart2 className="w-3.5 h-3.5" /> Polls
+          </button>
           <button
             onClick={() => setSortOption('latest')}
             className={`px-3.5 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
