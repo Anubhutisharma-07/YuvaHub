@@ -23,6 +23,7 @@ import eventRoutes from "./eventRoutes.js";
 import leaderboardRoutes from "./leaderboardRoutes.js";
 import experienceRoutes from "./experienceRoutes.js";
 import projectRoutes from "./projectRoutes.js";
+import endorsementRoutes from "./endorsementRoutes.js";
 import pollRoutes from "./pollRoutes.js";
 import watchlistRoutes from "./watchlistRoutes.js";
 import skillGapRoutes from "./skillGapRoutes.js";
@@ -58,6 +59,7 @@ const routes = [
   leaderboardRoutes,
   experienceRoutes,
   projectRoutes,
+  endorsementRoutes,
   pollRoutes,
   watchlistRoutes,
   skillGapRoutes,

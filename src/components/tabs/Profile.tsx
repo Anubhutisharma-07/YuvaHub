@@ -6,6 +6,7 @@ import { UserProfile } from '../../types';
 import { ErrorState } from '../ui/states';
 import { useAppContext } from '../../context/AppContext';
 import ResumeVersionManager from './ResumeVersionManager';
+import EndorsementHub from './EndorsementHub';
 
 export default function Profile() {
   const { user, profile, setProfile } = useAppContext();
@@ -441,6 +442,9 @@ export default function Profile() {
              </div>
              <button className="w-full mt-4 flex items-center justify-center gap-2 text-xs font-extrabold text-[#b56b37] hover:text-[#603620] uppercase tracking-wider transition-colors cursor-pointer">View All Activity <ExternalLink className="w-3.5 h-3.5" /></button>
           </div>
+           
+           {/* Endorsements Section */}
+           <EndorsementHub />
         </div>
       </div>
     </div>

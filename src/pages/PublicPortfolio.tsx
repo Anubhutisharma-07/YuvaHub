@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { User, MapPin, Briefcase, GraduationCap, Github, Linkedin, Globe, Award, Target, ExternalLink, Loader2, Sparkles } from 'lucide-react';
+import { User, MapPin, Briefcase, GraduationCap, Github, Linkedin, Globe, Award, Target, ExternalLink, Loader2, Sparkles, ThumbsUp } from 'lucide-react';
 import { SEO } from '../components/SEO';
 import LoadingScreen from '../components/ui/LoadingScreen';
+import { useAppContext } from '../context/AppContext';
 
 interface PublicProfileData {
   uid: string;
@@ -26,6 +27,9 @@ export default function PublicPortfolio() {
   const [profile, setProfile] = useState<PublicProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [endorsements, setEndorsements] = useState<Record<string, number>>({});
+  const [endorsing, setEndorsing] = useState<string | null>(null);
+  const { user } = useAppContext();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -50,6 +54,17 @@ export default function PublicPortfolio() {
         
         const data = await res.json();
         setProfile(data.data);
+        
+        // Fetch endorsements
+        const endRes = await fetch(`/api/v1/endorsements?uid=${uid}`);
+        if (endRes.ok) {
+          const endData = await endRes.json();
+          const endMap: Record<string, number> = {};
+          endData.data?.received?.forEach((e: any) => {
+            endMap[e.skill] = e.count;
+          });
+          setEndorsements(endMap);
+        }
       } catch (err: any) {
         console.error("Failed to fetch public profile:", err);
         setError("An unexpected error occurred.");
@@ -60,6 +75,49 @@ export default function PublicPortfolio() {
 
     fetchProfile();
   }, []);
+
+  const handleEndorse = async (skill: string) => {
+    if (!user) {
+      alert("Please login to endorse skills.");
+      return;
+    }
+    
+    setEndorsing(skill);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch('/api/v1/endorsements', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          targetUid: profile?.uid,
+          skill
+        })
+      });
+      
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Failed to endorse skill.");
+      } else {
+        setEndorsements(prev => ({
+          ...prev,
+          [skill]: (prev[skill] || 0) + 1
+        }));
+        // Trigger toast/animation for karma
+        const ev = new CustomEvent("karmaAnimation", {
+            detail: { amount: 5, reason: `Endorsed ${skill}` }
+        });
+        window.dispatchEvent(ev);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred while endorsing.");
+    } finally {
+      setEndorsing(null);
+    }
+  };
 
   if (loading) {
     return <LoadingScreen fullScreen={true} />;
@@ -197,12 +255,30 @@ export default function PublicPortfolio() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {profile.skills.map((skill, idx) => (
-                    <span 
+                    <div 
                       key={idx} 
-                      className="px-3.5 py-1.5 bg-[#f6efe2] dark:bg-gray-700 text-[#603620] dark:text-gray-300 rounded-full text-xs font-bold tracking-wide"
+                      className="group flex items-center bg-[#f6efe2] dark:bg-gray-700 rounded-full border border-transparent hover:border-[#b56b37] transition-all overflow-hidden"
                     >
-                      {skill}
-                    </span>
+                      <span className="px-3.5 py-1.5 text-[#603620] dark:text-gray-300 text-xs font-bold tracking-wide border-r border-[#e8ded1] dark:border-gray-600">
+                        {skill}
+                        {endorsements[skill] > 0 && (
+                          <span className="ml-1.5 bg-[#b56b37] text-white px-1.5 py-0.5 rounded-full text-[10px]">
+                            {endorsements[skill]}
+                          </span>
+                        )}
+                      </span>
+                      {user && user.uid !== profile.uid && (
+                        <button 
+                          onClick={() => handleEndorse(skill)}
+                          disabled={endorsing === skill}
+                          className="px-3 py-1.5 bg-[#f6efe2] dark:bg-gray-700 hover:bg-[#e8ded1] dark:hover:bg-gray-600 text-[#b56b37] text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
+                          title="Endorse this skill"
+                        >
+                          <ThumbsUp className="w-3.5 h-3.5" />
+                          <span className="hidden group-hover:inline">Endorse</span>
+                        </button>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>
