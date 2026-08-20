@@ -64,6 +64,7 @@ const ApplicationTracker = lazy(() => import('./pages/ApplicationTracker').then(
 const Leaderboard = lazy(() => import('./pages/Leaderboard').then(m => ({ default: m.Leaderboard })));
 const FocusRoom = lazy(() => import('./pages/FocusRoom').then(m => ({ default: m.FocusRoom })));
 const ExperiencesHub = lazy(() => import('./components/tabs/ExperiencesHub'));
+const PollStudio = lazy(() => import('./components/tabs/PollStudio'));
 const WatchlistManager = lazy(() => import('./components/tabs/WatchlistManager'));
 
 const LoadingFallback = () => (
@@ -161,6 +162,8 @@ const getSeoPropsForTab = (tab: string) => {
       return { title: "Global Focus Room | YuvaHub", description: "Join the global Pomodoro focus room and study with other students." };
     case 'faq':
       return { title: "Help Center & FAQ | YuvaHub", description: "Find answers to common questions, troubleshoot issues, and learn how to use YuvaHub effectively." };
+    case 'poll_studio':
+      return { title: "Community Polls | YuvaHub", description: "Participate in student polls and surveys." };
     default:
       return {
         title: "YuvaHub | Find Student Hackathons, Scholarships & Mentorships",
@@ -285,6 +288,7 @@ function App() {
         { id: 'interview_experiences', label: 'Interview Experiences', icon: MessageSquare },
         { id: 'opensource_bounties', label: 'Open Source Bounties', icon: Code2 },
         { id: 'community', label: 'Community Forum', icon: MessageSquare },
+        { id: 'poll_studio', label: 'Community Polls', icon: MessageSquare },
         { id: 'campus_alumni', label: 'Campus & Alumni Hub', icon: Building2 },
       ]
     },
@@ -353,6 +357,7 @@ function App() {
       case 'bounty_board': return <BountyBoard />;
       case 'interview_experiences': return <ExperiencesHub />;
       case 'community': return <Community />;
+      case 'poll_studio': return <PollStudio />;
       case 'profile': return <Profile />;
       case 'settings': return <SettingsTab />;
       case 'auth_security': return <AuthSecurityCenter />;

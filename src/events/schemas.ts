@@ -6,7 +6,9 @@ export const EventType = z.enum([
   'ApplicationSubmitted',
   'SessionBooked',
   'SessionCompleted',
-  'MentorApplicationSubmitted'
+  'MentorApplicationSubmitted',
+  'PollVoted',
+  'PollClosed'
 ]);
 
 export const BaseEventSchema = z.object({
@@ -72,8 +74,34 @@ export const MentorApplicationSubmittedEventSchema = BaseEventSchema.extend({
 
 export type MentorApplicationSubmittedEvent = z.infer<typeof MentorApplicationSubmittedEventSchema>;
 
+export const PollVotedPayloadSchema = z.object({
+  pollId: z.string(),
+  userId: z.string(),
+  optionId: z.string(),
+});
+
+export const PollVotedEventSchema = BaseEventSchema.extend({
+  eventType: z.literal(EventType.enum.PollVoted),
+  payload: PollVotedPayloadSchema,
+});
+
+export type PollVotedEvent = z.infer<typeof PollVotedEventSchema>;
+
+export const PollClosedPayloadSchema = z.object({
+  pollId: z.string(),
+});
+
+export const PollClosedEventSchema = BaseEventSchema.extend({
+  eventType: z.literal(EventType.enum.PollClosed),
+  payload: PollClosedPayloadSchema,
+});
+
+export type PollClosedEvent = z.infer<typeof PollClosedEventSchema>;
+
 export type EventPayloads =
   | OpportunityScrapedEvent
   | SessionBookedEvent
   | SessionCompletedEvent
-  | MentorApplicationSubmittedEvent;
+  | MentorApplicationSubmittedEvent
+  | PollVotedEvent
+  | PollClosedEvent;

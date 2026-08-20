@@ -23,6 +23,7 @@ import eventRoutes from "./eventRoutes.js";
 import leaderboardRoutes from "./leaderboardRoutes.js";
 import experienceRoutes from "./experienceRoutes.js";
 import projectRoutes from "./projectRoutes.js";
+import pollRoutes from "./pollRoutes.js";
 import watchlistRoutes from "./watchlistRoutes.js";
 import skillGapRoutes from "./skillGapRoutes.js";
 import { errorHandler } from "../middlewares/errorHandler.js";
@@ -57,6 +58,7 @@ const routes = [
   leaderboardRoutes,
   experienceRoutes,
   projectRoutes,
+  pollRoutes,
   watchlistRoutes,
   skillGapRoutes,
 ];
