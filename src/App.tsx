@@ -65,6 +65,7 @@ const Leaderboard = lazy(() => import('./pages/Leaderboard').then(m => ({ defaul
 const FocusRoom = lazy(() => import('./pages/FocusRoom').then(m => ({ default: m.FocusRoom })));
 const ExperiencesHub = lazy(() => import('./components/tabs/ExperiencesHub'));
 const PollStudio = lazy(() => import('./components/tabs/PollStudio'));
+const WatchlistManager = lazy(() => import('./components/tabs/WatchlistManager'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
@@ -259,6 +260,7 @@ function App() {
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'opportunities', label: 'Opportunities', icon: Globe },
         { id: 'application_tracker', label: 'Application Tracker', icon: Briefcase },
+        { id: 'watchlist_manager', label: 'Watchlists & Alerts', icon: Sparkles, badge: 'NEW' },
         { id: 'opportunity_match', label: 'AI Match Studio', icon: Sparkles, badge: 'AI' },
         { id: 'teams', label: 'Team Builder', icon: Users },
         { id: 'bookmarks', label: 'Bookmarks', icon: Bookmark },
@@ -370,6 +372,7 @@ function App() {
       case 'about': return <AboutTab />;
       case 'help': return gettingStartedStep ? <GettingStartedDetail stepId={gettingStartedStep as any} /> : <HelpCenterPage />;
       case 'mock_interview': return <MockInterviewRoom />;
+      case 'watchlist_manager': return <WatchlistManager />;
       case 'faq': return <FAQ />;
       default: return <Dashboard />;
     }
