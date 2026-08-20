@@ -23,6 +23,7 @@ import eventRoutes from "./eventRoutes.js";
 import leaderboardRoutes from "./leaderboardRoutes.js";
 import experienceRoutes from "./experienceRoutes.js";
 import projectRoutes from "./projectRoutes.js";
+import skillGapRoutes from "./skillGapRoutes.js";
 import { errorHandler } from "../middlewares/errorHandler.js";
 import { apiVersionHeaders } from "../versioning/middleware.js";
 
@@ -55,6 +56,7 @@ const routes = [
   leaderboardRoutes,
   experienceRoutes,
   projectRoutes,
+  skillGapRoutes,
 ];
 
 // Mount all routes onto v1Router
