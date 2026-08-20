@@ -1,5 +1,5 @@
 import React, { KeyboardEvent, MouseEvent, useState, useRef, useCallback } from "react";
-import { Bookmark, Shield, ExternalLink, X, CheckCircle, MapPin, Clock, ArrowRight, Sparkles, Building2, Coins } from "lucide-react";
+import { Bookmark, Shield, ExternalLink, X, CheckCircle, MapPin, Clock, ArrowRight, Sparkles, Building2, Coins, Calendar } from "lucide-react";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 
 export interface Opportunity {
@@ -98,6 +98,11 @@ export function OpportunityCard({
         setShowAuditModal(true);
     };
 
+    const handleAddToCalendar = (e: MouseEvent) => {
+        e.stopPropagation();
+        window.location.href = `/api/v1/opportunities/${opp.id}/calendar`;
+    };
+
     const typeLabel = (opp.type || 'Opportunity').toUpperCase();
 
     return (
@@ -149,18 +154,32 @@ export function OpportunityCard({
                             </div>
                         </div>
 
-                        <button
-                            type="button"
-                            onClick={handleBookmarkClick}
-                            aria-label={isBookmarked ? "Remove bookmark" : "Save bookmark"}
-                            aria-pressed={isBookmarked}
-                            className="p-1.5 rounded-lg text-[#8c7569] hover:text-[#b56b37] hover:bg-[#f6efe2] dark:hover:bg-slate-800 transition-colors"
-                        >
-                            <Bookmark
-                                size={18}
-                                className={isBookmarked ? "fill-[#b56b37] text-[#b56b37]" : "text-[#8c7569] dark:text-slate-500"}
-                            />
-                        </button>
+                        <div className="flex items-center gap-1">
+                            <button
+                                type="button"
+                                onClick={handleAddToCalendar}
+                                aria-label="Add to Calendar"
+                                title="Add to Calendar"
+                                className="p-1.5 rounded-lg text-[#8c7569] hover:text-[#b56b37] hover:bg-[#f6efe2] dark:hover:bg-slate-800 transition-colors"
+                            >
+                                <Calendar
+                                    size={18}
+                                    className="text-[#8c7569] dark:text-slate-500"
+                                />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleBookmarkClick}
+                                aria-label={isBookmarked ? "Remove bookmark" : "Save bookmark"}
+                                aria-pressed={isBookmarked}
+                                className="p-1.5 rounded-lg text-[#8c7569] hover:text-[#b56b37] hover:bg-[#f6efe2] dark:hover:bg-slate-800 transition-colors"
+                            >
+                                <Bookmark
+                                    size={18}
+                                    className={isBookmarked ? "fill-[#b56b37] text-[#b56b37]" : "text-[#8c7569] dark:text-slate-500"}
+                                />
+                            </button>
+                        </div>
                     </div>
 
                     {/* Title */}

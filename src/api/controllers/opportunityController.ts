@@ -598,3 +598,33 @@ export const getSimilarOpportunities = async (req: Request, res: Response) => {
 
     return sendSuccess(res, { items: formattedItems });
 };
+
+export const getOpportunityCalendar = async (req: Request, res: Response) => {
+    const paramId = req.params.id;
+    const rawId: string = Array.isArray(paramId) ? paramId[0] : (paramId || '');
+    
+    let item: any = null;
+    if (dbQuery) {
+      const oid = safeObjectId(rawId);
+      item = oid
+        ? await dbQuery.collection("opportunities").findOne({ _id: oid })
+        : await dbQuery.collection("opportunities").findOne({
+            $or: [
+              { id: rawId },
+              { dedupe_hash: rawId },
+              { title: { $regex: rawId.replace(/[-_]/g, ' '), $options: 'i' } }
+            ]
+          });
+    }
+
+    if (!item) {
+        throw AppError.notFound("Opportunity not found");
+    }
+
+    const { generateIcs } = await import("../../utils/icsGenerator.js");
+    const icsContent = generateIcs(item);
+
+    res.setHeader('Content-Type', 'text/calendar');
+    res.setHeader('Content-Disposition', `attachment; filename="opportunity-${rawId}.ics"`);
+    res.send(icsContent);
+};
