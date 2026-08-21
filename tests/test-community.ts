@@ -1,15 +1,11 @@
 import { MongoClient, ObjectId } from 'mongodb';
 import dotenv from 'dotenv';
-import { isToxic } from '../src/services/toxicity.js';
+import { isToxic } from './src/services/toxicity.js';
 import { GoogleGenAI } from '@google/genai';
 
 dotenv.config();
 
-import { describe, it, expect } from 'vitest';
-
-describe('tests/test-community.ts', () => {
-  it('should execute without errors', async () => {
-    try {
+async function runTests() {
   const uri = process.env.MONGODB_URI;
   if (!uri) {
     console.error("No MONGODB_URI found in .env!");
@@ -155,8 +151,9 @@ describe('tests/test-community.ts', () => {
 
   await client.close();
   console.log("All direct database tests completed successfully.");
-    } catch (e: any) {
-      console.warn("Test failed (likely due to missing env/db):", e.message);
-    }
-  });
-});
+}
+
+runTests().catch(err => {
+  console.error("Test execution failed:", err);
+  process.exit(1);
+});
