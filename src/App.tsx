@@ -1,7 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import {
   LayoutDashboard, Globe, PlusCircle, Users, User, Menu, X, Bookmark, Sparkles, MessageSquare, Settings, Sun, Moon, Mic, Trophy,
-  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock, BookOpen, Target, Activity
+  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock, BookOpen, Target, Activity, Bell
 } from 'lucide-react';
 import { signInWithGoogle, logout } from './lib/firebase';
 import { UserProfile } from './types';
@@ -67,6 +67,7 @@ const ExperiencesHub = lazy(() => import('./components/tabs/ExperiencesHub'));
 const PollStudio = lazy(() => import('./components/tabs/PollStudio'));
 const WatchlistManager = lazy(() => import('./components/tabs/WatchlistManager'));
 const AuditLogCenter = lazy(() => import('./pages/Enterprise/AuditLogCenter').then(m => ({ default: m.AuditLogCenter })));
+const NotificationHub = lazy(() => import('./pages/Enterprise/NotificationHub').then(m => ({ default: m.NotificationHub })));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
@@ -309,7 +310,7 @@ function App() {
         { id: 'profile', label: 'My Profile', icon: User },
         { id: 'auth_security', label: 'Auth & Security', icon: ShieldCheck },
         { id: 'settings', label: 'Settings', icon: Settings },
-        ...(isAdminUser ? [{ id: 'admin', label: 'Admin Panel', icon: ShieldAlert }, { id: 'audit_log', label: 'Audit Log', icon: Activity, badge: 'NEW' }] : []),
+        ...(isAdminUser ? [{ id: 'admin', label: 'Admin Panel', icon: ShieldAlert }, { id: 'audit_log', label: 'Audit Log', icon: Activity, badge: 'NEW' }, { id: 'notification_center', label: 'Notifications', icon: Bell, badge: 'NEW' }] : []),
       ]
     }
   ];
@@ -376,6 +377,7 @@ function App() {
       case 'watchlist_manager': return <WatchlistManager />;
       case 'faq': return <FAQ />;
       case 'audit_log': return <AuditLogCenter />;
+      case 'notification_center': return <NotificationHub />;
       default: return <Dashboard />;
     }
   };
