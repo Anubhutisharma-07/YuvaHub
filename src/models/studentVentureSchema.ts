@@ -1,52 +1,35 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import { z } from "zod";
 
-export interface IStudentVentureFund extends Document {
-  startupName: string;
-  campusName: string;
-  studentFounderName: string;
-  sectorDomain: 'FINTECH' | 'HEALTH_TECH' | 'ED_TECH' | 'SAAS' | 'HARDWARE';
-  fundingStage: 'PRE_SEED' | 'SEED' | 'SERIES_A' | 'STUDENT_GRANT';
-  targetInvestmentUsd: number;
-  committedInvestmentUsd: number;
-  investorCount: number;
-  investmentStatus: 'OPEN' | 'DUE_DILIGENCE' | 'FULLY_COMMITTED' | 'DISBURSED';
-  pitchDeckUrl: string;
-  executiveSummary: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export const SectorDomainSchema = z.enum([
+  'FINTECH',
+  'HEALTH_TECH',
+  'ED_TECH',
+  'SAAS',
+  'HARDWARE'
+]);
+export type SectorDomain = z.infer<typeof SectorDomainSchema>;
 
-const StudentVentureFundSchema: Schema = new Schema(
-  {
-    startupName: { type: String, required: true },
-    campusName: { type: String, required: true, index: true },
-    studentFounderName: { type: String, required: true },
-    sectorDomain: {
-      type: String,
-      enum: ['FINTECH', 'HEALTH_TECH', 'ED_TECH', 'SAAS', 'HARDWARE'],
-      default: 'SAAS',
-      required: true,
-    },
-    fundingStage: {
-      type: String,
-      enum: ['PRE_SEED', 'SEED', 'SERIES_A', 'STUDENT_GRANT'],
-      default: 'PRE_SEED',
-      required: true,
-    },
-    targetInvestmentUsd: { type: Number, required: true, min: 1000 },
-    committedInvestmentUsd: { type: Number, default: 0, min: 0 },
-    investorCount: { type: Number, default: 0, min: 0 },
-    investmentStatus: {
-      type: String,
-      enum: ['OPEN', 'DUE_DILIGENCE', 'FULLY_COMMITTED', 'DISBURSED'],
-      default: 'OPEN',
-      required: true,
-    },
-    pitchDeckUrl: { type: String, default: '#' },
-    executiveSummary: { type: String, required: true },
-  },
-  { timestamps: true }
-);
+export const FundingStageSchema = z.enum(['PRE_SEED', 'SEED', 'SERIES_A', 'STUDENT_GRANT']);
+export type FundingStage = z.infer<typeof FundingStageSchema>;
 
-export default mongoose.models.StudentVentureFund ||
-  mongoose.model<IStudentVentureFund>('StudentVentureFund', StudentVentureFundSchema);
+export const InvestmentStatusSchema = z.enum(['OPEN', 'DUE_DILIGENCE', 'FULLY_COMMITTED', 'DISBURSED']);
+export type InvestmentStatus = z.infer<typeof InvestmentStatusSchema>;
+
+export const StudentVentureFundSchema = z.object({
+  ventureId: z.string().optional(),
+  startupName: z.string().min(1),
+  campusName: z.string().min(1),
+  studentFounderName: z.string().min(1),
+  sectorDomain: SectorDomainSchema.default('SAAS'),
+  fundingStage: FundingStageSchema.default('PRE_SEED'),
+  targetInvestmentUsd: z.number().min(1000),
+  committedInvestmentUsd: z.number().min(0).default(0),
+  investorCount: z.number().min(0).default(0),
+  investmentStatus: InvestmentStatusSchema.default('OPEN'),
+  pitchDeckUrl: z.string().default('#'),
+  executiveSummary: z.string().min(1),
+  createdAt: z.date().default(() => new Date()),
+  updatedAt: z.date().default(() => new Date()),
+});
+
+export type IStudentVentureFund = z.infer<typeof StudentVentureFundSchema>;
