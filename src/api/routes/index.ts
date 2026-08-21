@@ -27,6 +27,7 @@ import endorsementRoutes from "./endorsementRoutes.js";
 import pollRoutes from "./pollRoutes.js";
 import watchlistRoutes from "./watchlistRoutes.js";
 import skillGapRoutes from "./skillGapRoutes.js";
+import careerGoalRoutes from "./careerGoalRoutes.js";
 import { errorHandler } from "../middlewares/errorHandler.js";
 import { apiVersionHeaders } from "../versioning/middleware.js";
 
@@ -63,6 +64,7 @@ const routes = [
   pollRoutes,
   watchlistRoutes,
   skillGapRoutes,
+  careerGoalRoutes,
 ];
 
 // Mount all routes onto v1Router

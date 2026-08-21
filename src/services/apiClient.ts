@@ -1095,3 +1095,47 @@ export async function generateFlashcardsBackend(jobDescription: string) {
   }
 }
 
+// --- Career Goal Tracker ---
+
+export async function createCareerGoal(goalTitle: string, targetRole: string, targetDate: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/career-goals`, {
+    method: 'POST',
+    body: JSON.stringify({ goalTitle, targetRole, targetDate }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || "Failed to create career goal");
+  }
+  return await response.json();
+}
+
+export async function fetchCareerGoals() {
+  const response = await fetchWithRetry(`${API_BASE_URL}/career-goals`, {
+    method: 'GET',
+  });
+  if (!response.ok) {
+    throw new Error("Failed to fetch career goals");
+  }
+  return await response.json();
+}
+
+export async function updateCareerGoalMilestone(goalId: string, milestoneId: string, status: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/career-goals/${goalId}/milestones/${milestoneId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
+  if (!response.ok) {
+    throw new Error("Failed to update milestone");
+  }
+  return await response.json();
+}
+
+export async function deleteCareerGoal(goalId: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/career-goals/${goalId}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    throw new Error("Failed to delete career goal");
+  }
+  return await response.json();
+}

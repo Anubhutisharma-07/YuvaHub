@@ -66,6 +66,7 @@ const FocusRoom = lazy(() => import('./pages/FocusRoom').then(m => ({ default: m
 const ExperiencesHub = lazy(() => import('./components/tabs/ExperiencesHub'));
 const PollStudio = lazy(() => import('./components/tabs/PollStudio'));
 const WatchlistManager = lazy(() => import('./components/tabs/WatchlistManager'));
+const CareerGoalTracker = lazy(() => import('./components/tabs/CareerGoalTracker'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
@@ -272,6 +273,7 @@ function App() {
         { id: 'skill_gap', label: 'Skill Gap Analyzer', icon: Target },
         { id: 'ai_assistant', label: 'AI Assistant', icon: Brain },
         { id: 'career_match', label: 'Career Match Studio', icon: TrendingUp },
+        { id: 'career_goals', label: 'Career Goal Tracker', icon: Target, badge: 'AI' },
         { id: 'resume_ats', label: 'Resume ATS Optimizer', icon: FileText },
         { id: 'interview_prep', label: 'AI Interview Studio', icon: Video },
         { id: 'project_showcase', label: 'Project Vault', icon: FolderGit2 },
@@ -336,6 +338,7 @@ function App() {
         </Suspense>
       );
       case 'career_match': return <CareerMatchStudio />;
+      case 'career_goals': return <CareerGoalTracker />;
       case 'hackathon_studio': return <HackathonStudio />;
       case 'developer_api': return <DeveloperApiPortal />;
       case 'grant_studio': return <GrantFellowshipStudio />;
