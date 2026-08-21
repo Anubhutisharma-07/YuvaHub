@@ -1,45 +1,31 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import { z } from "zod";
 
-export interface IResearchPatentIp extends Document {
-  patentTitle: string;
-  campusName: string;
-  leadInventorName: string;
-  patentApplicationNumber: string;
-  technologyDomain: 'ARTIFICIAL_INTELLIGENCE' | 'BIOTECH' | 'CLEANTECH' | 'QUANTUM' | 'SEMICONDUCTORS';
-  patentStatus: 'FILED' | 'GRANTED' | 'LICENSED' | 'COMMERCIALIZED';
-  licensingFeeUsd: number;
-  royaltySharePercent: number;
-  commercialPartnerAssigned?: string;
-  abstractDescription: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export const TechnologyDomainSchema = z.enum([
+  'ARTIFICIAL_INTELLIGENCE',
+  'BIOTECH',
+  'CLEANTECH',
+  'QUANTUM',
+  'SEMICONDUCTORS'
+]);
+export type TechnologyDomain = z.infer<typeof TechnologyDomainSchema>;
 
-const ResearchPatentIpSchema: Schema = new Schema(
-  {
-    patentTitle: { type: String, required: true },
-    campusName: { type: String, required: true, index: true },
-    leadInventorName: { type: String, required: true },
-    patentApplicationNumber: { type: String, required: true, unique: true },
-    technologyDomain: {
-      type: String,
-      enum: ['ARTIFICIAL_INTELLIGENCE', 'BIOTECH', 'CLEANTECH', 'QUANTUM', 'SEMICONDUCTORS'],
-      default: 'ARTIFICIAL_INTELLIGENCE',
-      required: true,
-    },
-    patentStatus: {
-      type: String,
-      enum: ['FILED', 'GRANTED', 'LICENSED', 'COMMERCIALIZED'],
-      default: 'FILED',
-      required: true,
-    },
-    licensingFeeUsd: { type: Number, required: true, min: 0 },
-    royaltySharePercent: { type: Number, default: 5.0, min: 0, max: 100 },
-    commercialPartnerAssigned: { type: String, default: null },
-    abstractDescription: { type: String, required: true },
-  },
-  { timestamps: true }
-);
+export const PatentStatusSchema = z.enum(['FILED', 'GRANTED', 'LICENSED', 'COMMERCIALIZED']);
+export type PatentStatus = z.infer<typeof PatentStatusSchema>;
 
-export default mongoose.models.ResearchPatentIp ||
-  mongoose.model<IResearchPatentIp>('ResearchPatentIp', ResearchPatentIpSchema);
+export const ResearchPatentIpSchema = z.object({
+  patentId: z.string().optional(),
+  patentTitle: z.string().min(1),
+  campusName: z.string().min(1),
+  leadInventorName: z.string().min(1),
+  patentApplicationNumber: z.string().min(1),
+  technologyDomain: TechnologyDomainSchema.default('ARTIFICIAL_INTELLIGENCE'),
+  patentStatus: PatentStatusSchema.default('FILED'),
+  licensingFeeUsd: z.number().min(0),
+  royaltySharePercent: z.number().min(0).max(100).default(5.0),
+  commercialPartnerAssigned: z.string().optional(),
+  abstractDescription: z.string().min(1),
+  createdAt: z.date().default(() => new Date()),
+  updatedAt: z.date().default(() => new Date()),
+});
+
+export type IResearchPatentIp = z.infer<typeof ResearchPatentIpSchema>;
