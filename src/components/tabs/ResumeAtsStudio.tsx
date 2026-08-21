@@ -1,0 +1,346 @@
+import React, { useState, useMemo } from 'react';
+import {
+  FileText,
+  Sparkles,
+  CheckCircle2,
+  AlertTriangle,
+  Zap,
+  TrendingUp,
+  Download,
+  Copy,
+  Check,
+  Plus,
+  Trash2,
+  RefreshCw,
+  Search,
+  Award,
+  BookOpen,
+  Code,
+  Briefcase,
+  Target,
+  Sliders,
+  ShieldCheck,
+  Layers,
+  X,
+  FileCode
+} from 'lucide-react';
+import { useAppContext } from '../../context/AppContext';
+
+export default function ResumeAtsStudio() {
+  const { user, profile } = useAppContext();
+
+  // Navigation State
+  const [activeTab, setActiveTab] = useState<'editor' | 'ats_check' | 'benchmarks' | 'export'>('editor');
+  const [notification, setNotification] = useState<{ type: string; message: string }>({ type: '', message: '' });
+
+  // Resume Data State
+  const [resumeData, setResumeData] = useState({
+    fullName: profile?.name || user?.displayName || 'Student Developer',
+    email: user?.email || 'student@yuvahub.com',
+    targetRole: 'Senior Full Stack & AI Engineer',
+    summary: 'Full stack developer with experience building scalable Web apps, real-time telemetry, and LLM integrations using React, TypeScript, and Node.js.',
+    skills: ['React', 'TypeScript', 'Tailwind CSS', 'Node.js', 'Firebase', 'Python', 'Google Cloud AI'],
+    experiences: [
+      {
+        id: 'exp_1',
+        title: 'Lead Software Developer',
+        company: 'YuvaHub Open Source',
+        duration: '2024 - Present',
+        bullets: [
+          'Architected responsive React/TypeScript components reducing UI latency by 40%.',
+          'Integrated secure REST API backends with JWT authentication telemetry.'
+        ]
+      }
+    ],
+    projects: [
+      {
+        id: 'proj_1',
+        name: 'YuvaHub Talent Platform',
+        tech: 'React, TypeScript, Express',
+        link: 'https://github.com/Chirag1724/YuvaHub',
+        description: 'Global student opportunity aggregator featuring AI career match and hackathon submission studio.'
+      }
+    ]
+  });
+
+  const [jobDescription, setJobDescription] = useState(`Seeking a Full Stack Engineer proficient in React, TypeScript, GraphQL, Node.js, and Cloud Infrastructure to build high-scale web applications.`);
+  const [newSkill, setNewSkill] = useState('');
+
+  // Dynamic ATS Score Calculation
+  const atsAnalysis = useMemo(() => {
+    const jdKeywords = jobDescription.toLowerCase().match(/\b[a-z0-9.]+\b/g) || [];
+    const resumeText = `${resumeData.summary} ${resumeData.skills.join(' ')} ${resumeData.experiences.flatMap(e => e.bullets).join(' ')}`.toLowerCase();
+
+    const matched = Array.from(new Set(jdKeywords.filter((k: string) => k.length > 3 && resumeText.includes(k))));
+    const score = Math.min(96, Math.max(50, Math.round((matched.length / Math.max(1, new Set(jdKeywords).size)) * 300)));
+
+    return {
+      score,
+      matchedCount: matched.length,
+      topMatched: matched.slice(0, 8),
+      recommendations: [
+        'Use action verbs at the start of bullet points: "Architected", "Deployed", "Optimized".',
+        'Add quantifiable metrics (e.g. "% performance gain" or "X concurrent users").',
+        'Ensure contact information and LinkedIn URL are in plain header text.'
+      ]
+    };
+  }, [resumeData, jobDescription]);
+
+  // Handle Add Skill
+  const handleAddSkill = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSkill.trim()) return;
+    if (resumeData.skills.includes(newSkill.trim())) return;
+    setResumeData({ ...resumeData, skills: [...resumeData.skills, newSkill.trim()] });
+    setNewSkill('');
+    setNotification({ type: 'success', message: 'Added skill to resume ATS stack!' });
+  };
+
+  // Handle Remove Skill
+  const handleRemoveSkill = (skill: string) => {
+    setResumeData({ ...resumeData, skills: resumeData.skills.filter(s => s !== skill) });
+    setNotification({ type: 'success', message: `Removed ${skill} from resume.` });
+  };
+
+  // Export Resume JSON
+  const handleExportJson = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(resumeData, null, 2));
+    const anchor = document.createElement('a');
+    anchor.setAttribute("href", dataStr);
+    anchor.setAttribute("download", `YuvaHub_Resume_${(resumeData.fullName || 'Draft').replace(/\s+/g, '_')}.json`);
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setNotification({ type: 'success', message: 'Exported Resume JSON Manifest!' });
+  };
+
+  return (
+    <div className="w-full max-w-[1400px] mx-auto space-y-8 font-sans pb-16 px-2 sm:px-4">
+      
+      {/* Top Banner Header - YuvaHub Brand Theme */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#f6efe2] via-[#fcf9f2] to-[#f6efe2] dark:from-slate-900 dark:to-slate-950 border border-[#e8ded1] dark:border-slate-800 p-6 md:p-8 shadow-sm">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#f3e4bd] bg-[#603620] rounded-full flex items-center gap-1.5 shadow-xs">
+                <FileText className="w-3.5 h-3.5 text-[#f3e4bd]" /> AI Resume ATS Optimizer
+              </span>
+              <span className="px-3 py-1 text-xs font-bold text-[#63703d] bg-[#63703d]/15 border border-[#63703d]/30 rounded-full">
+                FAANG ATS Verified
+              </span>
+            </div>
+
+            <h1 className="text-2xl md:text-3xl font-serif font-bold text-[#231f20] dark:text-white tracking-tight">
+              Resume ATS <span className="text-[#b56b37] italic">Optimizer</span>
+            </h1>
+            <p className="text-[#603620] dark:text-slate-400 text-xs md:text-sm max-w-2xl font-medium">
+              Build ATS-friendly resume sections, scan keyword density against job descriptions, and export FAANG-ready resume manifests.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4 bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 p-4 rounded-2xl w-full lg:w-auto shadow-xs">
+            <div className="relative flex items-center justify-center w-16 h-16 rounded-full border-4 border-[#b56b37] bg-[#fcf9f2] font-serif font-bold text-lg text-[#b56b37]">
+              {atsAnalysis.score}%
+            </div>
+            <div>
+              <div className="text-[10px] uppercase font-bold text-[#8c7569] tracking-wider">ATS Score</div>
+              <div className="text-xs font-extrabold text-[#231f20] dark:text-white">High Compatibility</div>
+              <div className="text-[11px] text-[#63703d] font-semibold">{atsAnalysis.matchedCount} Keywords Matched</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation Sub-Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar border-b border-[#e8ded1] dark:border-slate-800 pb-3">
+        {[
+          { id: 'editor', label: 'Resume Section Editor', icon: Sliders },
+          { id: 'ats_check', label: 'ATS Keyword Audit', icon: Target },
+          { id: 'benchmarks', label: 'Role Benchmarks', icon: Award },
+          { id: 'export', label: 'Export Manifest', icon: Download }
+        ].map(tab => {
+          const IconComponent = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer border ${
+                isActive
+                  ? 'bg-[#b56b37] border-[#b56b37] text-white shadow-sm scale-[1.02]'
+                  : 'bg-white dark:bg-slate-900 border-[#e8ded1] dark:border-slate-800 text-[#603620] dark:text-slate-300 hover:bg-[#f6efe2]'
+              }`}
+            >
+              <IconComponent className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-[#b56b37]'}`} />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Notification Banner */}
+      {notification.message && (
+        <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#63703d]/15 text-[#63703d] border border-[#63703d]/30 text-xs font-bold animate-fade-in">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>{notification.message}</span>
+          </div>
+          <button onClick={() => setNotification({ type: '', message: '' })}>
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Tab 1: Resume Section Editor */}
+      {activeTab === 'editor' && (
+        <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xs">
+          <div className="border-b border-[#e8ded1] dark:border-slate-800 pb-4">
+            <h2 className="text-xl font-serif font-bold text-[#231f20] dark:text-white">Resume Information & Skill Stack</h2>
+            <p className="text-xs text-[#603620] dark:text-slate-400 font-medium mt-1">Update your profile summary and technical skills to maximize keyword matching.</p>
+          </div>
+
+          <div className="space-y-4 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="font-bold text-[#603620] uppercase">Full Name</label>
+                <input
+                  type="text"
+                  value={resumeData.fullName}
+                  onChange={e => setResumeData({ ...resumeData, fullName: e.target.value })}
+                  className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="font-bold text-[#603620] uppercase">Target Role Title</label>
+                <input
+                  type="text"
+                  value={resumeData.targetRole}
+                  onChange={e => setResumeData({ ...resumeData, targetRole: e.target.value })}
+                  className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="font-bold text-[#603620] uppercase">Professional Summary</label>
+              <textarea
+                rows={3}
+                value={resumeData.summary}
+                onChange={e => setResumeData({ ...resumeData, summary: e.target.value })}
+                className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none resize-none"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="font-bold text-[#603620] uppercase">Technical Skills Stack</label>
+              <form onSubmit={handleAddSkill} className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Add skill (e.g. Redis, GraphQL)..."
+                  value={newSkill}
+                  onChange={e => setNewSkill(e.target.value)}
+                  className="flex-1 bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-2.5 text-xs text-[#231f20] dark:text-white outline-none"
+                />
+                <button type="submit" className="px-4 py-2.5 bg-[#b56b37] text-white font-bold rounded-xl flex items-center gap-1 cursor-pointer">
+                  <Plus className="w-4 h-4" /> Add
+                </button>
+              </form>
+
+              <div className="flex flex-wrap gap-2 pt-2">
+                {resumeData.skills.map(s => (
+                  <span key={s} className="px-3 py-1 bg-[#f6efe2] dark:bg-slate-800 text-[#231f20] dark:text-slate-200 border border-[#e8ded1] rounded-xl text-xs font-bold flex items-center gap-2">
+                    <span>{s}</span>
+                    <button onClick={() => handleRemoveSkill(s)} className="text-[#8c7569] hover:text-red-600">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 2: ATS Keyword Audit */}
+      {activeTab === 'ats_check' && (
+        <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xs">
+          <div className="border-b border-[#e8ded1] dark:border-slate-800 pb-4">
+            <h2 className="text-xl font-serif font-bold text-[#231f20] dark:text-white">Target Job Description & Keyword Audit</h2>
+            <p className="text-xs text-[#603620] dark:text-slate-400 font-medium mt-1">Paste the target job description to dynamically audit matching keywords.</p>
+          </div>
+
+          <div className="space-y-4">
+            <textarea
+              rows={4}
+              value={jobDescription}
+              onChange={e => setJobDescription(e.target.value)}
+              className="w-full bg-[#fcf9f2] dark:bg-slate-800 border border-[#e8ded1] dark:border-slate-700 rounded-xl p-3 text-xs text-[#231f20] dark:text-white outline-none resize-none"
+            />
+
+            <div className="p-5 rounded-2xl bg-[#fcf9f2] border border-[#e8ded1] space-y-3">
+              <h3 className="font-serif font-bold text-sm text-[#231f20]">Identified Matched Keywords ({atsAnalysis.matchedCount})</h3>
+              <div className="flex flex-wrap gap-1.5">
+                {atsAnalysis.topMatched.map(m => (
+                  <span key={m} className="px-2.5 py-1 bg-[#63703d]/15 text-[#63703d] border border-[#63703d]/30 text-xs font-bold rounded-md flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> {m}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="font-bold text-xs text-[#603620] uppercase">ATS Optimization Recommendations</h4>
+              {atsAnalysis.recommendations.map((rec, idx) => (
+                <div key={idx} className="flex items-center gap-2 text-xs font-semibold text-[#231f20]">
+                  <Sparkles className="w-3.5 h-3.5 text-[#b56b37]" /> {rec}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 3: Benchmarks */}
+      {activeTab === 'benchmarks' && (
+        <div className="space-y-4">
+          {[
+            { role: 'Senior Full Stack Engineer', keywords: ['React', 'TypeScript', 'Node.js', 'PostgreSQL', 'GraphQL'], scoreNeeded: 85 },
+            { role: 'AI & Machine Learning Engineer', keywords: ['Python', 'PyTorch', 'Vector DB', 'CUDA', 'Docker'], scoreNeeded: 90 }
+          ].map((b, idx) => (
+            <div key={idx} className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 shadow-2xs flex justify-between items-center">
+              <div>
+                <h3 className="font-serif font-bold text-base text-[#231f20] dark:text-white">{b.role}</h3>
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {b.keywords.map(k => (
+                    <span key={k} className="px-2 py-0.5 bg-[#f6efe2] text-[#603620] text-[10px] font-bold rounded border border-[#e8ded1]">
+                      #{k}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <span className="px-3 py-1 rounded-full bg-[#f3e4bd] text-[#603620] font-extrabold text-xs">
+                Min {b.scoreNeeded}% ATS
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Tab 4: Export */}
+      {activeTab === 'export' && (
+        <div className="bg-white dark:bg-slate-900 border border-[#e8ded1] dark:border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-2xs max-w-xl mx-auto">
+          <div className="w-16 h-16 bg-[#f6efe2] text-[#b56b37] flex items-center justify-center rounded-full mx-auto border border-[#e8ded1]">
+            <Download className="w-8 h-8 text-[#b56b37]" />
+          </div>
+          <h2 className="text-2xl font-serif font-bold text-[#231f20] dark:text-white">Export Resume Manifest</h2>
+          <p className="text-xs text-[#603620] dark:text-slate-400 font-medium">
+            Download full structured resume sections, skills stack, and experiences in JSON format.
+          </p>
+          <button onClick={handleExportJson} className="px-6 py-3 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold text-xs rounded-xl shadow-md cursor-pointer inline-flex items-center gap-2">
+            <Download className="w-4 h-4" /> Download Resume JSON Manifest
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
