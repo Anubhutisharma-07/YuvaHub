@@ -26,6 +26,7 @@ import projectRoutes from "./projectRoutes.js";
 import endorsementRoutes from "./endorsementRoutes.js";
 import pollRoutes from "./pollRoutes.js";
 import watchlistRoutes from "./watchlistRoutes.js";
+import reportRoutes from "./reportRoutes.js";
 import skillGapRoutes from "./skillGapRoutes.js";
 import { errorHandler } from "../middlewares/errorHandler.js";
 import { apiVersionHeaders } from "../versioning/middleware.js";
@@ -62,6 +63,7 @@ const routes = [
   endorsementRoutes,
   pollRoutes,
   watchlistRoutes,
+  reportRoutes,
   skillGapRoutes,
 ];
 
