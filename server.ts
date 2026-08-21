@@ -2585,15 +2585,17 @@ ${JSON.stringify(userProfile, null, 2)}
       }
       if (!db) return res.status(503).json({ error: "Database not available" });
 
-      let queryId;
+      const rawCommentId = req.params.commentId;
+      const commentIdStr = Array.isArray(rawCommentId) ? rawCommentId[0] : rawCommentId;
+      let queryId: any;
       try {
-        queryId = new ObjectId(commentId);
+        queryId = new ObjectId(commentIdStr);
       } catch (e) {
-        queryId = commentId;
+        queryId = commentIdStr;
       }
 
       const result = await db.collection("comments").findOneAndUpdate(
-        { _id: queryId, postId },
+        { _id: queryId, postId } as any,
         { $set: { content, updatedAt: new Date() } },
         { returnDocument: "after" }
       );

@@ -1,49 +1,32 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import { z } from "zod";
 
-export interface IAlumniEndowmentFund extends Document {
-  fundName: string;
-  campusName: string;
-  donorName: string;
-  donorAlumniBatchYear: number;
-  fundCategory: 'RESEARCH_GRANT' | 'STUDENT_SCHOLARSHIP' | 'LAB_EQUIPMENT' | 'HACKATHON_SPONSORSHIP';
-  targetAmountUsd: number;
-  currentAmountRaisedUsd: number;
-  totalDonorsCount: number;
-  grantStatus: 'ACTIVE' | 'FULLY_FUNDED' | 'DISBURSED' | 'PAUSED';
-  matchingGrantEnabled: boolean;
-  matchingRatio: number;
-  description: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export const FundCategorySchema = z.enum([
+  'RESEARCH_GRANT',
+  'STUDENT_SCHOLARSHIP',
+  'LAB_EQUIPMENT',
+  'HACKATHON_SPONSORSHIP'
+]);
+export type FundCategory = z.infer<typeof FundCategorySchema>;
 
-const AlumniEndowmentFundSchema: Schema = new Schema(
-  {
-    fundName: { type: String, required: true },
-    campusName: { type: String, required: true, index: true },
-    donorName: { type: String, required: true },
-    donorAlumniBatchYear: { type: Number, required: true },
-    fundCategory: {
-      type: String,
-      enum: ['RESEARCH_GRANT', 'STUDENT_SCHOLARSHIP', 'LAB_EQUIPMENT', 'HACKATHON_SPONSORSHIP'],
-      default: 'STUDENT_SCHOLARSHIP',
-      required: true,
-    },
-    targetAmountUsd: { type: Number, required: true, min: 100 },
-    currentAmountRaisedUsd: { type: Number, default: 0, min: 0 },
-    totalDonorsCount: { type: Number, default: 1, min: 0 },
-    grantStatus: {
-      type: String,
-      enum: ['ACTIVE', 'FULLY_FUNDED', 'DISBURSED', 'PAUSED'],
-      default: 'ACTIVE',
-      required: true,
-    },
-    matchingGrantEnabled: { type: Boolean, default: false },
-    matchingRatio: { type: Number, default: 1.0 },
-    description: { type: String, required: true },
-  },
-  { timestamps: true }
-);
+export const GrantStatusSchema = z.enum(['ACTIVE', 'FULLY_FUNDED', 'DISBURSED', 'PAUSED']);
+export type GrantStatus = z.infer<typeof GrantStatusSchema>;
 
-export default mongoose.models.AlumniEndowmentFund ||
-  mongoose.model<IAlumniEndowmentFund>('AlumniEndowmentFund', AlumniEndowmentFundSchema);
+export const AlumniEndowmentFundSchema = z.object({
+  fundId: z.string().optional(),
+  fundName: z.string().min(1),
+  campusName: z.string().min(1),
+  donorName: z.string().min(1),
+  donorAlumniBatchYear: z.number(),
+  fundCategory: FundCategorySchema.default('STUDENT_SCHOLARSHIP'),
+  targetAmountUsd: z.number().min(100),
+  currentAmountRaisedUsd: z.number().min(0).default(0),
+  totalDonorsCount: z.number().min(0).default(1),
+  grantStatus: GrantStatusSchema.default('ACTIVE'),
+  matchingGrantEnabled: z.boolean().default(false),
+  matchingRatio: z.number().default(1.0),
+  description: z.string().min(1),
+  createdAt: z.date().default(() => new Date()),
+  updatedAt: z.date().default(() => new Date()),
+});
+
+export type IAlumniEndowmentFund = z.infer<typeof AlumniEndowmentFundSchema>;
