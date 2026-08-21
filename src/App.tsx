@@ -67,6 +67,7 @@ const ExperiencesHub = lazy(() => import('./components/tabs/ExperiencesHub'));
 const PollStudio = lazy(() => import('./components/tabs/PollStudio'));
 const WatchlistManager = lazy(() => import('./components/tabs/WatchlistManager'));
 const AuditLogCenter = lazy(() => import('./pages/Enterprise/AuditLogCenter').then(m => ({ default: m.AuditLogCenter })));
+const ApiGatewayHub = lazy(() => import('./pages/Enterprise/ApiGatewayHub').then(m => ({ default: m.ApiGatewayHub })));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
@@ -309,7 +310,7 @@ function App() {
         { id: 'profile', label: 'My Profile', icon: User },
         { id: 'auth_security', label: 'Auth & Security', icon: ShieldCheck },
         { id: 'settings', label: 'Settings', icon: Settings },
-        ...(isAdminUser ? [{ id: 'admin', label: 'Admin Panel', icon: ShieldAlert }, { id: 'audit_log', label: 'Audit Log', icon: Activity, badge: 'NEW' }] : []),
+        ...(isAdminUser ? [{ id: 'admin', label: 'Admin Panel', icon: ShieldAlert }, { id: 'audit_log', label: 'Audit Log', icon: Activity, badge: 'NEW' }, { id: 'api_gateway', label: 'API Gateway', icon: Terminal, badge: 'NEW' }] : []),
       ]
     }
   ];
@@ -376,6 +377,7 @@ function App() {
       case 'watchlist_manager': return <WatchlistManager />;
       case 'faq': return <FAQ />;
       case 'audit_log': return <AuditLogCenter />;
+      case 'api_gateway': return <ApiGatewayHub />;
       default: return <Dashboard />;
     }
   };
