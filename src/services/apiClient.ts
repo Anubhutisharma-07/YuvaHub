@@ -1139,3 +1139,45 @@ export async function deleteCareerGoal(goalId: string) {
   }
   return await response.json();
 }
+
+// --- Student Ventures & Campus Startup Capital ---
+
+export async function fetchStudentVentures(filters?: { campusName?: string; sectorDomain?: string; fundingStage?: string; search?: string }) {
+  const params = new URLSearchParams();
+  if (filters?.campusName && filters.campusName !== 'All') params.append('campusName', filters.campusName);
+  if (filters?.sectorDomain && filters.sectorDomain !== 'All') params.append('sectorDomain', filters.sectorDomain);
+  if (filters?.fundingStage && filters.fundingStage !== 'All') params.append('fundingStage', filters.fundingStage);
+  if (filters?.search) params.append('search', filters.search);
+
+  const query = params.toString() ? `?${params.toString()}` : '';
+  const response = await fetchWithRetry(`${API_BASE_URL}/campus/ventures${query}`, { method: 'GET' });
+  if (!response.ok) {
+    throw new Error("Failed to fetch campus student ventures");
+  }
+  return await response.json();
+}
+
+export async function registerStudentVenture(payload: any) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/campus/ventures`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to register student venture");
+  }
+  return await response.json();
+}
+
+export async function commitStudentVentureInvestment(id: string, investmentAmountUsd: number, investorName?: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/campus/ventures/${id}/invest`, {
+    method: 'POST',
+    body: JSON.stringify({ investmentAmountUsd, investorName }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to invest in student venture");
+  }
+  return await response.json();
+}
+

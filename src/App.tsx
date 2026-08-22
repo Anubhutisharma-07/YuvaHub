@@ -1,7 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import {
   LayoutDashboard, Globe, PlusCircle, Users, User, Menu, X, Bookmark, Sparkles, MessageSquare, Settings, Sun, Moon, Mic, Trophy,
-  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock, BookOpen, Target
+  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock, BookOpen, Target, Rocket
 } from 'lucide-react';
 import { signInWithGoogle, logout } from './lib/firebase';
 import { UserProfile } from './types';
@@ -67,6 +67,7 @@ const ExperiencesHub = lazy(() => import('./components/tabs/ExperiencesHub'));
 const PollStudio = lazy(() => import('./components/tabs/PollStudio'));
 const WatchlistManager = lazy(() => import('./components/tabs/WatchlistManager'));
 const CareerGoalTracker = lazy(() => import('./components/tabs/CareerGoalTracker'));
+const CampusStudentVentureStudioPage = lazy(() => import('./pages/CampusStudentVentureStudioPage'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
@@ -292,6 +293,7 @@ function App() {
         { id: 'community', label: 'Community Forum', icon: MessageSquare },
         { id: 'poll_studio', label: 'Community Polls', icon: MessageSquare },
         { id: 'campus_alumni', label: 'Campus & Alumni Hub', icon: Building2 },
+        { id: 'student_ventures', label: 'Student Venture Studio', icon: Rocket, badge: 'NEW' },
       ]
     },
     {
@@ -361,6 +363,7 @@ function App() {
       case 'interview_experiences': return <ExperiencesHub />;
       case 'community': return <Community />;
       case 'poll_studio': return <PollStudio />;
+      case 'student_ventures': return <CampusStudentVentureStudioPage />;
       case 'profile': return <Profile />;
       case 'settings': return <SettingsTab />;
       case 'auth_security': return <AuthSecurityCenter />;
