@@ -67,6 +67,7 @@ const ExperiencesHub = lazy(() => import('./components/tabs/ExperiencesHub'));
 const PollStudio = lazy(() => import('./components/tabs/PollStudio'));
 const WatchlistManager = lazy(() => import('./components/tabs/WatchlistManager'));
 const CareerGoalTracker = lazy(() => import('./components/tabs/CareerGoalTracker'));
+const CampusAlumniMentorshipStudioPage = lazy(() => import('./pages/CampusAlumniMentorshipStudioPage'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
@@ -292,6 +293,7 @@ function App() {
         { id: 'community', label: 'Community Forum', icon: MessageSquare },
         { id: 'poll_studio', label: 'Community Polls', icon: MessageSquare },
         { id: 'campus_alumni', label: 'Campus & Alumni Hub', icon: Building2 },
+        { id: 'alumni_mentorship', label: 'Alumni Mentorship Studio', icon: GraduationCap, badge: 'NEW' },
       ]
     },
     {
@@ -361,6 +363,7 @@ function App() {
       case 'interview_experiences': return <ExperiencesHub />;
       case 'community': return <Community />;
       case 'poll_studio': return <PollStudio />;
+      case 'alumni_mentorship': return <CampusAlumniMentorshipStudioPage />;
       case 'profile': return <Profile />;
       case 'settings': return <SettingsTab />;
       case 'auth_security': return <AuthSecurityCenter />;

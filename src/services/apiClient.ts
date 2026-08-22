@@ -1139,3 +1139,45 @@ export async function deleteCareerGoal(goalId: string) {
   }
   return await response.json();
 }
+
+// --- Campus Alumni Mentorship & Career Guidance ---
+
+export async function fetchAlumniMentors(filters?: { campusName?: string; expertiseDomain?: string; availabilityStatus?: string; search?: string }) {
+  const params = new URLSearchParams();
+  if (filters?.campusName && filters.campusName !== 'All') params.append('campusName', filters.campusName);
+  if (filters?.expertiseDomain && filters.expertiseDomain !== 'All') params.append('expertiseDomain', filters.expertiseDomain);
+  if (filters?.availabilityStatus && filters.availabilityStatus !== 'All') params.append('availabilityStatus', filters.availabilityStatus);
+  if (filters?.search) params.append('search', filters.search);
+
+  const query = params.toString() ? `?${params.toString()}` : '';
+  const response = await fetchWithRetry(`${API_BASE_URL}/campus/mentorship/mentors${query}`, { method: 'GET' });
+  if (!response.ok) {
+    throw new Error("Failed to fetch campus alumni mentors");
+  }
+  return await response.json();
+}
+
+export async function registerAlumniMentor(payload: any) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/campus/mentorship/mentors`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to register alumni mentor");
+  }
+  return await response.json();
+}
+
+export async function bookAlumniMentorshipSession(id: string, studentName?: string, sessionTopic?: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/campus/mentorship/mentors/${id}/book`, {
+    method: 'POST',
+    body: JSON.stringify({ studentName, sessionTopic }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to book alumni mentorship session");
+  }
+  return await response.json();
+}
+
