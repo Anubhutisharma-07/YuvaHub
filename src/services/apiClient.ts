@@ -1263,3 +1263,65 @@ export async function commitStudentVentureInvestment(ventureId: string, investme
   const json = await response.json();
   return json.data?.venture || json.venture;
 }
+
+// ─── Mental Wellness API Client ──────────────────────────────────────────
+
+export async function fetchMentalWellnessCheckIns(filters?: {
+  campusName?: string;
+  stressLevel?: string;
+  sessionStatus?: string;
+  search?: string;
+}) {
+  try {
+    const params = new URLSearchParams();
+    if (filters?.campusName) params.append('campusName', filters.campusName);
+    if (filters?.stressLevel) params.append('stressLevel', filters.stressLevel);
+    if (filters?.sessionStatus) params.append('sessionStatus', filters.sessionStatus);
+    if (filters?.search) params.append('search', filters.search);
+
+    const response = await fetchWithRetry(`${API_BASE_URL}/campus/wellness/checkins?${params.toString()}`, {
+      method: 'GET',
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    const json = await response.json();
+    return json.data?.checkIns || json.checkIns || [];
+  } catch (error) {
+    console.warn("fetchMentalWellnessCheckIns failed", error);
+    return [];
+  }
+}
+
+export async function createMentalWellnessCheckIn(payload: {
+  studentId: string;
+  studentName: string;
+  campusName: string;
+  moodRating: number;
+  stressLevel: string;
+  primaryStressor: string;
+  supportRequested: boolean;
+  confidentialNotes?: string;
+}) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/campus/wellness/checkins`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to create mental wellness check-in");
+  }
+  const json = await response.json();
+  return json.data?.checkIn || json.checkIn;
+}
+
+export async function assignCounselorCheckIn(checkInId: string, counselorName?: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/campus/wellness/checkins/${checkInId}/counselor`, {
+    method: 'POST',
+    body: JSON.stringify({ counselorName }),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to assign counselor");
+  }
+  const json = await response.json();
+  return json.data?.checkIn || json.checkIn;
+}

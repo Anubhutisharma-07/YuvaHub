@@ -68,6 +68,7 @@ const PollStudio = lazy(() => import('./components/tabs/PollStudio'));
 const WatchlistManager = lazy(() => import('./components/tabs/WatchlistManager'));
 const CareerGoalTracker = lazy(() => import('./components/tabs/CareerGoalTracker'));
 const CampusStudentVentureStudioPage = lazy(() => import('./pages/CampusStudentVentureStudioPage'));
+const StudentMentalWellnessDeskPage = lazy(() => import('./pages/StudentMentalWellnessDeskPage'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
@@ -293,6 +294,7 @@ function App() {
         { id: 'community', label: 'Community Forum', icon: MessageSquare },
         { id: 'poll_studio', label: 'Community Polls', icon: MessageSquare },
         { id: 'campus_alumni', label: 'Campus & Alumni Hub', icon: Building2 },
+        { id: 'mental_wellness', label: 'Mental Wellness Desk', icon: HeartPulse, badge: 'NEW' },
       ]
     },
     {
@@ -345,6 +347,7 @@ function App() {
       case 'developer_api': return <DeveloperApiPortal />;
       case 'grant_studio': return <GrantFellowshipStudio />;
       case 'student_venture': return <CampusStudentVentureStudioPage />;
+      case 'mental_wellness': return <StudentMentalWellnessDeskPage />;
       case 'campus_alumni': return <CampusAlumniHub />;
       case 'resume_ats': return <ResumeAtsStudio />;
       case 'skill_gap': return <SkillGapStudio />;
