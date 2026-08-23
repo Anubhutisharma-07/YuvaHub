@@ -1210,3 +1210,67 @@ export async function flagResource(id: string) {
   return await response.json();
 }
 
+// ─── Code Review Exchange ───────────────────────────────────────────────────
+
+export async function createReviewRequest(data: { title: string; description: string; language: string; prUrl?: string; codeSnippet?: string; tags: string[]; requesterName?: string }) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/code-reviews`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || "Failed to create review request");
+  }
+  return await response.json();
+}
+
+export async function fetchReviewRequests(filters?: { status?: string; language?: string; tag?: string }, page = 1, limit = 10) {
+  const params = new URLSearchParams();
+  if (filters?.status) params.set('status', filters.status);
+  if (filters?.language) params.set('language', filters.language);
+  if (filters?.tag) params.set('tag', filters.tag);
+  params.set('page', page.toString());
+  params.set('limit', limit.toString());
+
+  const response = await fetchWithRetry(`${API_BASE_URL}/code-reviews?${params.toString()}`, {
+    method: 'GET',
+  });
+  if (!response.ok) {
+    throw new Error("Failed to fetch review requests");
+  }
+  return await response.json();
+}
+
+export async function claimReview(requestId: string, reviewerName?: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/code-reviews/${requestId}/claim`, {
+    method: 'POST',
+    body: JSON.stringify({ reviewerName }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || "Failed to claim review");
+  }
+  return await response.json();
+}
+
+export async function submitReviewFeedback(requestId: string, data: { correctnessScore: number; readabilityScore: number; bestPracticesScore: number; comments: string; suggestedChanges?: string }) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/code-reviews/${requestId}/feedback`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || "Failed to submit feedback");
+  }
+  return await response.json();
+}
+
+export async function fetchMyReviews() {
+  const response = await fetchWithRetry(`${API_BASE_URL}/code-reviews/mine`, {
+    method: 'GET',
+  });
+  if (!response.ok) {
+    throw new Error("Failed to fetch my reviews");
+  }
+  return await response.json();
+}
