@@ -67,8 +67,10 @@ const ExperiencesHub = lazy(() => import('./components/tabs/ExperiencesHub'));
 const PollStudio = lazy(() => import('./components/tabs/PollStudio'));
 const WatchlistManager = lazy(() => import('./components/tabs/WatchlistManager'));
 const CareerGoalTracker = lazy(() => import('./components/tabs/CareerGoalTracker'));
+const StudyGroupRooms = lazy(() => import('./components/tabs/StudyGroupRooms'));
 const CodeReviewExchange = lazy(() => import('./components/tabs/CodeReviewExchange'));
 const DeadlineCalendar = lazy(() => import('./components/tabs/DeadlineCalendar'));
+const DirectMessages = lazy(() => import('./components/tabs/DirectMessages'));
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
     <div className="flex items-center gap-3 animate-pulse">
@@ -288,6 +290,7 @@ function App() {
       title: "Ecosystem & Community",
       items: [
         { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
+        { id: 'study_groups', label: 'Study Groups', icon: Users, badge: 'NEW' },
         { id: 'mentorship', label: 'Mentorship', icon: GraduationCap },
         { id: 'focus_room', label: 'Global Focus Room', icon: Clock },
         { id: 'bounty_board', label: 'Bounty Board', icon: Coins },
@@ -296,6 +299,7 @@ function App() {
         { id: 'community', label: 'Community Forum', icon: MessageSquare },
         { id: 'poll_studio', label: 'Community Polls', icon: MessageSquare },
         { id: 'code_review', label: 'Code Review Exchange', icon: Code2, badge: 'NEW' },
+        { id: 'direct_messages', label: 'Direct Messages', icon: MessageSquare, badge: 'NEW' },
         { id: 'campus_alumni', label: 'Campus & Alumni Hub', icon: Building2 },
       ]
     },
@@ -363,11 +367,13 @@ function App() {
       case 'submit': return <SubmitOpportunity />;
       case 'mentorship': return <MentorshipAdvisoryStudio />;
       case 'focus_room': return <FocusRoom />;
+      case 'study_groups': return <StudyGroupRooms />;
       case 'bounty_board': return <BountyBoard />;
       case 'interview_experiences': return <ExperiencesHub />;
       case 'community': return <Community />;
       case 'poll_studio': return <PollStudio />;
       case 'code_review': return <CodeReviewExchange />;
+      case 'direct_messages': return <DirectMessages />;
       case 'profile': return <Profile />;
       case 'settings': return <SettingsTab />;
       case 'auth_security': return <AuthSecurityCenter />;
