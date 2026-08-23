@@ -33,6 +33,11 @@ import alumniMentorshipRoutes from "./alumniMentorshipRoutes.js";
 import studentVentureRoutes from "./studentVentureRoutes.js";
 import mentalWellnessRoutes from "./mentalWellnessRoutes.js";
 import researchPatentRoutes from "./researchPatentRoutes.js";
+import resourceRoutes from "./resourceRoutes.js";
+import studyGroupRoutes from "./studyGroupRoutes.js";
+import codeReviewRoutes from "./codeReviewRoutes.js";
+import deadlineCalendarRoutes from "./deadlineCalendarRoutes.js";
+import directMessageRoutes from "./directMessageRoutes.js";
 import { errorHandler } from "../middlewares/errorHandler.js";
 import { apiVersionHeaders } from "../versioning/middleware.js";
 
@@ -75,6 +80,11 @@ const routes = [
   studentVentureRoutes,
   mentalWellnessRoutes,
   researchPatentRoutes,
+  resourceRoutes,
+  studyGroupRoutes,
+  codeReviewRoutes,
+  deadlineCalendarRoutes,
+  directMessageRoutes,
 ];
 
 // Mount all routes onto v1Router
