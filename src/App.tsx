@@ -1,7 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import {
   LayoutDashboard, Globe, PlusCircle, Users, User, Menu, X, Bookmark, Sparkles, MessageSquare, Settings, Sun, Moon, Mic, Trophy,
-  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock, BookOpen, Target
+  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock, BookOpen, Target, HeartPulse, Rocket
 } from 'lucide-react';
 import { signInWithGoogle, logout } from './lib/firebase';
 import { UserProfile } from './types';
@@ -69,6 +69,7 @@ const WatchlistManager = lazy(() => import('./components/tabs/WatchlistManager')
 const CareerGoalTracker = lazy(() => import('./components/tabs/CareerGoalTracker'));
 const CampusStudentVentureStudioPage = lazy(() => import('./pages/CampusStudentVentureStudioPage'));
 const StudentMentalWellnessDeskPage = lazy(() => import('./pages/StudentMentalWellnessDeskPage'));
+const CampusResearchIpLicensingStudioPage = lazy(() => import('./pages/CampusResearchIpLicensingStudioPage'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
@@ -304,6 +305,7 @@ function App() {
         { id: 'grant_studio', label: 'Grants & Fellowships', icon: Award },
         { id: 'student_venture', label: 'Student Venture Studio', icon: Rocket, badge: 'NEW' },
         { id: 'research_grants', label: 'Research Grant Portal', icon: BookOpen },
+        { id: 'research_patents', label: 'Research IP & Patents', icon: Cpu, badge: 'NEW' },
         { id: 'tech_ecosystem', label: 'Tech Ecosystem Studio', icon: Cpu },
         { id: 'developer_api', label: 'Developer API Portal', icon: Terminal },
       ]
@@ -358,6 +360,7 @@ function App() {
       case 'hackathon_judge': return <HackathonJudgeStudio />;
       case 'mentorship_advisory': return <MentorshipAdvisoryStudio />;
       case 'research_grants': return <ResearchGrantPortal />;
+      case 'research_patents': return <CampusResearchIpLicensingStudioPage />;
       case 'project_showcase': return <ProjectShowcaseVault />;
       case 'star_interview': return <StarInterviewStudio />;
       case 'submit': return <SubmitOpportunity />;

@@ -1325,3 +1325,65 @@ export async function assignCounselorCheckIn(checkInId: string, counselorName?: 
   const json = await response.json();
   return json.data?.checkIn || json.checkIn;
 }
+
+// ─── Research Patent IP API Client ───────────────────────────────────────
+
+export async function fetchResearchPatents(filters?: {
+  campusName?: string;
+  technologyDomain?: string;
+  patentStatus?: string;
+  search?: string;
+}) {
+  try {
+    const params = new URLSearchParams();
+    if (filters?.campusName) params.append('campusName', filters.campusName);
+    if (filters?.technologyDomain) params.append('technologyDomain', filters.technologyDomain);
+    if (filters?.patentStatus) params.append('patentStatus', filters.patentStatus);
+    if (filters?.search) params.append('search', filters.search);
+
+    const response = await fetchWithRetry(`${API_BASE_URL}/campus/patents?${params.toString()}`, {
+      method: 'GET',
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    const json = await response.json();
+    return json.data?.patents || json.patents || [];
+  } catch (error) {
+    console.warn("fetchResearchPatents failed", error);
+    return [];
+  }
+}
+
+export async function registerResearchPatent(payload: {
+  patentTitle: string;
+  campusName: string;
+  leadInventorName: string;
+  patentApplicationNumber: string;
+  technologyDomain: string;
+  licensingFeeUsd: number;
+  royaltySharePercent: number;
+  abstractDescription: string;
+}) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/campus/patents`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to register research patent");
+  }
+  const json = await response.json();
+  return json.data?.patent || json.patent;
+}
+
+export async function executePatentLicensingAgreement(patentId: string, commercialPartnerName?: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/campus/patents/${patentId}/license`, {
+    method: 'POST',
+    body: JSON.stringify({ commercialPartnerName }),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to execute licensing agreement");
+  }
+  const json = await response.json();
+  return json.data?.patent || json.patent;
+}
