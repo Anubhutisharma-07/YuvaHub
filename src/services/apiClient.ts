@@ -1387,3 +1387,67 @@ export async function executePatentLicensingAgreement(patentId: string, commerci
   const json = await response.json();
   return json.data?.patent || json.patent;
 }
+
+// ─── Alumni Endowment API Client ─────────────────────────────────────────
+
+export async function fetchAlumniEndowments(filters?: {
+  campusName?: string;
+  fundCategory?: string;
+  grantStatus?: string;
+  search?: string;
+}) {
+  try {
+    const params = new URLSearchParams();
+    if (filters?.campusName) params.append('campusName', filters.campusName);
+    if (filters?.fundCategory) params.append('fundCategory', filters.fundCategory);
+    if (filters?.grantStatus) params.append('grantStatus', filters.grantStatus);
+    if (filters?.search) params.append('search', filters.search);
+
+    const response = await fetchWithRetry(`${API_BASE_URL}/campus/endowments?${params.toString()}`, {
+      method: 'GET',
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    const json = await response.json();
+    return json.data?.endowments || json.endowments || [];
+  } catch (error) {
+    console.warn("fetchAlumniEndowments failed", error);
+    return [];
+  }
+}
+
+export async function createAlumniEndowment(payload: {
+  fundName: string;
+  campusName: string;
+  donorName: string;
+  donorAlumniBatchYear: number;
+  fundCategory: string;
+  targetAmountUsd: number;
+  initialContributionUsd: number;
+  matchingGrantEnabled: boolean;
+  matchingRatio?: number;
+  description: string;
+}) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/campus/endowments`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to create alumni endowment");
+  }
+  const json = await response.json();
+  return json.data?.endowment || json.endowment;
+}
+
+export async function contributeToAlumniEndowment(fundId: string, donationAmountUsd: number) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/campus/endowments/${fundId}/contribute`, {
+    method: 'POST',
+    body: JSON.stringify({ donationAmountUsd }),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to contribute to alumni endowment");
+  }
+  const json = await response.json();
+  return json.data?.endowment || json.endowment;
+}

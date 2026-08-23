@@ -70,6 +70,7 @@ const CareerGoalTracker = lazy(() => import('./components/tabs/CareerGoalTracker
 const CampusStudentVentureStudioPage = lazy(() => import('./pages/CampusStudentVentureStudioPage'));
 const StudentMentalWellnessDeskPage = lazy(() => import('./pages/StudentMentalWellnessDeskPage'));
 const CampusResearchIpLicensingStudioPage = lazy(() => import('./pages/CampusResearchIpLicensingStudioPage'));
+const CampusAlumniEndowmentStudioPage = lazy(() => import('./pages/CampusAlumniEndowmentStudioPage'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
@@ -303,6 +304,7 @@ function App() {
       items: [
         { id: 'submit', label: 'Submit Opportunity', icon: PlusCircle },
         { id: 'grant_studio', label: 'Grants & Fellowships', icon: Award },
+        { id: 'alumni_endowments', label: 'Alumni Endowment Studio', icon: GraduationCap, badge: 'NEW' },
         { id: 'student_venture', label: 'Student Venture Studio', icon: Rocket, badge: 'NEW' },
         { id: 'research_grants', label: 'Research Grant Portal', icon: BookOpen },
         { id: 'research_patents', label: 'Research IP & Patents', icon: Cpu, badge: 'NEW' },
@@ -348,6 +350,7 @@ function App() {
       case 'hackathon_studio': return <HackathonStudio />;
       case 'developer_api': return <DeveloperApiPortal />;
       case 'grant_studio': return <GrantFellowshipStudio />;
+      case 'alumni_endowments': return <CampusAlumniEndowmentStudioPage />;
       case 'student_venture': return <CampusStudentVentureStudioPage />;
       case 'mental_wellness': return <StudentMentalWellnessDeskPage />;
       case 'campus_alumni': return <CampusAlumniHub />;
