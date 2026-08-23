@@ -1204,3 +1204,44 @@ export async function fetchMyReviews() {
   }
   return await response.json();
 }
+
+export async function fetchCalendarEvents() {
+  const response = await fetchWithRetry(`${API_BASE_URL}/calendar/events`, {
+    method: 'GET',
+  });
+  if (!response.ok) throw new Error("Failed to fetch calendar events");
+  return await response.json();
+}
+
+export async function setDeadlineReminder(data: { opportunityId: string; opportunityTitle: string; deadlineDate: string | Date; reminderOffsets?: number[]; channels?: string[] }) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/calendar/reminders`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error("Failed to set deadline reminder");
+  return await response.json();
+}
+
+export async function deleteDeadlineReminder(id: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/calendar/reminders/${id}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) throw new Error("Failed to delete reminder");
+  return await response.json();
+}
+
+export async function downloadCalendarICS(oppIds: string[]) {
+  const response = await fetch(`${API_BASE_URL}/calendar/export.ics?oppIds=${oppIds.join(',')}`, {
+    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+  });
+  if (!response.ok) throw new Error("Failed to export ICS");
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'deadlines.ics';
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+}
