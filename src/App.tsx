@@ -67,6 +67,7 @@ const ExperiencesHub = lazy(() => import('./components/tabs/ExperiencesHub'));
 const PollStudio = lazy(() => import('./components/tabs/PollStudio'));
 const WatchlistManager = lazy(() => import('./components/tabs/WatchlistManager'));
 const CareerGoalTracker = lazy(() => import('./components/tabs/CareerGoalTracker'));
+const ResourceVault = lazy(() => import('./components/tabs/ResourceVault'));
 const StudyGroupRooms = lazy(() => import('./components/tabs/StudyGroupRooms'));
 const CodeReviewExchange = lazy(() => import('./components/tabs/CodeReviewExchange'));
 const DirectMessages = lazy(() => import('./components/tabs/DirectMessages'));
@@ -154,6 +155,8 @@ const getSeoPropsForTab = (tab: string) => {
       return { title: "AI Mentorship | YuvaHub", description: "Receive AI-driven career guidance and mentorship plans on YuvaHub." };
     case 'community':
       return { title: "Community Forum | YuvaHub", description: "Participate in discussions and share resources with other ambitious students on YuvaHub." };
+    case 'resource_vault':
+      return { title: "Resource Vault | YuvaHub", description: "Discover, share, and bookmark the best learning resources curated by the student community." };
     case 'profile':
       return { title: "My Profile | YuvaHub", description: "Manage your student profile, skills, education, and resumes on YuvaHub." };
     case 'settings':
@@ -296,6 +299,7 @@ function App() {
         { id: 'interview_experiences', label: 'Interview Experiences', icon: MessageSquare },
         { id: 'opensource_bounties', label: 'Open Source Bounties', icon: Code2 },
         { id: 'community', label: 'Community Forum', icon: MessageSquare },
+        { id: 'resource_vault', label: 'Resource Vault', icon: BookOpen },
         { id: 'poll_studio', label: 'Community Polls', icon: MessageSquare },
         { id: 'code_review', label: 'Code Review Exchange', icon: Code2, badge: 'NEW' },
         { id: 'direct_messages', label: 'Direct Messages', icon: MessageSquare, badge: 'NEW' },
@@ -369,6 +373,7 @@ function App() {
       case 'bounty_board': return <BountyBoard />;
       case 'interview_experiences': return <ExperiencesHub />;
       case 'community': return <Community />;
+      case 'resource_vault': return <ResourceVault />;
       case 'poll_studio': return <PollStudio />;
       case 'code_review': return <CodeReviewExchange />;
       case 'direct_messages': return <DirectMessages />;

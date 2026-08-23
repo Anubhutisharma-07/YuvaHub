@@ -29,6 +29,7 @@ import watchlistRoutes from "./watchlistRoutes.js";
 import reportRoutes from "./reportRoutes.js";
 import skillGapRoutes from "./skillGapRoutes.js";
 import careerGoalRoutes from "./careerGoalRoutes.js";
+import resourceRoutes from "./resourceRoutes.js";
 import studyGroupRoutes from "./studyGroupRoutes.js";
 import codeReviewRoutes from "./codeReviewRoutes.js";
 import directMessageRoutes from "./directMessageRoutes.js";
@@ -70,6 +71,7 @@ const routes = [
   reportRoutes,
   skillGapRoutes,
   careerGoalRoutes,
+  resourceRoutes,
   studyGroupRoutes,
   codeReviewRoutes,
   directMessageRoutes,

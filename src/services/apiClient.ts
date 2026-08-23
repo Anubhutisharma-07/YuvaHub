@@ -1140,6 +1140,76 @@ export async function deleteCareerGoal(goalId: string) {
   return await response.json();
 }
 
+// ─── Community Resource Vault ────────────────────────────────────────────────
+export async function submitResource(data: any) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/resources`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || "Failed to submit resource");
+  }
+  return await response.json();
+}
+
+export async function fetchResources(params: Record<string, any> = {}) {
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== "all") {
+      if (Array.isArray(v)) {
+        v.forEach(val => searchParams.append(k, val));
+      } else {
+        searchParams.append(k, String(v));
+      }
+    }
+  });
+  const response = await fetchWithRetry(`${API_BASE_URL}/resources?${searchParams.toString()}`, {
+    method: 'GET',
+  });
+  if (!response.ok) throw new Error("Failed to fetch resources");
+  return await response.json();
+}
+
+export async function fetchSavedResources(params: Record<string, any> = {}) {
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null) {
+      searchParams.append(k, String(v));
+    }
+  });
+  const response = await fetchWithRetry(`${API_BASE_URL}/resources/saved?${searchParams.toString()}`, {
+    method: 'GET',
+  });
+  if (!response.ok) throw new Error("Failed to fetch saved resources");
+  return await response.json();
+}
+
+export async function voteResource(id: string, direction: 'up' | 'down') {
+  const response = await fetchWithRetry(`${API_BASE_URL}/resources/${id}/vote`, {
+    method: 'POST',
+    body: JSON.stringify({ direction }),
+  });
+  if (!response.ok) throw new Error("Failed to vote");
+  return await response.json();
+}
+
+export async function saveResource(id: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/resources/${id}/save`, {
+    method: 'POST',
+  });
+  if (!response.ok) throw new Error("Failed to save resource");
+  return await response.json();
+}
+
+export async function flagResource(id: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/resources/${id}/flag`, {
+    method: 'POST',
+  });
+  if (!response.ok) throw new Error("Failed to flag resource");
+  return await response.json();
+}
+
 // ─── Study Group Rooms ─────────────────────────────────────────────────────────
 export async function createStudyGroup(data: { name: string; topic: string; tags: string[]; maxCapacity: number; resourceUrl?: string }) {
   const response = await fetchWithRetry(`${API_BASE_URL}/study-groups`, {
