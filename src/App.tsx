@@ -67,6 +67,7 @@ const ExperiencesHub = lazy(() => import('./components/tabs/ExperiencesHub'));
 const PollStudio = lazy(() => import('./components/tabs/PollStudio'));
 const WatchlistManager = lazy(() => import('./components/tabs/WatchlistManager'));
 const CareerGoalTracker = lazy(() => import('./components/tabs/CareerGoalTracker'));
+const ResourceVault = lazy(() => import('./components/tabs/ResourceVault'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
@@ -151,6 +152,8 @@ const getSeoPropsForTab = (tab: string) => {
       return { title: "AI Mentorship | YuvaHub", description: "Receive AI-driven career guidance and mentorship plans on YuvaHub." };
     case 'community':
       return { title: "Community Forum | YuvaHub", description: "Participate in discussions and share resources with other ambitious students on YuvaHub." };
+    case 'resource_vault':
+      return { title: "Resource Vault | YuvaHub", description: "Discover, share, and bookmark the best learning resources curated by the student community." };
     case 'profile':
       return { title: "My Profile | YuvaHub", description: "Manage your student profile, skills, education, and resumes on YuvaHub." };
     case 'settings':
@@ -290,6 +293,7 @@ function App() {
         { id: 'interview_experiences', label: 'Interview Experiences', icon: MessageSquare },
         { id: 'opensource_bounties', label: 'Open Source Bounties', icon: Code2 },
         { id: 'community', label: 'Community Forum', icon: MessageSquare },
+        { id: 'resource_vault', label: 'Resource Vault', icon: BookOpen },
         { id: 'poll_studio', label: 'Community Polls', icon: MessageSquare },
         { id: 'campus_alumni', label: 'Campus & Alumni Hub', icon: Building2 },
       ]
@@ -360,6 +364,7 @@ function App() {
       case 'bounty_board': return <BountyBoard />;
       case 'interview_experiences': return <ExperiencesHub />;
       case 'community': return <Community />;
+      case 'resource_vault': return <ResourceVault />;
       case 'poll_studio': return <PollStudio />;
       case 'profile': return <Profile />;
       case 'settings': return <SettingsTab />;
