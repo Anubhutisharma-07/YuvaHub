@@ -1139,3 +1139,65 @@ export async function deleteCareerGoal(goalId: string) {
   }
   return await response.json();
 }
+
+// ─── Alumni Mentorship API Client ──────────────────────────────────────────
+
+export async function fetchAlumniMentorshipSlots(filters?: {
+  campusName?: string;
+  expertiseArea?: string;
+  status?: string;
+  search?: string;
+}) {
+  try {
+    const params = new URLSearchParams();
+    if (filters?.campusName) params.append('campusName', filters.campusName);
+    if (filters?.expertiseArea) params.append('expertiseArea', filters.expertiseArea);
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.search) params.append('search', filters.search);
+
+    const response = await fetchWithRetry(`${API_BASE_URL}/campus/mentorship/mentors?${params.toString()}`, {
+      method: 'GET',
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    const json = await response.json();
+    return json.data?.slots || json.slots || [];
+  } catch (error) {
+    console.warn("fetchAlumniMentorshipSlots failed", error);
+    return [];
+  }
+}
+
+export async function registerAlumniMentorshipSlot(payload: {
+  mentorName: string;
+  mentorAlumniBatchYear: number;
+  mentorCurrentCompany: string;
+  mentorCurrentRole: string;
+  campusName: string;
+  expertiseArea: string;
+  availableSessionsCount: number;
+  sessionTopics: string;
+}) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/campus/mentorship/mentors`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to register mentorship slot");
+  }
+  const json = await response.json();
+  return json.data?.slot || json.slot;
+}
+
+export async function bookAlumniMentorshipSession(slotId: string, studentId?: string, studentName?: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/campus/mentorship/mentors/${slotId}/book`, {
+    method: 'POST',
+    body: JSON.stringify({ studentId, studentName }),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to book mentorship session");
+  }
+  const json = await response.json();
+  return json.data?.slot || json.slot;
+}
