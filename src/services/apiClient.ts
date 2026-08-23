@@ -1201,3 +1201,65 @@ export async function bookAlumniMentorshipSession(slotId: string, studentId?: st
   const json = await response.json();
   return json.data?.slot || json.slot;
 }
+
+// ─── Student Venture API Client ──────────────────────────────────────────
+
+export async function fetchStudentVentures(filters?: {
+  campusName?: string;
+  sectorDomain?: string;
+  fundingStage?: string;
+  search?: string;
+}) {
+  try {
+    const params = new URLSearchParams();
+    if (filters?.campusName) params.append('campusName', filters.campusName);
+    if (filters?.sectorDomain) params.append('sectorDomain', filters.sectorDomain);
+    if (filters?.fundingStage) params.append('fundingStage', filters.fundingStage);
+    if (filters?.search) params.append('search', filters.search);
+
+    const response = await fetchWithRetry(`${API_BASE_URL}/campus/ventures?${params.toString()}`, {
+      method: 'GET',
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    const json = await response.json();
+    return json.data?.ventures || json.ventures || [];
+  } catch (error) {
+    console.warn("fetchStudentVentures failed", error);
+    return [];
+  }
+}
+
+export async function registerStudentVenture(payload: {
+  startupName: string;
+  campusName: string;
+  studentFounderName: string;
+  sectorDomain: string;
+  fundingStage: string;
+  targetInvestmentUsd: number;
+  pitchDeckUrl?: string;
+  executiveSummary: string;
+}) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/campus/ventures`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to register student venture");
+  }
+  const json = await response.json();
+  return json.data?.venture || json.venture;
+}
+
+export async function commitStudentVentureInvestment(ventureId: string, investmentAmountUsd: number) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/campus/ventures/${ventureId}/invest`, {
+    method: 'POST',
+    body: JSON.stringify({ investmentAmountUsd }),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to commit venture investment");
+  }
+  const json = await response.json();
+  return json.data?.venture || json.venture;
+}

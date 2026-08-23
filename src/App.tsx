@@ -67,6 +67,7 @@ const ExperiencesHub = lazy(() => import('./components/tabs/ExperiencesHub'));
 const PollStudio = lazy(() => import('./components/tabs/PollStudio'));
 const WatchlistManager = lazy(() => import('./components/tabs/WatchlistManager'));
 const CareerGoalTracker = lazy(() => import('./components/tabs/CareerGoalTracker'));
+const CampusStudentVentureStudioPage = lazy(() => import('./pages/CampusStudentVentureStudioPage'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
@@ -299,6 +300,7 @@ function App() {
       items: [
         { id: 'submit', label: 'Submit Opportunity', icon: PlusCircle },
         { id: 'grant_studio', label: 'Grants & Fellowships', icon: Award },
+        { id: 'student_venture', label: 'Student Venture Studio', icon: Rocket, badge: 'NEW' },
         { id: 'research_grants', label: 'Research Grant Portal', icon: BookOpen },
         { id: 'tech_ecosystem', label: 'Tech Ecosystem Studio', icon: Cpu },
         { id: 'developer_api', label: 'Developer API Portal', icon: Terminal },
@@ -342,6 +344,7 @@ function App() {
       case 'hackathon_studio': return <HackathonStudio />;
       case 'developer_api': return <DeveloperApiPortal />;
       case 'grant_studio': return <GrantFellowshipStudio />;
+      case 'student_venture': return <CampusStudentVentureStudioPage />;
       case 'campus_alumni': return <CampusAlumniHub />;
       case 'resume_ats': return <ResumeAtsStudio />;
       case 'skill_gap': return <SkillGapStudio />;

@@ -30,6 +30,7 @@ import reportRoutes from "./reportRoutes.js";
 import skillGapRoutes from "./skillGapRoutes.js";
 import careerGoalRoutes from "./careerGoalRoutes.js";
 import alumniMentorshipRoutes from "./alumniMentorshipRoutes.js";
+import studentVentureRoutes from "./studentVentureRoutes.js";
 import { errorHandler } from "../middlewares/errorHandler.js";
 import { apiVersionHeaders } from "../versioning/middleware.js";
 
@@ -69,6 +70,7 @@ const routes = [
   skillGapRoutes,
   careerGoalRoutes,
   alumniMentorshipRoutes,
+  studentVentureRoutes,
 ];
 
 // Mount all routes onto v1Router
