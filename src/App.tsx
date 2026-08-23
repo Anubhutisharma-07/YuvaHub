@@ -69,6 +69,7 @@ const WatchlistManager = lazy(() => import('./components/tabs/WatchlistManager')
 const CareerGoalTracker = lazy(() => import('./components/tabs/CareerGoalTracker'));
 const StudyGroupRooms = lazy(() => import('./components/tabs/StudyGroupRooms'));
 const CodeReviewExchange = lazy(() => import('./components/tabs/CodeReviewExchange'));
+const DirectMessages = lazy(() => import('./components/tabs/DirectMessages'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
@@ -297,6 +298,7 @@ function App() {
         { id: 'community', label: 'Community Forum', icon: MessageSquare },
         { id: 'poll_studio', label: 'Community Polls', icon: MessageSquare },
         { id: 'code_review', label: 'Code Review Exchange', icon: Code2, badge: 'NEW' },
+        { id: 'direct_messages', label: 'Direct Messages', icon: MessageSquare, badge: 'NEW' },
         { id: 'campus_alumni', label: 'Campus & Alumni Hub', icon: Building2 },
       ]
     },
@@ -369,6 +371,7 @@ function App() {
       case 'community': return <Community />;
       case 'poll_studio': return <PollStudio />;
       case 'code_review': return <CodeReviewExchange />;
+      case 'direct_messages': return <DirectMessages />;
       case 'profile': return <Profile />;
       case 'settings': return <SettingsTab />;
       case 'auth_security': return <AuthSecurityCenter />;

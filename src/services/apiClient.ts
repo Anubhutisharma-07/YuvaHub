@@ -1250,3 +1250,47 @@ export async function fetchMyReviews() {
   }
   return await response.json();
 }
+
+// ─── Direct Messages API Methods ─────────────────────────────────────────────
+
+export async function fetchConversations(page: number = 1, limit: number = 20) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/dm/conversations?page=${page}&limit=${limit}`, {
+    method: 'GET',
+  });
+  if (!response.ok) {
+    throw new Error("Failed to fetch conversations");
+  }
+  return await response.json();
+}
+
+export async function fetchMessages(recipientId: string, page: number = 1, limit: number = 50) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/dm/conversations/${recipientId}?page=${page}&limit=${limit}`, {
+    method: 'GET',
+  });
+  if (!response.ok) {
+    throw new Error("Failed to fetch messages");
+  }
+  return await response.json();
+}
+
+export async function sendDirectMessage(recipientId: string, content: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/dm/conversations/${recipientId}`, {
+    method: 'POST',
+    body: JSON.stringify({ content }),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to send message");
+  }
+  return await response.json();
+}
+
+export async function markConversationRead(recipientId: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/dm/conversations/${recipientId}/read`, {
+    method: 'PATCH',
+  });
+  if (!response.ok) {
+    throw new Error("Failed to mark conversation as read");
+  }
+  return await response.json();
+}
