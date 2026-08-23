@@ -1139,3 +1139,48 @@ export async function deleteCareerGoal(goalId: string) {
   }
   return await response.json();
 }
+
+export async function createStudyGroup(data: { name: string; topic: string; tags: string[]; maxCapacity: number; resourceUrl?: string }) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/study-groups`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || "Failed to create study group");
+  }
+  return await response.json();
+}
+
+export async function fetchStudyGroups(tag?: string, topic?: string) {
+  const params = new URLSearchParams();
+  if (tag) params.append('tag', tag);
+  if (topic) params.append('topic', topic);
+  const url = `${API_BASE_URL}/study-groups${params.toString() ? '?' + params.toString() : ''}`;
+  
+  const response = await fetchWithRetry(url, { method: 'GET' });
+  if (!response.ok) throw new Error("Failed to fetch study groups");
+  return await response.json();
+}
+
+export async function joinStudyGroup(roomId: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/study-groups/${roomId}/join`, {
+    method: 'POST',
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || "Failed to join study group");
+  }
+  return await response.json();
+}
+
+export async function leaveStudyGroup(roomId: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/study-groups/${roomId}/leave`, {
+    method: 'POST',
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || "Failed to leave study group");
+  }
+  return await response.json();
+}

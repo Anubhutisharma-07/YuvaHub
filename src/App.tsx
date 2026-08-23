@@ -67,6 +67,7 @@ const ExperiencesHub = lazy(() => import('./components/tabs/ExperiencesHub'));
 const PollStudio = lazy(() => import('./components/tabs/PollStudio'));
 const WatchlistManager = lazy(() => import('./components/tabs/WatchlistManager'));
 const CareerGoalTracker = lazy(() => import('./components/tabs/CareerGoalTracker'));
+const StudyGroupRooms = lazy(() => import('./components/tabs/StudyGroupRooms'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
@@ -284,6 +285,7 @@ function App() {
       title: "Ecosystem & Community",
       items: [
         { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
+        { id: 'study_groups', label: 'Study Groups', icon: Users, badge: 'NEW' },
         { id: 'mentorship', label: 'Mentorship', icon: GraduationCap },
         { id: 'focus_room', label: 'Global Focus Room', icon: Clock },
         { id: 'bounty_board', label: 'Bounty Board', icon: Coins },
@@ -357,6 +359,7 @@ function App() {
       case 'submit': return <SubmitOpportunity />;
       case 'mentorship': return <MentorshipAdvisoryStudio />;
       case 'focus_room': return <FocusRoom />;
+      case 'study_groups': return <StudyGroupRooms />;
       case 'bounty_board': return <BountyBoard />;
       case 'interview_experiences': return <ExperiencesHub />;
       case 'community': return <Community />;
