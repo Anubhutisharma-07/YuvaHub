@@ -1,12 +1,14 @@
 import { getSocketIO } from "../api/socketInstance.js";
 import { dbCommand } from "../api/db.js";
 import { setupFocusRoom } from "./focusRoom.js";
+import { setupStudyGroupPresence } from "./studyGroupPresence.js";
 
 export const setupSocketEvents = () => {
   const io = getSocketIO();
   if (!io) return;
 
   setupFocusRoom(io as any); // io instance, cast to any to avoid type complaints if versions differ, though Server should match.
+  setupStudyGroupPresence(io as any);
 
   io.on("connection", (socket: any) => {
     console.log(`[Socket] User connected: ${socket.id}`);
