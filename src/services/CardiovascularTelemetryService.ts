@@ -282,7 +282,7 @@ export class CardiovascularTelemetryService {
     ) {
       alerts.push({
         id: `alt-papi-${patient.id}`,
-        severity: "WARNING",
+        severity: "CRITICAL",
         title: "Right Ventricular Failure Pattern (PAPi < 0.90)",
         triggerMeasurement: `PAPi: ${patient.hemodynamics.pulmonaryArteryPulsatilityIndex}, CVP: ${patient.hemodynamics.centralVenousPressureMmHg} mmHg`,
         expectedRange: "PAPi > 1.0, CVP < 10 mmHg",

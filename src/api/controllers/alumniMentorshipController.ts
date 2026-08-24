@@ -78,7 +78,7 @@ export const bookAlumniMentorshipSession = async (req: Request, res: Response) =
   }
 
   const bookedSlot = await AlumniMentorshipEngine.bookSession(
-    slotId,
+    slotId as string,
     studentId,
     studentName
   );

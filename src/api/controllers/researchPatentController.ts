@@ -72,7 +72,7 @@ export const executePatentLicensingAgreement = async (
   }
 
   const updatedPatent = await ResearchPatentEngine.executeLicensingAgreement(
-    patentId,
+    patentId as string,
     commercialPartnerName
   );
 

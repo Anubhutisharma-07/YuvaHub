@@ -68,7 +68,7 @@ export const assignCounselorCheckIn = async (req: Request, res: Response) => {
   }
 
   const updatedCheckIn = await StudentMentalWellnessEngine.assignCounselor(
-    checkInId,
+    checkInId as string,
     counselorName
   );
 

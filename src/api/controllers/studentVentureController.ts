@@ -77,7 +77,7 @@ export const commitStudentVentureInvestment = async (
   }
 
   const updatedVenture = await StudentVentureEngine.commitInvestment(
-    ventureId,
+    ventureId as string,
     investmentAmountUsd
   );
 
