@@ -14,12 +14,13 @@ const randf = (a: number, b: number, d = 2) => parseFloat((Math.random() * (b - 
 const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
 const dstr = (d: number) => { const dt = new Date(); dt.setDate(dt.getDate() - rand(0, Math.abs(d))); dt.setHours(rand(0, 23)); return dt.toISOString(); };
 
-const PROVIDERS: CloudProvider[] = ['aws', 'gcp', 'azure', 'self_hosted'];
+const PROVIDERS: CloudProvider[] = ['aws', 'gcp', 'azure', 'alibaba', 'self_hosted'];
 const CATEGORIES: CostCategory[] = ['compute', 'storage', 'network', 'database', 'serverless', 'cdn', 'monitoring', 'security', 'ai_ml', 'other'];
 const SERVICES: Record<CloudProvider, string[]> = {
   aws: ['EC2', 'S3', 'RDS', 'Lambda', 'CloudFront', 'ElastiCache', 'SQS', 'DynamoDB', 'EKS', 'SageMaker'],
   gcp: ['GCE', 'GCS', 'Cloud SQL', 'Cloud Functions', 'Cloud CDN', 'Memorystore', 'Pub/Sub', 'BigQuery', 'GKE', 'Vertex AI'],
   azure: ['VM', 'Blob Storage', 'SQL Database', 'Functions', 'CDN', 'Redis Cache', 'Service Bus', 'Cosmos DB', 'AKS', 'Azure ML'],
+  alibaba: ['ECS', 'OSS', 'RDS', 'Function Compute', 'CDN', 'ApsaraDB for Redis', 'Message Queue', 'PolarDB', 'ACK', 'Machine Learning Platform for AI'],
   self_hosted: ['K8s Nodes', 'PostgreSQL', 'Redis', 'Nginx', 'MinIO', 'RabbitMQ', 'Prometheus', 'Grafana', 'Jenkins', 'GitLab']
 };
 const REGIONS = ['us-east-1', 'us-west-2', 'eu-west-1', 'ap-south-1', 'ap-northeast-1', 'eu-central-1'];
