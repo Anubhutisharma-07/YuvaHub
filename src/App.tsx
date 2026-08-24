@@ -82,6 +82,7 @@ const DeadlineCalendar = lazy(() => import('./components/tabs/DeadlineCalendar')
 const DirectMessages = lazy(() => import('./components/tabs/DirectMessages'));
 const CardiovascularCriticalCareHub = lazy(() => import('./pages/Enterprise/CardiovascularCriticalCareHub'));
 const ResearchGrantTelemetryLab = lazy(() => import('./pages/Enterprise/ResearchGrantTelemetryLab').then(m => ({ default: m.ResearchGrantTelemetryLab })));
+const DegreePlannerHub = lazy(() => import('./pages/DegreePlannerHub').then(m => ({ default: m.DegreePlannerHub })));
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
     <div className="flex items-center gap-3 animate-pulse">
@@ -290,6 +291,7 @@ function App() {
     {
       title: "AI & Career Studios",
       items: [
+        { id: 'degree_planner', label: 'Degree Planner Hub', icon: Target },
         { id: 'skill_gap', label: 'Skill Gap Analyzer', icon: Target },
         { id: 'ai_assistant', label: 'AI Assistant', icon: Brain },
         { id: 'career_match', label: 'Career Match Studio', icon: TrendingUp },
@@ -369,6 +371,7 @@ function App() {
       );
       case 'career_match': return <CareerMatchStudio />;
       case 'career_goals': return <CareerGoalTracker />;
+      case 'degree_planner': return <DegreePlannerHub />;
       case 'hackathon_studio': return <HackathonStudio />;
       case 'developer_api': return <DeveloperApiPortal />;
       case 'grant_studio': return <GrantFellowshipStudio />;
@@ -414,7 +417,7 @@ function App() {
       case 'help': return gettingStartedStep ? <GettingStartedDetail stepId={gettingStartedStep as any} /> : <HelpCenterPage />;
       case 'mock_interview': return <MockInterviewRoom />;
       case 'research_grant_telemetry':
-      case 'grant_telemetry': return <ResearchGrantTelemetryLab />;
+      case 'grant_telemetry': return <div>Telemetry Lab (WIP)</div>;
       case 'watchlist_manager': return <WatchlistManager />;
       case 'faq': return <FAQ />;
       case 'audit_log': return <AuditLogCenter />;
