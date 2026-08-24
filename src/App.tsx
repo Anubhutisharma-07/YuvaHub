@@ -325,7 +325,7 @@ function App() {
         { id: 'profile', label: 'My Profile', icon: User },
         { id: 'auth_security', label: 'Auth & Security', icon: ShieldCheck },
         { id: 'settings', label: 'Settings', icon: Settings },
-        ...(isAdminUser ? [{ id: 'admin', label: 'Admin Panel', icon: ShieldAlert }] : []),
+        ...(isAdminUser ? [{ id: 'admin', label: 'Admin Panel', icon: ShieldAlert }, { id: 'audit_log', label: 'Audit Log', icon: Activity, badge: 'NEW' }, { id: 'api_gateway', label: 'API Gateway', icon: Terminal, badge: 'NEW' }] : []),
       ]
     }
   ];
@@ -398,6 +398,8 @@ function App() {
       case 'mock_interview': return <MockInterviewRoom />;
       case 'watchlist_manager': return <WatchlistManager />;
       case 'faq': return <FAQ />;
+      case 'audit_log': return <AuditLogCenter />;
+      case 'api_gateway': return <ApiGatewayHub />;
       default: return <Dashboard />;
     }
   };
