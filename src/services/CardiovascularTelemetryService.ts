@@ -264,7 +264,7 @@ export class CardiovascularTelemetryService {
     if (patient.hemodynamics.cardiacPowerOutputWatts > 0 && patient.hemodynamics.cardiacPowerOutputWatts < 0.60) {
       alerts.push({
         id: `alt-cpo-${patient.id}`,
-        severity: "HIGH",
+        severity: "CRITICAL",
         title: "Critical Low Cardiac Power Output (CPO < 0.60 W)",
         triggerMeasurement: `CPO: ${patient.hemodynamics.cardiacPowerOutputWatts} W (CPI: ${patient.hemodynamics.cardiacPowerIndexWattsM2} W/m2)`,
         expectedRange: "CPO >= 0.60 W (Target >= 0.80 W)",
@@ -282,7 +282,7 @@ export class CardiovascularTelemetryService {
     ) {
       alerts.push({
         id: `alt-papi-${patient.id}`,
-        severity: "HIGH",
+        severity: "WARNING",
         title: "Right Ventricular Failure Pattern (PAPi < 0.90)",
         triggerMeasurement: `PAPi: ${patient.hemodynamics.pulmonaryArteryPulsatilityIndex}, CVP: ${patient.hemodynamics.centralVenousPressureMmHg} mmHg`,
         expectedRange: "PAPi > 1.0, CVP < 10 mmHg",
@@ -310,7 +310,7 @@ export class CardiovascularTelemetryService {
     if (patient.anticoagulationLabs.lactateMmolL >= 4.0 || patient.anticoagulationLabs.arterialPh < 7.20) {
       alerts.push({
         id: `alt-lactate-${patient.id}`,
-        severity: "HIGH",
+        severity: "CRITICAL",
         title: "Severe Metabolic Acidosis & Tissue Hypoperfusion",
         triggerMeasurement: `Lactate: ${patient.anticoagulationLabs.lactateMmolL} mmol/L, pH: ${patient.anticoagulationLabs.arterialPh}`,
         expectedRange: "Lactate < 2.0 mmol/L, pH 7.35 - 7.45",

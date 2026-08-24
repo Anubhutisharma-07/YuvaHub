@@ -8,6 +8,7 @@ export const getAlumniMentorshipSlots = async (req: Request, res: Response) => {
   const expertiseArea = (req.query.expertiseArea as string) || undefined;
   const status = (req.query.status as string) || undefined;
   const search = (req.query.search as string) || undefined;
+  const slotId = (req.query.slotId as string) || undefined;
 
   const slots = await AlumniMentorshipEngine.getSlots({
     campusName,
@@ -64,7 +65,9 @@ export const registerAlumniMentorshipSlot = async (req: Request, res: Response) 
 };
 
 export const bookAlumniMentorshipSession = async (req: Request, res: Response) => {
-  const slotId = req.params.slotId || (req.body.slotId as string);
+  const paramSlotId = req.params.slotId;
+  const bodySlotId = req.body.slotId;
+  const slotId = (Array.isArray(paramSlotId) ? paramSlotId[0] : paramSlotId) || (Array.isArray(bodySlotId) ? bodySlotId[0] : bodySlotId);
   const studentId =
     (req.user?.uid as string) || (req.body.studentId as string) || "STU-DEMO";
   const studentName =
