@@ -2,6 +2,7 @@ import { getSocketIO } from "../api/socketInstance.js";
 import { dbCommand } from "../api/db.js";
 import { setupFocusRoom } from "./focusRoom.js";
 import { setupStudyGroupPresence } from "./studyGroupPresence.js";
+import { setupMockInterviewCollab } from "./mockInterviewCollab.js";
 import { setupCareerFairPresence } from "./careerFairPresence.js";
 
 export const setupSocketEvents = () => {
@@ -10,6 +11,7 @@ export const setupSocketEvents = () => {
 
   setupFocusRoom(io as any); // io instance, cast to any to avoid type complaints if versions differ, though Server should match.
   setupStudyGroupPresence(io as any);
+  setupMockInterviewCollab(io as any);
   setupCareerFairPresence(io as any);
 
   io.on("connection", (socket: any) => {
