@@ -1,7 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import {
   LayoutDashboard, Globe, PlusCircle, Users, User, Menu, X, Bookmark, Sparkles, MessageSquare, Settings, Sun, Moon, Mic, Trophy,
-  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock, BookOpen, Target, Activity, Calendar
+  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock, BookOpen, Target, Calendar, HeartPulse
 } from 'lucide-react';
 import { signInWithGoogle, logout } from './lib/firebase';
 import { UserProfile } from './types';
@@ -74,6 +74,7 @@ const StudyGroupRooms = lazy(() => import('./components/tabs/StudyGroupRooms'));
 const CodeReviewExchange = lazy(() => import('./components/tabs/CodeReviewExchange'));
 const DeadlineCalendar = lazy(() => import('./components/tabs/DeadlineCalendar'));
 const DirectMessages = lazy(() => import('./components/tabs/DirectMessages'));
+const CardiovascularCriticalCareHub = lazy(() => import('./pages/Enterprise/CardiovascularCriticalCareHub'));
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
     <div className="flex items-center gap-3 animate-pulse">
@@ -269,6 +270,7 @@ function App() {
       title: "Core Platform",
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'cardiovascular_hub', label: 'Cardiovascular & ECMO Hub', icon: HeartPulse, badge: 'CTICU' },
         { id: 'opportunities', label: 'Opportunities', icon: Globe },
         { id: 'application_tracker', label: 'Application Tracker', icon: Briefcase },
         { id: 'watchlist_manager', label: 'Watchlists & Alerts', icon: Sparkles, badge: 'NEW' },
@@ -325,7 +327,7 @@ function App() {
         { id: 'profile', label: 'My Profile', icon: User },
         { id: 'auth_security', label: 'Auth & Security', icon: ShieldCheck },
         { id: 'settings', label: 'Settings', icon: Settings },
-        ...(isAdminUser ? [{ id: 'admin', label: 'Admin Panel', icon: ShieldAlert }, { id: 'audit_log', label: 'Audit Log', icon: Activity, badge: 'NEW' }, { id: 'dlp_hub', label: 'DLP Center', icon: ShieldAlert, badge: 'NEW' }] : []),
+        ...(isAdminUser ? [{ id: 'admin', label: 'Admin Panel', icon: ShieldAlert }, { id: 'audit_log', label: 'Audit Log', icon: Activity, badge: 'NEW' }, { id: 'api_gateway', label: 'API Gateway', icon: Terminal, badge: 'NEW' }] : []),
       ]
     }
   ];
@@ -333,6 +335,7 @@ function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard': return <Dashboard />;
+      case 'cardiovascular_hub': return <CardiovascularCriticalCareHub />;
       case 'opportunities': return <Opportunities />;
       case 'application_tracker': return <ApplicationTracker />;
       case 'deadline_calendar': return <DeadlineCalendar />;
@@ -395,10 +398,12 @@ function App() {
       case 'about': return <AboutTab />;
       case 'help': return gettingStartedStep ? <GettingStartedDetail stepId={gettingStartedStep as any} /> : <HelpCenterPage />;
       case 'mock_interview': return <MockInterviewRoom />;
+      case 'research_grant_telemetry':
+      case 'grant_telemetry': return <ResearchGrantTelemetryLab />;
       case 'watchlist_manager': return <WatchlistManager />;
       case 'faq': return <FAQ />;
       case 'audit_log': return <AuditLogCenter />;
-      case 'dlp_hub': return <DlpHub />;
+      case 'api_gateway': return <ApiGatewayHub />;
       default: return <Dashboard />;
     }
   };
