@@ -66,6 +66,8 @@ const FocusRoom = lazy(() => import('./pages/FocusRoom').then(m => ({ default: m
 const ExperiencesHub = lazy(() => import('./components/tabs/ExperiencesHub'));
 const PollStudio = lazy(() => import('./components/tabs/PollStudio'));
 const WatchlistManager = lazy(() => import('./components/tabs/WatchlistManager'));
+const AuditLogCenter = lazy(() => import('./pages/Enterprise/AuditLogCenter').then(m => ({ default: m.AuditLogCenter })));
+const DlpHub = lazy(() => import('./pages/Enterprise/DlpHub').then(m => ({ default: m.DlpHub })));
 const CareerGoalTracker = lazy(() => import('./components/tabs/CareerGoalTracker'));
 const ResourceVault = lazy(() => import('./components/tabs/ResourceVault'));
 const StudyGroupRooms = lazy(() => import('./components/tabs/StudyGroupRooms'));
