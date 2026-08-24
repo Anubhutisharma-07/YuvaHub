@@ -1,6 +1,7 @@
 import React, { KeyboardEvent, MouseEvent, useState, useRef, useCallback } from "react";
-import { Bookmark, Shield, ExternalLink, X, CheckCircle, MapPin, Clock, ArrowRight, Sparkles, Building2, Coins, Calendar } from "lucide-react";
+import { Bookmark, Shield, ExternalLink, X, CheckCircle, MapPin, Clock, ArrowRight, Sparkles, Building2, Coins, Calendar, Flag } from "lucide-react";
 import { useFocusTrap } from "../hooks/useFocusTrap";
+import { ReportModal } from "./ui/ReportModal";
 
 export interface Opportunity {
     id: string;
@@ -54,6 +55,8 @@ export function OpportunityCard({
     const auditModalRef = useRef<HTMLDivElement>(null);
     const closeAuditModal = useCallback(() => setShowAuditModal(false), []);
     useFocusTrap(auditModalRef, showAuditModal, closeAuditModal);
+
+    const [showReportModal, setShowReportModal] = useState(false);
 
     const orgName = opp.source_name || opp.sourceName || opp.org || opp.organization || "Verified Company";
     const title = opp.title || "Untitled Opportunity";
@@ -178,6 +181,15 @@ export function OpportunityCard({
                                     size={18}
                                     className={isBookmarked ? "fill-[#b56b37] text-[#b56b37]" : "text-[#8c7569] dark:text-slate-500"}
                                 />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setShowReportModal(true); }}
+                                aria-label="Report Opportunity"
+                                title="Report this opportunity"
+                                className="p-1.5 rounded-lg text-[#8c7569] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            >
+                                <Flag size={18} />
                             </button>
                         </div>
                     </div>
@@ -312,6 +324,14 @@ export function OpportunityCard({
                     </div>
                 </div>
             )}
+            
+            <ReportModal
+                isOpen={showReportModal}
+                onClose={() => setShowReportModal(false)}
+                contentType="opportunity"
+                contentId={opp.id}
+                contentTitle={title}
+            />
         </>
     );
 }
