@@ -26,7 +26,14 @@ import projectRoutes from "./projectRoutes.js";
 import endorsementRoutes from "./endorsementRoutes.js";
 import pollRoutes from "./pollRoutes.js";
 import watchlistRoutes from "./watchlistRoutes.js";
+import reportRoutes from "./reportRoutes.js";
 import skillGapRoutes from "./skillGapRoutes.js";
+import careerGoalRoutes from "./careerGoalRoutes.js";
+import resourceRoutes from "./resourceRoutes.js";
+import studyGroupRoutes from "./studyGroupRoutes.js";
+import codeReviewRoutes from "./codeReviewRoutes.js";
+import deadlineCalendarRoutes from "./deadlineCalendarRoutes.js";
+import directMessageRoutes from "./directMessageRoutes.js";
 import { errorHandler } from "../middlewares/errorHandler.js";
 import { apiVersionHeaders } from "../versioning/middleware.js";
 
@@ -62,7 +69,14 @@ const routes = [
   endorsementRoutes,
   pollRoutes,
   watchlistRoutes,
+  reportRoutes,
   skillGapRoutes,
+  careerGoalRoutes,
+  resourceRoutes,
+  studyGroupRoutes,
+  codeReviewRoutes,
+  deadlineCalendarRoutes,
+  directMessageRoutes,
 ];
 
 // Mount all routes onto v1Router
