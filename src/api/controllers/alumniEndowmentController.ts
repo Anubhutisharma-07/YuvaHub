@@ -80,7 +80,7 @@ export const contributeToAlumniEndowment = async (
   }
 
   const updatedFund = await AlumniEndowmentEngine.contributeToFund(
-    fundId,
+    fundId as string,
     donationAmountUsd
   );
 

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { createCareerFair, getCareerFairs, addCompanyBooth, getCompanyBooths, dropResume } from "../api/controllers/virtualCareerFairController";
+import { getCourseCatalog, getUserRoadmap, saveUserRoadmap } from "../api/controllers/academicRoadmapController.js";
 
 export const apiRouter = Router();
 
@@ -13,3 +14,7 @@ apiRouter.get("/career-fairs", getCareerFairs);
 apiRouter.post("/career-fairs/booths", addCompanyBooth);
 apiRouter.get("/career-fairs/:fairId/booths", getCompanyBooths);
 apiRouter.post("/career-fairs/booths/drop-resume", dropResume);
+
+apiRouter.get("/planner/catalog", getCourseCatalog);
+apiRouter.get("/planner/roadmap", getUserRoadmap);
+apiRouter.post("/planner/roadmap", saveUserRoadmap);
