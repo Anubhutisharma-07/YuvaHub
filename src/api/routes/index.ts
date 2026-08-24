@@ -39,6 +39,7 @@ import studyGroupRoutes from "./studyGroupRoutes.js";
 import codeReviewRoutes from "./codeReviewRoutes.js";
 import deadlineCalendarRoutes from "./deadlineCalendarRoutes.js";
 import directMessageRoutes from "./directMessageRoutes.js";
+import teamMatchmakerRoutes from "./teamMatchmakerRoutes.js";
 import { errorHandler } from "../middlewares/errorHandler.js";
 import { apiVersionHeaders } from "../versioning/middleware.js";
 
@@ -87,6 +88,7 @@ const routes = [
   codeReviewRoutes,
   deadlineCalendarRoutes,
   directMessageRoutes,
+  teamMatchmakerRoutes,
 ];
 
 // Mount all routes onto v1Router
