@@ -1326,6 +1326,132 @@ export async function assignCounselorCheckIn(checkInId: string, counselorName?: 
   return json.data?.checkIn || json.checkIn;
 }
 
+// ─── Research Patent IP API Client ───────────────────────────────────────
+
+export async function fetchResearchPatents(filters?: {
+  campusName?: string;
+  technologyDomain?: string;
+  patentStatus?: string;
+  search?: string;
+}) {
+  try {
+    const params = new URLSearchParams();
+    if (filters?.campusName) params.append('campusName', filters.campusName);
+    if (filters?.technologyDomain) params.append('technologyDomain', filters.technologyDomain);
+    if (filters?.patentStatus) params.append('patentStatus', filters.patentStatus);
+    if (filters?.search) params.append('search', filters.search);
+
+    const response = await fetchWithRetry(`${API_BASE_URL}/campus/patents?${params.toString()}`, {
+      method: 'GET',
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    const json = await response.json();
+    return json.data?.patents || json.patents || [];
+  } catch (error) {
+    console.warn("fetchResearchPatents failed", error);
+    return [];
+  }
+}
+
+export async function registerResearchPatent(payload: {
+  patentTitle: string;
+  campusName: string;
+  leadInventorName: string;
+  patentApplicationNumber: string;
+  technologyDomain: string;
+  licensingFeeUsd: number;
+  royaltySharePercent: number;
+  abstractDescription: string;
+}) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/campus/patents`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to register research patent");
+  }
+  const json = await response.json();
+  return json.data?.patent || json.patent;
+}
+
+export async function executePatentLicensingAgreement(patentId: string, commercialPartnerName?: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/campus/patents/${patentId}/license`, {
+    method: 'POST',
+    body: JSON.stringify({ commercialPartnerName }),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to execute licensing agreement");
+  }
+  const json = await response.json();
+  return json.data?.patent || json.patent;
+}
+
+// ─── Alumni Endowment API Client ─────────────────────────────────────────
+
+export async function fetchAlumniEndowments(filters?: {
+  campusName?: string;
+  fundCategory?: string;
+  grantStatus?: string;
+  search?: string;
+}) {
+  try {
+    const params = new URLSearchParams();
+    if (filters?.campusName) params.append('campusName', filters.campusName);
+    if (filters?.fundCategory) params.append('fundCategory', filters.fundCategory);
+    if (filters?.grantStatus) params.append('grantStatus', filters.grantStatus);
+    if (filters?.search) params.append('search', filters.search);
+
+    const response = await fetchWithRetry(`${API_BASE_URL}/campus/endowments?${params.toString()}`, {
+      method: 'GET',
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    const json = await response.json();
+    return json.data?.endowments || json.endowments || [];
+  } catch (error) {
+    console.warn("fetchAlumniEndowments failed", error);
+    return [];
+  }
+}
+
+export async function createAlumniEndowment(payload: {
+  fundName: string;
+  campusName: string;
+  donorName: string;
+  donorAlumniBatchYear: number;
+  fundCategory: string;
+  targetAmountUsd: number;
+  initialContributionUsd: number;
+  matchingGrantEnabled: boolean;
+  matchingRatio?: number;
+  description: string;
+}) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/campus/endowments`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to create alumni endowment");
+  }
+  const json = await response.json();
+  return json.data?.endowment || json.endowment;
+}
+
+export async function contributeToAlumniEndowment(fundId: string, donationAmountUsd: number) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/campus/endowments/${fundId}/contribute`, {
+    method: 'POST',
+    body: JSON.stringify({ donationAmountUsd }),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to contribute to alumni endowment");
+  }
+  const json = await response.json();
+  return json.data?.endowment || json.endowment;
+}
+
 // ─── Community Resource Vault ────────────────────────────────────────────────
 export async function submitResource(data: any) {
   const response = await fetchWithRetry(`${API_BASE_URL}/resources`, {
