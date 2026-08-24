@@ -29,6 +29,11 @@ import watchlistRoutes from "./watchlistRoutes.js";
 import reportRoutes from "./reportRoutes.js";
 import skillGapRoutes from "./skillGapRoutes.js";
 import careerGoalRoutes from "./careerGoalRoutes.js";
+import alumniMentorshipRoutes from "./alumniMentorshipRoutes.js";
+import studentVentureRoutes from "./studentVentureRoutes.js";
+import mentalWellnessRoutes from "./mentalWellnessRoutes.js";
+import researchPatentRoutes from "./researchPatentRoutes.js";
+import alumniEndowmentRoutes from "./alumniEndowmentRoutes.js";
 import resourceRoutes from "./resourceRoutes.js";
 import studyGroupRoutes from "./studyGroupRoutes.js";
 import codeReviewRoutes from "./codeReviewRoutes.js";
@@ -72,6 +77,11 @@ const routes = [
   reportRoutes,
   skillGapRoutes,
   careerGoalRoutes,
+  alumniMentorshipRoutes,
+  studentVentureRoutes,
+  mentalWellnessRoutes,
+  researchPatentRoutes,
+  alumniEndowmentRoutes,
   resourceRoutes,
   studyGroupRoutes,
   codeReviewRoutes,
