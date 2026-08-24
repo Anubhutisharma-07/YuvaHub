@@ -61,7 +61,7 @@ export const commitStudentVentureInvestment = async (
   req: Request,
   res: Response
 ) => {
-  const ventureId = req.params.ventureId || (req.body.ventureId as string);
+  const ventureId = (req.params.ventureId as string) || (req.body.ventureId as string);
   const investmentAmountUsd = Number(
     req.body.investmentAmountUsd || req.body.amountUsd || 1000
   );
@@ -75,7 +75,7 @@ export const commitStudentVentureInvestment = async (
   }
 
   const updatedVenture = await StudentVentureEngine.commitInvestment(
-    ventureId,
+    ventureId as string,
     investmentAmountUsd
   );
 

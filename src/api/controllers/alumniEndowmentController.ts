@@ -66,7 +66,7 @@ export const contributeToAlumniEndowment = async (
   req: Request,
   res: Response
 ) => {
-  const fundId = req.params.fundId || (req.body.fundId as string);
+  const fundId = (req.params.fundId as string) || (req.body.fundId as string);
   const donationAmountUsd = Number(
     req.body.donationAmountUsd || req.body.amountUsd || 1000
   );
@@ -80,7 +80,7 @@ export const contributeToAlumniEndowment = async (
   }
 
   const updatedFund = await AlumniEndowmentEngine.contributeToFund(
-    fundId,
+    fundId as string,
     donationAmountUsd
   );
 
