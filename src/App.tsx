@@ -1,7 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import {
   LayoutDashboard, Globe, PlusCircle, Users, User, Menu, X, Bookmark, Sparkles, MessageSquare, Settings, Sun, Moon, Mic, Trophy,
-  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock, BookOpen, Target, Calendar, HeartPulse
+  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock, BookOpen, Target, Activity, Calendar, HeartPulse
 } from 'lucide-react';
 import { signInWithGoogle, logout } from './lib/firebase';
 import { UserProfile } from './types';
@@ -67,7 +67,9 @@ const ExperiencesHub = lazy(() => import('./components/tabs/ExperiencesHub'));
 const PollStudio = lazy(() => import('./components/tabs/PollStudio'));
 const WatchlistManager = lazy(() => import('./components/tabs/WatchlistManager'));
 const AuditLogCenter = lazy(() => import('./pages/Enterprise/AuditLogCenter').then(m => ({ default: m.AuditLogCenter })));
+const SsoIdentityHub = lazy(() => import('./pages/Enterprise/SsoIdentityHub').then(m => ({ default: m.SsoIdentityHub })));
 const DlpHub = lazy(() => import('./pages/Enterprise/DlpHub').then(m => ({ default: m.DlpHub })));
+const ApiGatewayHub = lazy(() => import('./pages/Enterprise/ApiGatewayHub').then(m => ({ default: m.ApiGatewayHub })));
 const CareerGoalTracker = lazy(() => import('./components/tabs/CareerGoalTracker'));
 const CampusStudentVentureStudioPage = lazy(() => import('./pages/CampusStudentVentureStudioPage'));
 const StudentMentalWellnessDeskPage = lazy(() => import('./pages/StudentMentalWellnessDeskPage'));
@@ -335,7 +337,7 @@ function App() {
         { id: 'profile', label: 'My Profile', icon: User },
         { id: 'auth_security', label: 'Auth & Security', icon: ShieldCheck },
         { id: 'settings', label: 'Settings', icon: Settings },
-        ...(isAdminUser ? [{ id: 'admin', label: 'Admin Panel', icon: ShieldAlert }, { id: 'audit_log', label: 'Audit Log', icon: Activity, badge: 'NEW' }, { id: 'api_gateway', label: 'API Gateway', icon: Terminal, badge: 'NEW' }] : []),
+        ...(isAdminUser ? [{ id: 'admin', label: 'Admin Panel', icon: ShieldAlert }, { id: 'audit_log', label: 'Audit Log', icon: Activity, badge: 'NEW' }, { id: 'sso_identity', label: 'SSO & Identity', icon: Shield, badge: 'NEW' }, { id: 'api_gateway', label: 'API Gateway', icon: Terminal, badge: 'NEW' }] : []),
       ]
     }
   ];
@@ -415,6 +417,7 @@ function App() {
       case 'watchlist_manager': return <WatchlistManager />;
       case 'faq': return <FAQ />;
       case 'audit_log': return <AuditLogCenter />;
+      case 'sso_identity': return <SsoIdentityHub />;
       case 'api_gateway': return <ApiGatewayHub />;
       default: return <Dashboard />;
     }
