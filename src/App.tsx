@@ -81,7 +81,6 @@ const CodeReviewExchange = lazy(() => import('./components/tabs/CodeReviewExchan
 const DeadlineCalendar = lazy(() => import('./components/tabs/DeadlineCalendar'));
 const DirectMessages = lazy(() => import('./components/tabs/DirectMessages'));
 const CardiovascularCriticalCareHub = lazy(() => import('./pages/Enterprise/CardiovascularCriticalCareHub'));
-const ResearchGrantTelemetryLab = lazy(() => import('./pages/Enterprise/ResearchGrantTelemetryLab').then(m => ({ default: m.ResearchGrantTelemetryLab })));
 const DegreePlannerHub = lazy(() => import('./pages/DegreePlannerHub').then(m => ({ default: m.DegreePlannerHub })));
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
