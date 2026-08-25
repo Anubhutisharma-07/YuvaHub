@@ -59,7 +59,7 @@ const ProjectShowcaseVault = lazy(() => import('./components/tabs/ProjectShowcas
 const StarInterviewStudio = lazy(() => import('./components/tabs/StarInterviewStudio'));
 const HelpCenter = lazy(() => import('./components/tabs/HelpCenter'));
 const FAQ = lazy(() => import('./components/tabs/FAQ'));
-const Teams = lazy(() => import('./components/tabs/Teams'));
+const Teams = lazy(() => import('./components/team-builder/HackathonTeamBuilderHub'));
 const MockInterviewRoom = lazy(() => import('./pages/MockInterviewRoom'));
 const ApplicationTracker = lazy(() => import('./pages/ApplicationTracker').then(m => ({ default: m.ApplicationTracker })));
 const Leaderboard = lazy(() => import('./pages/Leaderboard').then(m => ({ default: m.Leaderboard })));
@@ -68,22 +68,13 @@ const ExperiencesHub = lazy(() => import('./components/tabs/ExperiencesHub'));
 const PollStudio = lazy(() => import('./components/tabs/PollStudio'));
 const WatchlistManager = lazy(() => import('./components/tabs/WatchlistManager'));
 const AuditLogCenter = lazy(() => import('./pages/Enterprise/AuditLogCenter').then(m => ({ default: m.AuditLogCenter })));
+const DevopsPipelineHub = lazy(() => import('./pages/Enterprise/DevopsPipelineHub').then(m => ({ default: m.DevopsPipelineHub })));
 const SsoIdentityHub = lazy(() => import('./pages/Enterprise/SsoIdentityHub').then(m => ({ default: m.SsoIdentityHub })));
 const DlpHub = lazy(() => import('./pages/Enterprise/DlpHub').then(m => ({ default: m.DlpHub })));
 const ApiGatewayHub = lazy(() => import('./pages/Enterprise/ApiGatewayHub').then(m => ({ default: m.ApiGatewayHub })));
 const CareerGoalTracker = lazy(() => import('./components/tabs/CareerGoalTracker'));
-const CampusStudentVentureStudioPage = lazy(() => import('./pages/CampusStudentVentureStudioPage'));
-const StudentMentalWellnessDeskPage = lazy(() => import('./pages/StudentMentalWellnessDeskPage'));
-const CampusResearchIpLicensingStudioPage = lazy(() => import('./pages/CampusResearchIpLicensingStudioPage'));
-const CampusAlumniEndowmentStudioPage = lazy(() => import('./pages/CampusAlumniEndowmentStudioPage'));
-const ResourceVault = lazy(() => import('./components/tabs/ResourceVault'));
-const StudyGroupRooms = lazy(() => import('./components/tabs/StudyGroupRooms'));
-const CodeReviewExchange = lazy(() => import('./components/tabs/CodeReviewExchange'));
-const DeadlineCalendar = lazy(() => import('./components/tabs/DeadlineCalendar'));
-const DirectMessages = lazy(() => import('./components/tabs/DirectMessages'));
-const CardiovascularCriticalCareHub = lazy(() => import('./pages/Enterprise/CardiovascularCriticalCareHub'));
-const GigMarketHub = lazy(() => import('./components/gigs/GigMarketHub'));
-const DegreePlannerHub = lazy(() => import('./pages/DegreePlannerHub').then(m => ({ default: m.DegreePlannerHub })));
+const CampusAlumniMentorshipStudioPage = lazy(() => import('./pages/CampusAlumniMentorshipStudioPage'));
+
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
     <div className="flex items-center gap-3 animate-pulse">
@@ -319,8 +310,7 @@ function App() {
         { id: 'code_review', label: 'Code Review Exchange', icon: Code2, badge: 'NEW' },
         { id: 'direct_messages', label: 'Direct Messages', icon: MessageSquare, badge: 'NEW' },
         { id: 'campus_alumni', label: 'Campus & Alumni Hub', icon: Building2 },
-        { id: 'mental_wellness', label: 'Mental Wellness Desk', icon: HeartPulse, badge: 'NEW' },
-        { id: 'gig_marketplace', label: 'Student Gig Marketplace', icon: Coins, badge: 'NEW' },
+        { id: 'alumni_mentorship', label: 'Alumni Mentorship Studio', icon: GraduationCap, badge: 'NEW' },
       ]
     },
     {
@@ -342,7 +332,7 @@ function App() {
         { id: 'profile', label: 'My Profile', icon: User },
         { id: 'auth_security', label: 'Auth & Security', icon: ShieldCheck },
         { id: 'settings', label: 'Settings', icon: Settings },
-        ...(isAdminUser ? [{ id: 'admin', label: 'Admin Panel', icon: ShieldAlert }, { id: 'audit_log', label: 'Audit Log', icon: Activity, badge: 'NEW' }, { id: 'sso_identity', label: 'SSO & Identity', icon: Shield, badge: 'NEW' }, { id: 'api_gateway', label: 'API Gateway', icon: Terminal, badge: 'NEW' }] : []),
+        ...(isAdminUser ? [{ id: 'admin', label: 'Admin Panel', icon: ShieldAlert }, { id: 'audit_log', label: 'Audit Log', icon: Activity, badge: 'NEW' }, { id: 'devops_pipelines', label: 'Pipelines', icon: Terminal, badge: 'NEW' }, { id: 'sso_identity', label: 'SSO & Identity', icon: Shield, badge: 'NEW' }, { id: 'api_gateway', label: 'API Gateway', icon: Terminal, badge: 'NEW' }] : []),
       ]
     }
   ];
@@ -402,8 +392,7 @@ function App() {
       case 'community': return <Community />;
       case 'resource_vault': return <ResourceVault />;
       case 'poll_studio': return <PollStudio />;
-      case 'code_review': return <CodeReviewExchange />;
-      case 'direct_messages': return <DirectMessages />;
+      case 'alumni_mentorship': return <CampusAlumniMentorshipStudioPage />;
       case 'profile': return <Profile />;
       case 'settings': return <SettingsTab />;
       case 'auth_security': return <AuthSecurityCenter />;
@@ -423,6 +412,7 @@ function App() {
       case 'watchlist_manager': return <WatchlistManager />;
       case 'faq': return <FAQ />;
       case 'audit_log': return <AuditLogCenter />;
+      case 'devops_pipelines': return <DevopsPipelineHub />;
       case 'sso_identity': return <SsoIdentityHub />;
       case 'api_gateway': return <ApiGatewayHub />;
       case 'gig_marketplace': return <GigMarketHub />;
