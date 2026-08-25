@@ -1,7 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import {
   LayoutDashboard, Globe, PlusCircle, Users, User, Menu, X, Bookmark, Sparkles, MessageSquare, Settings, Sun, Moon, Mic, Trophy,
-  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock, BookOpen, Target, Activity, Calendar, HeartPulse, Rocket, Shield
+  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock, BookOpen, Target, Activity, Calendar, HeartPulse, Rocket, Shield, Megaphone
 } from 'lucide-react';
 import { signInWithGoogle, logout } from './lib/firebase';
 import { UserProfile } from './types';
@@ -13,6 +13,7 @@ import LoadingScreen from './components/ui/LoadingScreen';
 import NotificationDropdown from './components/ui/NotificationDropdown';
 import BackToTopButton from './components/ui/BackToTopButton';
 import AccessibilityEnhancer from './components/accessibility/AccessibilityEnhancer';
+import AnnouncementBanner from './components/ui/AnnouncementBanner';
 
 // Route components are lazy-loaded to reduce the initial bundle size (code splitting)
 const Dashboard = lazy(() => import('./components/tabs/Dashboard'));
@@ -75,6 +76,7 @@ const ApiGatewayHub = lazy(() => import('./pages/Enterprise/ApiGatewayHub').then
 const CareerGoalTracker = lazy(() => import('./components/tabs/CareerGoalTracker'));
 const CampusAlumniMentorshipStudioPage = lazy(() => import('./pages/CampusAlumniMentorshipStudioPage'));
 const ActivityFeed = lazy(() => import('./components/tabs/ActivityFeed'));
+const Announcements = lazy(() => import('./components/tabs/Announcements'));
 
 const CardiovascularCriticalCareHub = lazy(() => import('./pages/Enterprise/CardiovascularCriticalCareHub').then(m => ({ default: m.CardiovascularCriticalCareHub })));
 const DeadlineCalendar = lazy(() => import('./components/tabs/DeadlineCalendar'));
@@ -341,6 +343,7 @@ function App() {
       items: [
         { id: 'profile', label: 'My Profile', icon: User },
         { id: 'activity_feed', label: 'Activity Feed', icon: Activity, badge: 'NEW' },
+        { id: 'announcements', label: 'Announcements', icon: Megaphone, badge: 'NEW' },
         { id: 'auth_security', label: 'Auth & Security', icon: ShieldCheck },
         { id: 'settings', label: 'Settings', icon: Settings },
         ...(isAdminUser ? [{ id: 'admin', label: 'Admin Panel', icon: ShieldAlert }, { id: 'audit_log', label: 'Audit Log', icon: Activity, badge: 'NEW' }, { id: 'devops_pipelines', label: 'Pipelines', icon: Terminal, badge: 'NEW' }, { id: 'sso_identity', label: 'SSO & Identity', icon: Shield, badge: 'NEW' }, { id: 'api_gateway', label: 'API Gateway', icon: Terminal, badge: 'NEW' }] : []),
@@ -406,6 +409,7 @@ function App() {
       case 'alumni_mentorship': return <CampusAlumniMentorshipStudioPage />;
       case 'profile': return <Profile />;
       case 'activity_feed': return <ActivityFeed />;
+      case 'announcements': return <Announcements />;
       case 'settings': return <SettingsTab />;
       case 'auth_security': return <AuthSecurityCenter />;
       case 'admin': return <AdminDashboard />;
@@ -545,6 +549,11 @@ function App() {
       >
         Skip to main content
       </a>
+
+      {/* Global Announcement Banner */}
+      <div className="absolute top-0 left-0 right-0 z-[60]">
+        <AnnouncementBanner />
+      </div>
 
       {/* Centralized SEO component for logged-in views */}
       {selectedOppId ? null : (

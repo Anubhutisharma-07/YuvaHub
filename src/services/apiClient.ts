@@ -1415,3 +1415,70 @@ export async function updateDigestPreferences(frequency: "Daily" | "Weekly" | "N
     throw error;
   }
 }
+
+// ─── Announcements ────────────────────────────────────────────────────────────
+
+export async function fetchAnnouncements(page: number = 1, limit: number = 20, category?: string) {
+  try {
+    const params = new URLSearchParams();
+    params.append('page', page.toString());
+    params.append('limit', limit.toString());
+    if (category) params.append('category', category);
+
+    const response = await fetchWithRetry(`${API_BASE_URL}/announcements?${params.toString()}`, {
+      method: "GET"
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    return await response.json();
+  } catch (error) {
+    console.warn("fetchAnnouncements failed", error);
+    return { items: [], total: 0 };
+  }
+}
+
+export async function fetchActiveAnnouncements() {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/announcements/active`, {
+      method: "GET"
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    return await response.json();
+  } catch (error) {
+    console.warn("fetchActiveAnnouncements failed", error);
+    return { data: [] };
+  }
+}
+
+export async function createAnnouncement(data: any) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/announcements`, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+  if (!response.ok) throw new Error("Failed to create announcement");
+  return response.json();
+}
+
+export async function updateAnnouncement(id: string, data: any) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/announcements/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data)
+  });
+  if (!response.ok) throw new Error("Failed to update announcement");
+  return response.json();
+}
+
+export async function deleteAnnouncement(id: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/announcements/${id}`, {
+    method: "DELETE"
+  });
+  if (!response.ok) throw new Error("Failed to delete announcement");
+  return response.json();
+}
+
+export async function dismissAnnouncement(id: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/announcements/${id}/dismiss`, {
+    method: "POST"
+  });
+  if (!response.ok) throw new Error("Failed to dismiss announcement");
+  return response.json();
+}
