@@ -415,6 +415,7 @@ function App() {
       case 'devops_pipelines': return <DevopsPipelineHub />;
       case 'sso_identity': return <SsoIdentityHub />;
       case 'api_gateway': return <ApiGatewayHub />;
+      case 'gig_marketplace': return <GigMarketHub />;
       default: return <Dashboard />;
     }
   };
