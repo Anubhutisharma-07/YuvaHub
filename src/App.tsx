@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import {
   LayoutDashboard, Globe, PlusCircle, Users, User, Menu, X, Bookmark, Sparkles, MessageSquare, Settings, Sun, Moon, Mic, Trophy,
   Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock, BookOpen, Target, Activity, Calendar, HeartPulse, Rocket, Shield
@@ -74,6 +74,7 @@ const DlpHub = lazy(() => import('./pages/Enterprise/DlpHub').then(m => ({ defau
 const ApiGatewayHub = lazy(() => import('./pages/Enterprise/ApiGatewayHub').then(m => ({ default: m.ApiGatewayHub })));
 const CareerGoalTracker = lazy(() => import('./components/tabs/CareerGoalTracker'));
 const CampusAlumniMentorshipStudioPage = lazy(() => import('./pages/CampusAlumniMentorshipStudioPage'));
+const ActivityFeed = lazy(() => import('./components/tabs/ActivityFeed'));
 
 const CardiovascularCriticalCareHub = lazy(() => import('./pages/Enterprise/CardiovascularCriticalCareHub').then(m => ({ default: m.CardiovascularCriticalCareHub })));
 const DeadlineCalendar = lazy(() => import('./components/tabs/DeadlineCalendar'));
@@ -339,6 +340,7 @@ function App() {
       title: "Account & System",
       items: [
         { id: 'profile', label: 'My Profile', icon: User },
+        { id: 'activity_feed', label: 'Activity Feed', icon: Activity, badge: 'NEW' },
         { id: 'auth_security', label: 'Auth & Security', icon: ShieldCheck },
         { id: 'settings', label: 'Settings', icon: Settings },
         ...(isAdminUser ? [{ id: 'admin', label: 'Admin Panel', icon: ShieldAlert }, { id: 'audit_log', label: 'Audit Log', icon: Activity, badge: 'NEW' }, { id: 'devops_pipelines', label: 'Pipelines', icon: Terminal, badge: 'NEW' }, { id: 'sso_identity', label: 'SSO & Identity', icon: Shield, badge: 'NEW' }, { id: 'api_gateway', label: 'API Gateway', icon: Terminal, badge: 'NEW' }] : []),
@@ -403,6 +405,7 @@ function App() {
       case 'poll_studio': return <PollStudio />;
       case 'alumni_mentorship': return <CampusAlumniMentorshipStudioPage />;
       case 'profile': return <Profile />;
+      case 'activity_feed': return <ActivityFeed />;
       case 'settings': return <SettingsTab />;
       case 'auth_security': return <AuthSecurityCenter />;
       case 'admin': return <AdminDashboard />;
@@ -424,7 +427,7 @@ function App() {
       case 'devops_pipelines': return <DevopsPipelineHub />;
       case 'sso_identity': return <SsoIdentityHub />;
       case 'api_gateway': return <ApiGatewayHub />;
-      case 'gig_marketplace': return <GigMarketHub />;
+
       default: return <Dashboard />;
     }
   };
