@@ -1181,3 +1181,175 @@ export async function bookAlumniMentorshipSession(id: string, studentName?: stri
   return await response.json();
 }
 
+
+/* -------------------------------------------------------------------------- */
+/* Compatibility API exports for feature tabs/pages.                         */
+/* These wrappers keep the frontend API surface aligned with the route views. */
+/* -------------------------------------------------------------------------- */
+
+async function apiClientRequest(path: string, method: string = 'GET', body?: any): Promise<any> {
+  const response = await fetchWithRetry(`${API_BASE_URL}${path}`, {
+    method,
+    ...(body === undefined ? {} : { body: JSON.stringify(body) })
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data?.error || `Request failed: ${response.status}`);
+  }
+
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    return response.json();
+  }
+  return response;
+}
+
+export async function fetchReviewRequests(...args: any[]): Promise<any> {
+  return apiClientRequest('/code-review/requests');
+}
+
+export async function createReviewRequest(payload: any): Promise<any> {
+  return apiClientRequest('/code-review/requests', 'POST', payload);
+}
+
+export async function claimReview(id: string, reviewerName?: string): Promise<any> {
+  return apiClientRequest(`/code-review/requests/${encodeURIComponent(id)}/claim`, 'POST', { reviewerName });
+}
+
+export async function submitReviewFeedback(id: string, payload: any): Promise<any> {
+  return apiClientRequest(`/code-review/requests/${encodeURIComponent(id)}/feedback`, 'POST', payload);
+}
+
+export async function fetchMyReviews(...args: any[]): Promise<any> {
+  return apiClientRequest('/code-review/my-reviews');
+}
+
+export async function fetchCalendarEvents(...args: any[]): Promise<any> {
+  return apiClientRequest('/calendar/events');
+}
+
+export async function setDeadlineReminder(...args: any[]): Promise<any> {
+  const payload = args.length === 1 ? args[0] : { opportunityId: args[0], reminder: args[1] };
+  return apiClientRequest('/deadline-reminders', 'POST', payload);
+}
+
+export async function deleteDeadlineReminder(id: string, ...args: any[]): Promise<any> {
+  return apiClientRequest(`/deadline-reminders/${encodeURIComponent(id)}`, 'DELETE');
+}
+
+export async function downloadCalendarICS(...args: any[]): Promise<any> {
+  return apiClientRequest('/calendar/ics');
+}
+
+export async function fetchConversations(...args: any[]): Promise<any> {
+  return apiClientRequest('/messages/conversations');
+}
+
+export async function fetchMessages(conversationId: string, ...args: any[]): Promise<any> {
+  return apiClientRequest(`/messages/conversations/${encodeURIComponent(conversationId)}`);
+}
+
+export async function sendDirectMessage(payload: any, ...args: any[]): Promise<any> {
+  return apiClientRequest('/messages', 'POST', payload);
+}
+
+export async function markConversationRead(conversationId: string, ...args: any[]): Promise<any> {
+  return apiClientRequest(`/messages/conversations/${encodeURIComponent(conversationId)}/read`, 'POST');
+}
+
+export async function fetchResources(...args: any[]): Promise<any> {
+  return apiClientRequest('/resources');
+}
+
+export async function fetchSavedResources(...args: any[]): Promise<any> {
+  return apiClientRequest('/resources/saved');
+}
+
+export async function submitResource(payload: any): Promise<any> {
+  return apiClientRequest('/resources', 'POST', payload);
+}
+
+export async function voteResource(id: string, ...args: any[]): Promise<any> {
+  return apiClientRequest(`/resources/${encodeURIComponent(id)}/vote`, 'POST', args[0]);
+}
+
+export async function saveResource(id: string, ...args: any[]): Promise<any> {
+  return apiClientRequest(`/resources/${encodeURIComponent(id)}/save`, 'POST', args[0]);
+}
+
+export async function flagResource(id: string, ...args: any[]): Promise<any> {
+  return apiClientRequest(`/resources/${encodeURIComponent(id)}/flag`, 'POST', args[0]);
+}
+
+export async function fetchStudyGroups(...args: any[]): Promise<any> {
+  return apiClientRequest('/study-groups');
+}
+
+export async function createStudyGroup(payload: any): Promise<any> {
+  return apiClientRequest('/study-groups', 'POST', payload);
+}
+
+export async function joinStudyGroup(id: string, ...args: any[]): Promise<any> {
+  return apiClientRequest(`/study-groups/${encodeURIComponent(id)}/join`, 'POST', args[0]);
+}
+
+export async function leaveStudyGroup(id: string, ...args: any[]): Promise<any> {
+  return apiClientRequest(`/study-groups/${encodeURIComponent(id)}/leave`, 'POST', args[0]);
+}
+
+export async function fetchAlumniEndowments(...args: any[]): Promise<any> {
+  return apiClientRequest('/campus/endowments');
+}
+
+export async function createAlumniEndowment(payload: any): Promise<any> {
+  return apiClientRequest('/campus/endowments', 'POST', payload);
+}
+
+export async function contributeToAlumniEndowment(id: string, payload?: any): Promise<any> {
+  return apiClientRequest(`/campus/endowments/${encodeURIComponent(id)}/contribute`, 'POST', payload);
+}
+
+export async function fetchAlumniMentorshipSlots(...args: any[]): Promise<any> {
+  return apiClientRequest('/campus/mentorship/slots');
+}
+
+export async function registerAlumniMentorshipSlot(payload: any): Promise<any> {
+  return apiClientRequest('/campus/mentorship/slots', 'POST', payload);
+}
+
+export async function fetchResearchPatents(...args: any[]): Promise<any> {
+  return apiClientRequest('/campus/research-patents');
+}
+
+export async function registerResearchPatent(payload: any): Promise<any> {
+  return apiClientRequest('/campus/research-patents', 'POST', payload);
+}
+
+export async function executePatentLicensingAgreement(id: string, payload?: any): Promise<any> {
+  return apiClientRequest(`/campus/research-patents/${encodeURIComponent(id)}/license`, 'POST', payload);
+}
+
+export async function fetchStudentVentures(...args: any[]): Promise<any> {
+  return apiClientRequest('/campus/student-ventures');
+}
+
+export async function registerStudentVenture(payload: any): Promise<any> {
+  return apiClientRequest('/campus/student-ventures', 'POST', payload);
+}
+
+export async function commitStudentVentureInvestment(id: string, payload?: any): Promise<any> {
+  return apiClientRequest(`/campus/student-ventures/${encodeURIComponent(id)}/invest`, 'POST', payload);
+}
+
+export async function fetchMentalWellnessCheckIns(...args: any[]): Promise<any> {
+  return apiClientRequest('/campus/mental-wellness/check-ins');
+}
+
+export async function createMentalWellnessCheckIn(payload: any): Promise<any> {
+  return apiClientRequest('/campus/mental-wellness/check-ins', 'POST', payload);
+}
+
+export async function assignCounselorCheckIn(id: string, payload?: any): Promise<any> {
+  return apiClientRequest(`/campus/mental-wellness/check-ins/${encodeURIComponent(id)}/assign-counselor`, 'POST', payload);
+}

@@ -410,6 +410,20 @@ export async function initializeDatabase(): Promise<void> {
         .then(() => console.log(`[Database] Created unique sparse index on users.firebaseUid`))
         .catch((err: any) => console.error(`[Database] Failed to create unique index:`, err));
 
+      // Deadline reminders must be claimed by a unique, process-independent key.
+      // The partial filter preserves compatibility with legacy notifications
+      // that were created before dedupeKey existed.
+      dbCommand.collection("notifications").createIndex(
+        { dedupeKey: 1 },
+        {
+          name: "deadline_reminder_dedupe_key_unique",
+          unique: true,
+          partialFilterExpression: { dedupeKey: { $exists: true } },
+        },
+      )
+        .then(() => console.log(`[Database] Created unique index on notifications.dedupeKey`))
+        .catch((err: any) => console.error(`[Database] Failed to create unique index on notifications.dedupeKey:`, err));
+
       // Paginated list endpoints — sort-field indexes (created_at / uploaded_at)
       const paginatedIndexes: [string, string][] = [
         ["teams", "created_at"],
