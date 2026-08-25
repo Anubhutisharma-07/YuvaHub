@@ -1353,3 +1353,65 @@ export async function createMentalWellnessCheckIn(payload: any): Promise<any> {
 export async function assignCounselorCheckIn(id: string, payload?: any): Promise<any> {
   return apiClientRequest(`/campus/mental-wellness/check-ins/${encodeURIComponent(id)}/assign-counselor`, 'POST', payload);
 }
+
+// ─── Activity Feed & Digest Preferences ────────────────────────────────────────
+
+export async function fetchActivityFeed(page: number = 1, limit: number = 20, type?: string, startDate?: number, endDate?: number) {
+  try {
+    const params = new URLSearchParams();
+    params.append('page', page.toString());
+    params.append('limit', limit.toString());
+    if (type) params.append('type', type);
+    if (startDate) params.append('startDate', startDate.toString());
+    if (endDate) params.append('endDate', endDate.toString());
+
+    const response = await fetchWithRetry(`${API_BASE_URL}/activity/feed?${params.toString()}`, {
+      method: "GET"
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    return await response.json();
+  } catch (error) {
+    console.warn("fetchActivityFeed failed", error);
+    return { items: [], total: 0 };
+  }
+}
+
+export async function fetchActivityStats() {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/activity/stats`, {
+      method: "GET"
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    return await response.json();
+  } catch (error) {
+    console.warn("fetchActivityStats failed", error);
+    return { data: { totalActions: 0, weeklyKarma: 0, streak: 0 } };
+  }
+}
+
+export async function getDigestPreferences() {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/activity/digest-preferences`, {
+      method: "GET"
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    return await response.json();
+  } catch (error) {
+    console.warn("getDigestPreferences failed", error);
+    return { data: { frequency: "None" } };
+  }
+}
+
+export async function updateDigestPreferences(frequency: "Daily" | "Weekly" | "None") {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/activity/digest-preferences`, {
+      method: "PUT",
+      body: JSON.stringify({ frequency })
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    return await response.json();
+  } catch (error) {
+    console.warn("updateDigestPreferences failed", error);
+    throw error;
+  }
+}
