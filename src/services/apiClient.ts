@@ -1095,3 +1095,390 @@ export async function generateFlashcardsBackend(jobDescription: string) {
   }
 }
 
+// --- Career Goal Tracker ---
+
+export async function createCareerGoal(goalTitle: string, targetRole: string, targetDate: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/career-goals`, {
+    method: 'POST',
+    body: JSON.stringify({ goalTitle, targetRole, targetDate }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || "Failed to create career goal");
+  }
+  return await response.json();
+}
+
+export async function fetchCareerGoals() {
+  const response = await fetchWithRetry(`${API_BASE_URL}/career-goals`, {
+    method: 'GET',
+  });
+  if (!response.ok) {
+    throw new Error("Failed to fetch career goals");
+  }
+  return await response.json();
+}
+
+export async function updateCareerGoalMilestone(goalId: string, milestoneId: string, status: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/career-goals/${goalId}/milestones/${milestoneId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
+  if (!response.ok) {
+    throw new Error("Failed to update milestone");
+  }
+  return await response.json();
+}
+
+export async function deleteCareerGoal(goalId: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/career-goals/${goalId}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    throw new Error("Failed to delete career goal");
+  }
+  return await response.json();
+}
+
+// --- Campus Alumni Mentorship & Career Guidance ---
+
+export async function fetchAlumniMentors(filters?: { campusName?: string; expertiseDomain?: string; availabilityStatus?: string; search?: string }) {
+  const params = new URLSearchParams();
+  if (filters?.campusName && filters.campusName !== 'All') params.append('campusName', filters.campusName);
+  if (filters?.expertiseDomain && filters.expertiseDomain !== 'All') params.append('expertiseDomain', filters.expertiseDomain);
+  if (filters?.availabilityStatus && filters.availabilityStatus !== 'All') params.append('availabilityStatus', filters.availabilityStatus);
+  if (filters?.search) params.append('search', filters.search);
+
+  const query = params.toString() ? `?${params.toString()}` : '';
+  const response = await fetchWithRetry(`${API_BASE_URL}/campus/mentorship/mentors${query}`, { method: 'GET' });
+  if (!response.ok) {
+    throw new Error("Failed to fetch campus alumni mentors");
+  }
+  return await response.json();
+}
+
+export async function registerAlumniMentor(payload: any) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/campus/mentorship/mentors`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to register alumni mentor");
+  }
+  return await response.json();
+}
+
+export async function bookAlumniMentorshipSession(id: string, studentName?: string, sessionTopic?: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/campus/mentorship/mentors/${id}/book`, {
+    method: 'POST',
+    body: JSON.stringify({ studentName, sessionTopic }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to book alumni mentorship session");
+  }
+  return await response.json();
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* Compatibility API exports for feature tabs/pages.                         */
+/* These wrappers keep the frontend API surface aligned with the route views. */
+/* -------------------------------------------------------------------------- */
+
+async function apiClientRequest(path: string, method: string = 'GET', body?: any): Promise<any> {
+  const response = await fetchWithRetry(`${API_BASE_URL}${path}`, {
+    method,
+    ...(body === undefined ? {} : { body: JSON.stringify(body) })
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data?.error || `Request failed: ${response.status}`);
+  }
+
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    return response.json();
+  }
+  return response;
+}
+
+export async function fetchReviewRequests(...args: any[]): Promise<any> {
+  return apiClientRequest('/code-review/requests');
+}
+
+export async function createReviewRequest(payload: any): Promise<any> {
+  return apiClientRequest('/code-review/requests', 'POST', payload);
+}
+
+export async function claimReview(id: string, reviewerName?: string): Promise<any> {
+  return apiClientRequest(`/code-review/requests/${encodeURIComponent(id)}/claim`, 'POST', { reviewerName });
+}
+
+export async function submitReviewFeedback(id: string, payload: any): Promise<any> {
+  return apiClientRequest(`/code-review/requests/${encodeURIComponent(id)}/feedback`, 'POST', payload);
+}
+
+export async function fetchMyReviews(...args: any[]): Promise<any> {
+  return apiClientRequest('/code-review/my-reviews');
+}
+
+export async function fetchCalendarEvents(...args: any[]): Promise<any> {
+  return apiClientRequest('/calendar/events');
+}
+
+export async function setDeadlineReminder(...args: any[]): Promise<any> {
+  const payload = args.length === 1 ? args[0] : { opportunityId: args[0], reminder: args[1] };
+  return apiClientRequest('/deadline-reminders', 'POST', payload);
+}
+
+export async function deleteDeadlineReminder(id: string, ...args: any[]): Promise<any> {
+  return apiClientRequest(`/deadline-reminders/${encodeURIComponent(id)}`, 'DELETE');
+}
+
+export async function downloadCalendarICS(...args: any[]): Promise<any> {
+  return apiClientRequest('/calendar/ics');
+}
+
+export async function fetchConversations(...args: any[]): Promise<any> {
+  return apiClientRequest('/messages/conversations');
+}
+
+export async function fetchMessages(conversationId: string, ...args: any[]): Promise<any> {
+  return apiClientRequest(`/messages/conversations/${encodeURIComponent(conversationId)}`);
+}
+
+export async function sendDirectMessage(payload: any, ...args: any[]): Promise<any> {
+  return apiClientRequest('/messages', 'POST', payload);
+}
+
+export async function markConversationRead(conversationId: string, ...args: any[]): Promise<any> {
+  return apiClientRequest(`/messages/conversations/${encodeURIComponent(conversationId)}/read`, 'POST');
+}
+
+export async function fetchResources(...args: any[]): Promise<any> {
+  return apiClientRequest('/resources');
+}
+
+export async function fetchSavedResources(...args: any[]): Promise<any> {
+  return apiClientRequest('/resources/saved');
+}
+
+export async function submitResource(payload: any): Promise<any> {
+  return apiClientRequest('/resources', 'POST', payload);
+}
+
+export async function voteResource(id: string, ...args: any[]): Promise<any> {
+  return apiClientRequest(`/resources/${encodeURIComponent(id)}/vote`, 'POST', args[0]);
+}
+
+export async function saveResource(id: string, ...args: any[]): Promise<any> {
+  return apiClientRequest(`/resources/${encodeURIComponent(id)}/save`, 'POST', args[0]);
+}
+
+export async function flagResource(id: string, ...args: any[]): Promise<any> {
+  return apiClientRequest(`/resources/${encodeURIComponent(id)}/flag`, 'POST', args[0]);
+}
+
+export async function fetchStudyGroups(...args: any[]): Promise<any> {
+  return apiClientRequest('/study-groups');
+}
+
+export async function createStudyGroup(payload: any): Promise<any> {
+  return apiClientRequest('/study-groups', 'POST', payload);
+}
+
+export async function joinStudyGroup(id: string, ...args: any[]): Promise<any> {
+  return apiClientRequest(`/study-groups/${encodeURIComponent(id)}/join`, 'POST', args[0]);
+}
+
+export async function leaveStudyGroup(id: string, ...args: any[]): Promise<any> {
+  return apiClientRequest(`/study-groups/${encodeURIComponent(id)}/leave`, 'POST', args[0]);
+}
+
+export async function fetchAlumniEndowments(...args: any[]): Promise<any> {
+  return apiClientRequest('/campus/endowments');
+}
+
+export async function createAlumniEndowment(payload: any): Promise<any> {
+  return apiClientRequest('/campus/endowments', 'POST', payload);
+}
+
+export async function contributeToAlumniEndowment(id: string, payload?: any): Promise<any> {
+  return apiClientRequest(`/campus/endowments/${encodeURIComponent(id)}/contribute`, 'POST', payload);
+}
+
+export async function fetchAlumniMentorshipSlots(...args: any[]): Promise<any> {
+  return apiClientRequest('/campus/mentorship/slots');
+}
+
+export async function registerAlumniMentorshipSlot(payload: any): Promise<any> {
+  return apiClientRequest('/campus/mentorship/slots', 'POST', payload);
+}
+
+export async function fetchResearchPatents(...args: any[]): Promise<any> {
+  return apiClientRequest('/campus/research-patents');
+}
+
+export async function registerResearchPatent(payload: any): Promise<any> {
+  return apiClientRequest('/campus/research-patents', 'POST', payload);
+}
+
+export async function executePatentLicensingAgreement(id: string, payload?: any): Promise<any> {
+  return apiClientRequest(`/campus/research-patents/${encodeURIComponent(id)}/license`, 'POST', payload);
+}
+
+export async function fetchStudentVentures(...args: any[]): Promise<any> {
+  return apiClientRequest('/campus/student-ventures');
+}
+
+export async function registerStudentVenture(payload: any): Promise<any> {
+  return apiClientRequest('/campus/student-ventures', 'POST', payload);
+}
+
+export async function commitStudentVentureInvestment(id: string, payload?: any): Promise<any> {
+  return apiClientRequest(`/campus/student-ventures/${encodeURIComponent(id)}/invest`, 'POST', payload);
+}
+
+export async function fetchMentalWellnessCheckIns(...args: any[]): Promise<any> {
+  return apiClientRequest('/campus/mental-wellness/check-ins');
+}
+
+export async function createMentalWellnessCheckIn(payload: any): Promise<any> {
+  return apiClientRequest('/campus/mental-wellness/check-ins', 'POST', payload);
+}
+
+export async function assignCounselorCheckIn(id: string, payload?: any): Promise<any> {
+  return apiClientRequest(`/campus/mental-wellness/check-ins/${encodeURIComponent(id)}/assign-counselor`, 'POST', payload);
+}
+
+// ─── Activity Feed & Digest Preferences ────────────────────────────────────────
+
+export async function fetchActivityFeed(page: number = 1, limit: number = 20, type?: string, startDate?: number, endDate?: number) {
+  try {
+    const params = new URLSearchParams();
+    params.append('page', page.toString());
+    params.append('limit', limit.toString());
+    if (type) params.append('type', type);
+    if (startDate) params.append('startDate', startDate.toString());
+    if (endDate) params.append('endDate', endDate.toString());
+
+    const response = await fetchWithRetry(`${API_BASE_URL}/activity/feed?${params.toString()}`, {
+      method: "GET"
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    return await response.json();
+  } catch (error) {
+    console.warn("fetchActivityFeed failed", error);
+    return { items: [], total: 0 };
+  }
+}
+
+export async function fetchActivityStats() {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/activity/stats`, {
+      method: "GET"
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    return await response.json();
+  } catch (error) {
+    console.warn("fetchActivityStats failed", error);
+    return { data: { totalActions: 0, weeklyKarma: 0, streak: 0 } };
+  }
+}
+
+export async function getDigestPreferences() {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/activity/digest-preferences`, {
+      method: "GET"
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    return await response.json();
+  } catch (error) {
+    console.warn("getDigestPreferences failed", error);
+    return { data: { frequency: "None" } };
+  }
+}
+
+export async function updateDigestPreferences(frequency: "Daily" | "Weekly" | "None") {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/activity/digest-preferences`, {
+      method: "PUT",
+      body: JSON.stringify({ frequency })
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    return await response.json();
+  } catch (error) {
+    console.warn("updateDigestPreferences failed", error);
+    throw error;
+  }
+}
+
+// ─── Announcements ────────────────────────────────────────────────────────────
+
+export async function fetchAnnouncements(page: number = 1, limit: number = 20, category?: string) {
+  try {
+    const params = new URLSearchParams();
+    params.append('page', page.toString());
+    params.append('limit', limit.toString());
+    if (category) params.append('category', category);
+
+    const response = await fetchWithRetry(`${API_BASE_URL}/announcements?${params.toString()}`, {
+      method: "GET"
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    return await response.json();
+  } catch (error) {
+    console.warn("fetchAnnouncements failed", error);
+    return { items: [], total: 0 };
+  }
+}
+
+export async function fetchActiveAnnouncements() {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/announcements/active`, {
+      method: "GET"
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    return await response.json();
+  } catch (error) {
+    console.warn("fetchActiveAnnouncements failed", error);
+    return { data: [] };
+  }
+}
+
+export async function createAnnouncement(data: any) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/announcements`, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+  if (!response.ok) throw new Error("Failed to create announcement");
+  return response.json();
+}
+
+export async function updateAnnouncement(id: string, data: any) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/announcements/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data)
+  });
+  if (!response.ok) throw new Error("Failed to update announcement");
+  return response.json();
+}
+
+export async function deleteAnnouncement(id: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/announcements/${id}`, {
+    method: "DELETE"
+  });
+  if (!response.ok) throw new Error("Failed to delete announcement");
+  return response.json();
+}
+
+export async function dismissAnnouncement(id: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/announcements/${id}/dismiss`, {
+    method: "POST"
+  });
+  if (!response.ok) throw new Error("Failed to dismiss announcement");
+  return response.json();
+}
