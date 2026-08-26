@@ -48,6 +48,7 @@ const CampusAlumniHub = lazy(() => import('./components/tabs/CampusAlumniHub'));
 const ResumeAtsStudio = lazy(() => import('./components/tabs/ResumeAtsStudio'));
 const SkillGapStudio = lazy(() => import('./components/tabs/SkillGapStudio'));
 const InterviewPrepStudio = lazy(() => import('./components/tabs/InterviewPrepStudio'));
+const MentorshipNetwork = lazy(() => import('./components/tabs/MentorshipNetwork'));
 const OpenSourceBountyStudio = lazy(() => import('./components/tabs/OpenSourceBountyStudio'));
 const OpportunityMatchStudio = lazy(() => import('./components/tabs/OpportunityMatchStudio'));
 const TechEcosystemStudio = lazy(() => import('./components/tabs/TechEcosystemStudio'));
@@ -284,6 +285,7 @@ function App() {
       items: [
         { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
         { id: 'mentorship', label: 'Mentorship', icon: GraduationCap },
+        { id: 'mentor_network', label: 'Mentor Network', icon: Users, badge: 'NEW' },
         { id: 'focus_room', label: 'Global Focus Room', icon: Clock },
         { id: 'bounty_board', label: 'Bounty Board', icon: Coins },
         { id: 'interview_experiences', label: 'Interview Experiences', icon: MessageSquare },
@@ -349,6 +351,7 @@ function App() {
       case 'tech_ecosystem': return <TechEcosystemStudio />;
       case 'hackathon_judge': return <HackathonJudgeStudio />;
       case 'mentorship_advisory': return <MentorshipAdvisoryStudio />;
+      case 'mentor_network': return <MentorshipNetwork />;
       case 'research_grants': return <ResearchGrantPortal />;
       case 'project_showcase': return <ProjectShowcaseVault />;
       case 'star_interview': return <StarInterviewStudio />;
