@@ -48,6 +48,7 @@ const CampusAlumniHub = lazy(() => import('./components/tabs/CampusAlumniHub'));
 const ResumeAtsStudio = lazy(() => import('./components/tabs/ResumeAtsStudio'));
 const SkillGapStudio = lazy(() => import('./components/tabs/SkillGapStudio'));
 const InterviewPrepStudio = lazy(() => import('./components/tabs/InterviewPrepStudio'));
+const AchievementCenter = lazy(() => import('./components/tabs/AchievementCenter'));
 const OpenSourceBountyStudio = lazy(() => import('./components/tabs/OpenSourceBountyStudio'));
 const OpportunityMatchStudio = lazy(() => import('./components/tabs/OpportunityMatchStudio'));
 const TechEcosystemStudio = lazy(() => import('./components/tabs/TechEcosystemStudio'));
@@ -283,6 +284,8 @@ function App() {
       title: "Ecosystem & Community",
       items: [
         { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
+        { id: 'achievement_center', label: 'Achievement Center', icon: Award, badge: 'NEW' },
+        { id: 'achievement_center', label: 'Achievement Center', icon: Award, badge: 'NEW' },
         { id: 'mentorship', label: 'Mentorship', icon: GraduationCap },
         { id: 'focus_room', label: 'Global Focus Room', icon: Clock },
         { id: 'bounty_board', label: 'Bounty Board', icon: Coins },
@@ -351,6 +354,7 @@ function App() {
       case 'mentorship_advisory': return <MentorshipAdvisoryStudio />;
       case 'research_grants': return <ResearchGrantPortal />;
       case 'project_showcase': return <ProjectShowcaseVault />;
+      case 'achievement_center': return <AchievementCenter />;
       case 'star_interview': return <StarInterviewStudio />;
       case 'submit': return <SubmitOpportunity />;
       case 'mentorship': return <MentorshipAdvisoryStudio />;
