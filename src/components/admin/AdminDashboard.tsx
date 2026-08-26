@@ -61,7 +61,7 @@ const AdminDashboard = () => {
 
   const [healthMetrics, setHealthMetrics] = useState<any>(null);
   const [logs, setLogs] = useState<ScraperLog[]>([]);
-  const [moderationOpps, setModerationOpps] = useState<any[]>([]);
+  const [moderationReports, setModerationReports] = useState<any[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -84,7 +84,7 @@ const AdminDashboard = () => {
       const [statsRes, scrapersRes, modRes, healthRes] = await Promise.all([
         fetch('/api/v1/admin/scraper-stats', { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
         fetch('/api/v1/admin/scrapers', { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
-        fetch('/api/v1/admin/moderation-queue', { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch('/api/v1/reports/queue', { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
         fetch('/api/v1/admin/scraper-health', { headers }).then(r => r.ok ? r.json() : null).catch(() => null)
       ]);
 
@@ -100,7 +100,7 @@ const AdminDashboard = () => {
       }
       const modList = Array.isArray(modRes) ? modRes : (modRes?.items ?? modRes?.data ?? []);
       if (modRes && Array.isArray(modList)) {
-        setModerationOpps(modList);
+        setModerationReports(modList);
       }
     } catch (err) {
       console.error('Failed to load admin dashboard telemetry:', err);
@@ -138,10 +138,10 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleModerate = async (id: string, action: 'approve' | 'reject') => {
+  const handleModerate = async (id: string, action: 'approve' | 'reject' | 'dismiss' | 'remove' | 'ban' | string) => {
     const token = await user?.getIdToken?.() || localStorage.getItem('token');
     try {
-      await fetch(`/api/v1/admin/moderate/${id}`, {
+      await fetch(`/api/v1/reports/${id}/resolve`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -149,7 +149,7 @@ const AdminDashboard = () => {
         },
         body: JSON.stringify({ action })
       });
-      setModerationOpps(prev => prev.filter(opp => (opp._id || opp.id) !== id));
+      setModerationReports(prev => prev.filter(rep => (rep._id || rep.id) !== id));
     } catch (err) {
       console.error(`Failed to ${action} opp:`, err);
     }
@@ -220,7 +220,7 @@ const AdminDashboard = () => {
               className={`px-4 py-2 rounded-lg uppercase tracking-wider transition-all cursor-pointer ${activeTab === 'moderation' ? 'bg-[#b56b37] text-white shadow-xs font-extrabold' : 'text-[#603620] hover:text-[#231f20]'}`}
             >
               Moderation Queue
-              {moderationOpps.length > 0 && <span className="ml-2 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full">{moderationOpps.length}</span>}
+              {moderationReports.length > 0 && <span className="ml-2 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full">{moderationReports.length}</span>}
             </button>
           </div>
           
@@ -494,53 +494,53 @@ const AdminDashboard = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-[#e8ded1] bg-[#fcf9f2] text-[10px] font-extrabold text-[#603620] uppercase tracking-wider">
-                  <th className="py-3 px-4">Title</th>
-                  <th className="py-3 px-4">Organization</th>
-                  <th className="py-3 px-4">Score</th>
-                  <th className="py-3 px-4">Flags</th>
+                  <th className="py-3 px-4">Content Type</th>
+                  <th className="py-3 px-4">Reason</th>
+                  <th className="py-3 px-4">Description</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#e8ded1] text-xs font-medium">
-                {moderationOpps.length === 0 ? (
+                {moderationReports.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-12 text-center text-[#8c7569] font-medium">
+                    <td colSpan={4} className="py-12 text-center text-[#8c7569] font-medium">
                       <CheckCircle className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
                       Queue is completely clear.
                     </td>
                   </tr>
                 ) : (
-                  moderationOpps.map((opp) => (
-                    <tr key={opp._id || opp.id} className="hover:bg-[#fcf9f2] transition-colors">
-                      <td className="py-3.5 px-4 font-serif font-bold text-[#231f20]">
-                        {opp.title}
-                      </td>
-                      <td className="py-3.5 px-4 text-[#603620]">
-                        {opp.org || opp.organization || 'Unknown'}
+                  moderationReports.map((report) => (
+                    <tr key={report._id || report.id} className="hover:bg-[#fcf9f2] transition-colors">
+                      <td className="py-3.5 px-4 font-bold text-[#231f20] capitalize">
+                        {report.contentType}
                       </td>
                       <td className="py-3.5 px-4">
-                        <span className={`px-2 py-1 rounded text-[10px] font-extrabold uppercase border ${(opp.source_quality_score || 0) < 50 ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-                          {opp.source_quality_score || 0}/100
+                        <span className="px-2 py-1 rounded text-[10px] font-extrabold uppercase border bg-red-50 text-red-700 border-red-200">
+                          {report.reason}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4">
-                        {opp.flagged ? <span className="text-red-700 font-extrabold">User Flagged</span> : <span className="text-[#8c7569]">System</span>}
+                      <td className="py-3.5 px-4 text-[#603620] max-w-[200px] truncate">
+                        {report.description || 'No description provided'}
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex justify-end gap-2">
                           <button 
-                            onClick={() => handleModerate(opp._id || opp.id, 'approve')}
-                            className="p-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors cursor-pointer"
-                            title="Approve"
+                            onClick={() => handleModerate(report._id || report.id, 'dismiss')}
+                            className="px-2 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors cursor-pointer text-[10px] font-bold"
                           >
-                            <Check className="w-4 h-4" />
+                            Dismiss
                           </button>
                           <button 
-                            onClick={() => handleModerate(opp._id || opp.id, 'reject')}
-                            className="p-1.5 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition-colors cursor-pointer"
-                            title="Reject & Delete"
+                            onClick={() => handleModerate(report._id || report.id, 'remove')}
+                            className="px-2 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors cursor-pointer text-[10px] font-bold"
                           >
-                            <X className="w-4 h-4" />
+                            Remove
+                          </button>
+                          <button 
+                            onClick={() => handleModerate(report._id || report.id, 'ban')}
+                            className="px-2 py-1 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition-colors cursor-pointer text-[10px] font-bold"
+                          >
+                            Ban User
                           </button>
                         </div>
                       </td>
