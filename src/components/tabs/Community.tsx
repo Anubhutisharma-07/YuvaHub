@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Trophy, Megaphone, HelpCircle, Link as LinkIcon, Send, Heart, 
   MessageSquare, Loader2, Sparkles, Trash2, ChevronDown, ChevronUp, 
-  AlertTriangle, Flame, Clock, Tag, UserCheck, Shield, BarChart2
+  AlertTriangle, Flame, Clock, Tag, UserCheck, Shield, BarChart2, Flag
 } from 'lucide-react';
 import { UserProfile } from '../../types';
 import { EmptyState, ErrorState, SkeletonCard } from '../ui/states';
 import { useAppContext } from '../../context/AppContext';
+import { ReportModal } from '../ui/ReportModal';
 
 interface PostComment {
   _id?: string;
@@ -57,6 +58,11 @@ export default function Community() {
   const [commentInputMap, setCommentInputMap] = useState<Record<string, string>>({});
   const [loadingCommentsPostId, setLoadingCommentsPostId] = useState<string | null>(null);
   const [commentErrorMap, setCommentErrorMap] = useState<Record<string, string | null>>({});
+
+  // Report State
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportPostId, setReportPostId] = useState<string>('');
+  const [reportPostTitle, setReportPostTitle] = useState<string>('');
 
   const containsProfanity = (text: string): boolean => {
     const profanityRegex = /\b(badword|abuse|hate|spam|scam|idiot|stupid|bastard)\b/i;
@@ -397,6 +403,17 @@ export default function Community() {
                         <span>{p.repliesCount || comments.length || 0} Replies</span>
                       </button>
                     </div>
+                    <button
+                      onClick={() => {
+                        setReportPostId(pid);
+                        setReportPostTitle(p.title || 'Community Post');
+                        setShowReportModal(true);
+                      }}
+                      title="Report this post"
+                      className="p-1.5 rounded-lg text-[#8c7569] hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                    >
+                      <Flag className="w-4 h-4" />
+                    </button>
                   </div>
 
                   {/* Comments Thread Drawer */}
@@ -438,6 +455,14 @@ export default function Community() {
           )}
         </div>
       </div>
+
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        contentType="post"
+        contentId={reportPostId}
+        contentTitle={reportPostTitle}
+      />
     </div>
   );
 }
