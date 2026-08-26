@@ -48,6 +48,7 @@ const CampusAlumniHub = lazy(() => import('./components/tabs/CampusAlumniHub'));
 const ResumeAtsStudio = lazy(() => import('./components/tabs/ResumeAtsStudio'));
 const SkillGapStudio = lazy(() => import('./components/tabs/SkillGapStudio'));
 const InterviewPrepStudio = lazy(() => import('./components/tabs/InterviewPrepStudio'));
+const LearningPathTracker = lazy(() => import('./components/tabs/LearningPathTracker'));
 const OpenSourceBountyStudio = lazy(() => import('./components/tabs/OpenSourceBountyStudio'));
 const OpportunityMatchStudio = lazy(() => import('./components/tabs/OpportunityMatchStudio'));
 const TechEcosystemStudio = lazy(() => import('./components/tabs/TechEcosystemStudio'));
@@ -276,6 +277,7 @@ function App() {
         { id: 'resume_ats', label: 'Resume ATS Optimizer', icon: FileText },
         { id: 'interview_prep', label: 'AI Interview Studio', icon: Video },
         { id: 'project_showcase', label: 'Project Vault', icon: FolderGit2 },
+        { id: 'learning_paths', label: 'Learning Paths', icon: GraduationCap },
         { id: 'mock_interview', label: 'Mock Interview Room', icon: Mic },
       ]
     },
@@ -351,6 +353,7 @@ function App() {
       case 'mentorship_advisory': return <MentorshipAdvisoryStudio />;
       case 'research_grants': return <ResearchGrantPortal />;
       case 'project_showcase': return <ProjectShowcaseVault />;
+      case 'learning_paths': return <LearningPathTracker />;
       case 'star_interview': return <StarInterviewStudio />;
       case 'submit': return <SubmitOpportunity />;
       case 'mentorship': return <MentorshipAdvisoryStudio />;
