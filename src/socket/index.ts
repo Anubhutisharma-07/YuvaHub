@@ -47,6 +47,16 @@ export const setupSocketEvents = () => {
       console.log(`[Socket] User ${socket.id} left post_${postId}`);
     });
 
+    socket.on("joinEventRoom", (eventId: string) => {
+      socket.join(`event_${eventId}`);
+      console.log(`[Socket] User ${socket.id} joined event_${eventId}`);
+    });
+
+    socket.on("leaveEventRoom", (eventId: string) => {
+      socket.leave(`event_${eventId}`);
+      console.log(`[Socket] User ${socket.id} left event_${eventId}`);
+    });
+
     socket.on("draw_event", (data: any) => {
       // Broadcast to other users. If team/room-based is needed later, we'd use `socket.to(room).emit`.
       // For now, broadcast to everyone else to satisfy the generic real-time requirement.

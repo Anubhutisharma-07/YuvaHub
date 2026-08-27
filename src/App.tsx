@@ -1,7 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import {
   LayoutDashboard, Globe, PlusCircle, Users, User, Menu, X, Bookmark, Sparkles, MessageSquare, Settings, Sun, Moon, Mic, Trophy,
-  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock, BookOpen, Target, Activity, Calendar, HeartPulse, Rocket, Shield, Megaphone, Search
+  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock, BookOpen, Target, Activity, Calendar, HeartPulse, Rocket, Shield, Megaphone, Search, Ticket
 } from 'lucide-react';
 import { signInWithGoogle, logout } from './lib/firebase';
 import { UserProfile } from './types';
@@ -81,6 +81,7 @@ const CampusAlumniMentorshipStudioPage = lazy(() => import('./pages/CampusAlumni
 const ActivityFeed = lazy(() => import('./components/tabs/ActivityFeed'));
 const Announcements = lazy(() => import('./components/tabs/Announcements'));
 const SavedSearchManager = lazy(() => import('./components/tabs/SavedSearchManager'));
+const MyRsvps = lazy(() => import('./components/tabs/MyRsvps').then(m => ({ default: m.MyRsvps })));
 
 const CardiovascularCriticalCareHub = lazy(() => import('./pages/Enterprise/CardiovascularCriticalCareHub').then(m => ({ default: m.CardiovascularCriticalCareHub })));
 const DeadlineCalendar = lazy(() => import('./components/tabs/DeadlineCalendar'));
@@ -351,6 +352,7 @@ function App() {
       title: "Account & System",
       items: [
         { id: 'profile', label: 'My Profile', icon: User },
+        { id: 'my_rsvps', label: 'My RSVPs', icon: Ticket, badge: 'NEW' },
         { id: 'activity_feed', label: 'Activity Feed', icon: Activity, badge: 'NEW' },
         { id: 'announcements', label: 'Announcements', icon: Megaphone, badge: 'NEW' },
         { id: 'auth_security', label: 'Auth & Security', icon: ShieldCheck },
@@ -421,6 +423,7 @@ function App() {
       case 'poll_studio': return <PollStudio />;
       case 'alumni_mentorship': return <CampusAlumniMentorshipStudioPage />;
       case 'profile': return <Profile />;
+      case 'my_rsvps': return <MyRsvps />;
       case 'activity_feed': return <ActivityFeed />;
       case 'announcements': return <Announcements />;
       case 'settings': return <SettingsTab />;

@@ -1624,3 +1624,88 @@ export async function acceptForumAnswer(postId: string, replyId: string) {
   if (!response.ok) throw new Error("Failed to accept forum answer");
   return response.json();
 }
+
+// ─── Event RSVPs ─────────────────────────────────────────────────────────────
+
+export async function registerForEvent(eventId: string, notes?: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/event-rsvps/${eventId}`, {
+    method: "POST",
+    body: JSON.stringify({ notes })
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || "Failed to register for event");
+  }
+  return response.json();
+}
+
+export async function cancelEventRegistration(eventId: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/event-rsvps/${eventId}`, {
+    method: "DELETE"
+  });
+  if (!response.ok) throw new Error("Failed to cancel RSVP");
+  return response.json();
+}
+
+export async function fetchUserRsvps() {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/event-rsvps`, {
+      method: "GET"
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    return await response.json();
+  } catch (error) {
+    console.warn("fetchUserRsvps failed", error);
+    return { data: [] };
+  }
+}
+
+// ─── Testimonials ─────────────────────────────────────────────────────────────
+
+export async function fetchPublicTestimonials(targetUid?: string) {
+  const url = targetUid ? `${API_BASE_URL}/testimonials/public?targetUid=${targetUid}` : `${API_BASE_URL}/testimonials/public`;
+  const response = await fetchWithRetry(url, {
+    method: "GET"
+  });
+  if (!response.ok) {
+    throw new Error("Failed to fetch testimonials");
+  }
+  return response.json();
+}
+
+export async function createTestimonial(data: any) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/testimonials`, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+  if (!response.ok) {
+    throw new Error("Failed to create testimonial");
+  }
+  return response.json();
+}
+
+export async function fetchTestimonialInbox() {
+  const response = await fetchWithRetry(`${API_BASE_URL}/testimonials/inbox`, {
+    method: "GET"
+  });
+  if (!response.ok) throw new Error("Failed to fetch testimonial inbox");
+  return response.json();
+}
+
+export async function updateTestimonialStatus(id: string, status: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/testimonials/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status })
+  });
+  if (!response.ok) throw new Error("Failed to update testimonial status");
+  return response.json();
+}
+
+export async function highlightTestimonial(id: string, isHighlighted: boolean) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/testimonials/${id}/highlight`, {
+    method: "PATCH",
+    body: JSON.stringify({ isHighlighted })
+  });
+  if (!response.ok) throw new Error("Failed to highlight testimonial");
+  return response.json();
+}
