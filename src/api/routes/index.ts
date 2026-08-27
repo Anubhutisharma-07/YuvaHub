@@ -33,6 +33,7 @@ import alumniMentorshipRoutes from "./alumniMentorshipRoutes.js";
 import activityRoutes from "./activityRoutes.js";
 import announcementRoutes from "./announcementRoutes.js";
 import opportunityNoteRoutes from "./opportunityNoteRoutes.js";
+import savedSearchRoutes from "./savedSearchRoutes.js";
 import { errorHandler } from "../middlewares/errorHandler.js";
 import { apiVersionHeaders } from "../versioning/middleware.js";
 
@@ -75,6 +76,7 @@ const routes = [
   activityRoutes,
   announcementRoutes,
   opportunityNoteRoutes,
+  savedSearchRoutes,
 ];
 
 // Mount all routes onto v1Router
