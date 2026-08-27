@@ -1482,3 +1482,53 @@ export async function dismissAnnouncement(id: string) {
   if (!response.ok) throw new Error("Failed to dismiss announcement");
   return response.json();
 }
+
+// ─── Saved Searches ────────────────────────────────────────────────────────────
+
+export async function fetchSavedSearches() {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/saved-searches`, {
+      method: "GET"
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    return await response.json();
+  } catch (error) {
+    console.warn("fetchSavedSearches failed", error);
+    return { data: [], total: 0 };
+  }
+}
+
+export async function createSavedSearch(data: any) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/saved-searches`, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+  if (!response.ok) throw new Error("Failed to create saved search");
+  return response.json();
+}
+
+export async function updateSavedSearch(id: string, data: any) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/saved-searches/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data)
+  });
+  if (!response.ok) throw new Error("Failed to update saved search");
+  return response.json();
+}
+
+export async function deleteSavedSearch(id: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/saved-searches/${id}`, {
+    method: "DELETE"
+  });
+  if (!response.ok) throw new Error("Failed to delete saved search");
+  return response.json();
+}
+
+export async function previewSavedSearch(filters: any) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/saved-searches/preview`, {
+    method: "POST",
+    body: JSON.stringify({ filters })
+  });
+  if (!response.ok) throw new Error("Failed to preview saved search");
+  return response.json();
+}
