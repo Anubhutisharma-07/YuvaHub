@@ -1584,3 +1584,58 @@ export async function previewSavedSearch(filters: any) {
   if (!response.ok) throw new Error("Failed to preview saved search");
   return response.json();
 }
+
+// ─── Testimonials ──────────────────────────────────────────────────────────────
+
+export async function createTestimonial(data: any) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/testimonials`, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+  if (!response.ok) throw new Error("Failed to create testimonial");
+  return response.json();
+}
+
+export async function fetchPublicTestimonials(uid: string) {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/testimonials/public/${uid}`, {
+      method: "GET"
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    return await response.json();
+  } catch (error) {
+    console.warn("fetchPublicTestimonials failed", error);
+    return { data: [] };
+  }
+}
+
+export async function fetchTestimonialInbox() {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/testimonials/inbox`, {
+      method: "GET"
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    return await response.json();
+  } catch (error) {
+    console.warn("fetchTestimonialInbox failed", error);
+    return { data: { received: [], given: [] } };
+  }
+}
+
+export async function updateTestimonialStatus(id: string, status: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/testimonials/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status })
+  });
+  if (!response.ok) throw new Error("Failed to update testimonial status");
+  return response.json();
+}
+
+export async function highlightTestimonial(id: string, isHighlighted: boolean) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/testimonials/${id}/highlight`, {
+    method: "PATCH",
+    body: JSON.stringify({ isHighlighted })
+  });
+  if (!response.ok) throw new Error("Failed to update testimonial highlight");
+  return response.json();
+}
