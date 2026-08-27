@@ -1,7 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import {
   LayoutDashboard, Globe, PlusCircle, Users, User, Menu, X, Bookmark, Sparkles, MessageSquare, Settings, Sun, Moon, Mic, Trophy,
-  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock, BookOpen, Target, Activity, Calendar, HeartPulse, Rocket, Shield, Megaphone
+  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock, BookOpen, Target, Activity, Calendar, HeartPulse, Rocket, Shield, Megaphone, Search
 } from 'lucide-react';
 import { signInWithGoogle, logout } from './lib/firebase';
 import { UserProfile } from './types';
@@ -77,6 +77,7 @@ const CareerGoalTracker = lazy(() => import('./components/tabs/CareerGoalTracker
 const CampusAlumniMentorshipStudioPage = lazy(() => import('./pages/CampusAlumniMentorshipStudioPage'));
 const ActivityFeed = lazy(() => import('./components/tabs/ActivityFeed'));
 const Announcements = lazy(() => import('./components/tabs/Announcements'));
+const SavedSearchManager = lazy(() => import('./components/tabs/SavedSearchManager'));
 
 const CardiovascularCriticalCareHub = lazy(() => import('./pages/Enterprise/CardiovascularCriticalCareHub').then(m => ({ default: m.CardiovascularCriticalCareHub })));
 const DeadlineCalendar = lazy(() => import('./components/tabs/DeadlineCalendar'));
@@ -289,6 +290,8 @@ function App() {
         { id: 'deadline_calendar', label: 'Deadline Calendar', icon: Calendar, badge: 'NEW' },
         { id: 'opportunity_match', label: 'AI Match Studio', icon: Sparkles, badge: 'AI' },
         { id: 'teams', label: 'Team Builder', icon: Users },
+        { id: 'experiences', icon: FileText, label: 'Experiences' },
+        { id: 'saved-searches', icon: Search, label: 'Saved Searches' },
         { id: 'bookmarks', label: 'Bookmarks', icon: Bookmark },
       ]
     },
@@ -359,6 +362,8 @@ function App() {
       case 'application_tracker': return <ApplicationTracker />;
       case 'deadline_calendar': return <DeadlineCalendar />;
       case 'teams': return <Teams />;
+      case 'experiences': return <ExperiencesHub />;
+      case 'saved-searches': return <SavedSearchManager />;
       case 'bookmarks': return <Bookmarks />;
       case 'leaderboard': return <Leaderboard />;
       case 'ai_assistant': return (
