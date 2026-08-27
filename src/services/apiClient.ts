@@ -1585,57 +1585,42 @@ export async function previewSavedSearch(filters: any) {
   return response.json();
 }
 
-// ─── Testimonials ──────────────────────────────────────────────────────────────
+// ─── Forum Replies ─────────────────────────────────────────────────────────────
 
-export async function createTestimonial(data: any) {
-  const response = await fetchWithRetry(`${API_BASE_URL}/testimonials`, {
-    method: "POST",
-    body: JSON.stringify(data)
-  });
-  if (!response.ok) throw new Error("Failed to create testimonial");
-  return response.json();
-}
-
-export async function fetchPublicTestimonials(uid: string) {
+export async function getForumReplies(postId: string) {
   try {
-    const response = await fetchWithRetry(`${API_BASE_URL}/testimonials/public/${uid}`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}/community/posts/${postId}/replies`, {
       method: "GET"
     });
     if (!response.ok) throw new Error("API_ERROR");
     return await response.json();
   } catch (error) {
-    console.warn("fetchPublicTestimonials failed", error);
+    console.warn("getForumReplies failed", error);
     return { data: [] };
   }
 }
 
-export async function fetchTestimonialInbox() {
-  try {
-    const response = await fetchWithRetry(`${API_BASE_URL}/testimonials/inbox`, {
-      method: "GET"
-    });
-    if (!response.ok) throw new Error("API_ERROR");
-    return await response.json();
-  } catch (error) {
-    console.warn("fetchTestimonialInbox failed", error);
-    return { data: { received: [], given: [] } };
-  }
-}
-
-export async function updateTestimonialStatus(id: string, status: string) {
-  const response = await fetchWithRetry(`${API_BASE_URL}/testimonials/${id}/status`, {
-    method: "PATCH",
-    body: JSON.stringify({ status })
+export async function createForumReply(postId: string, content: string, parentReplyId?: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/community/posts/${postId}/replies`, {
+    method: "POST",
+    body: JSON.stringify({ content, parentReplyId })
   });
-  if (!response.ok) throw new Error("Failed to update testimonial status");
+  if (!response.ok) throw new Error("Failed to create forum reply");
   return response.json();
 }
 
-export async function highlightTestimonial(id: string, isHighlighted: boolean) {
-  const response = await fetchWithRetry(`${API_BASE_URL}/testimonials/${id}/highlight`, {
-    method: "PATCH",
-    body: JSON.stringify({ isHighlighted })
+export async function upvoteForumReply(postId: string, replyId: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/community/posts/${postId}/replies/${replyId}/upvote`, {
+    method: "POST"
   });
-  if (!response.ok) throw new Error("Failed to update testimonial highlight");
+  if (!response.ok) throw new Error("Failed to upvote forum reply");
+  return response.json();
+}
+
+export async function acceptForumAnswer(postId: string, replyId: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/community/posts/${postId}/replies/${replyId}/accept`, {
+    method: "PUT"
+  });
+  if (!response.ok) throw new Error("Failed to accept forum answer");
   return response.json();
 }
