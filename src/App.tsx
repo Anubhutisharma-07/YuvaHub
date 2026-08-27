@@ -314,6 +314,8 @@ function App() {
       title: "Ecosystem & Community",
       items: [
         { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
+        { id: 'achievement_center', label: 'Achievement Center', icon: Award, badge: 'NEW' },
+        { id: 'achievement_center', label: 'Achievement Center', icon: Award, badge: 'NEW' },
         { id: 'study_groups', label: 'Study Groups', icon: Users, badge: 'NEW' },
         { id: 'mentorship', label: 'Mentorship', icon: GraduationCap },
         { id: 'mentor_network', label: 'Mentor Network', icon: Users, badge: 'NEW' },
@@ -404,6 +406,7 @@ function App() {
       case 'research_grants': return <ResearchGrantPortal />;
       case 'research_patents': return <CampusResearchIpLicensingStudioPage />;
       case 'project_showcase': return <ProjectShowcaseVault />;
+      case 'achievement_center': return <AchievementCenter />;
       case 'star_interview': return <StarInterviewStudio />;
       case 'submit': return <SubmitOpportunity />;
       case 'mentorship': return <MentorshipAdvisoryStudio />;
