@@ -1482,3 +1482,55 @@ export async function dismissAnnouncement(id: string) {
   if (!response.ok) throw new Error("Failed to dismiss announcement");
   return response.json();
 }
+
+// ─── Opportunity Notes ────────────────────────────────────────────────────────
+
+export async function fetchOpportunityNote(opportunityId: string) {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/opportunity-notes/${opportunityId}`, {
+      method: "GET"
+    });
+    if (!response.ok) {
+      if (response.status === 404) return null;
+      throw new Error("Failed to fetch opportunity note");
+    }
+    const data = await response.json();
+    return data.data?.note || null;
+  } catch (error) {
+    console.warn("fetchOpportunityNote failed", error);
+    return null;
+  }
+}
+
+export async function upsertOpportunityNote(opportunityId: string, content: string, color: string, isPinned: boolean) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/opportunity-notes`, {
+    method: "POST",
+    body: JSON.stringify({ opportunityId, content, color, isPinned })
+  });
+  if (!response.ok) throw new Error("Failed to save opportunity note");
+  const data = await response.json();
+  return data.data?.note;
+}
+
+export async function deleteOpportunityNote(opportunityId: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/opportunity-notes/${opportunityId}`, {
+    method: "DELETE"
+  });
+  if (!response.ok) throw new Error("Failed to delete opportunity note");
+  return response.json();
+}
+
+export async function bulkGetOpportunityNotes(opportunityIds: string[]) {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/opportunity-notes/bulk`, {
+      method: "POST",
+      body: JSON.stringify({ opportunityIds })
+    });
+    if (!response.ok) throw new Error("Failed to fetch bulk opportunity notes");
+    const data = await response.json();
+    return data.data?.notes || [];
+  } catch (error) {
+    console.warn("bulkGetOpportunityNotes failed", error);
+    return [];
+  }
+}

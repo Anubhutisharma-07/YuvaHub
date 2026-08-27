@@ -410,6 +410,10 @@ export async function initializeDatabase(): Promise<void> {
         .then(() => console.log(`[Database] Created unique sparse index on users.firebaseUid`))
         .catch((err: any) => console.error(`[Database] Failed to create unique index:`, err));
 
+      dbCommand.collection("opportunity_notes").createIndex({ userId: 1, opportunityId: 1 }, { unique: true })
+        .then(() => console.log(`[Database] Created compound unique index on opportunity_notes`))
+        .catch((err: any) => console.error(`[Database] Failed to create index on opportunity_notes:`, err));
+
       // Deadline reminders must be claimed by a unique, process-independent key.
       // The partial filter preserves compatibility with legacy notifications
       // that were created before dedupeKey existed.
