@@ -1584,3 +1584,43 @@ export async function previewSavedSearch(filters: any) {
   if (!response.ok) throw new Error("Failed to preview saved search");
   return response.json();
 }
+
+// ─── Forum Replies ─────────────────────────────────────────────────────────────
+
+export async function getForumReplies(postId: string) {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/community/posts/${postId}/replies`, {
+      method: "GET"
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    return await response.json();
+  } catch (error) {
+    console.warn("getForumReplies failed", error);
+    return { data: [] };
+  }
+}
+
+export async function createForumReply(postId: string, content: string, parentReplyId?: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/community/posts/${postId}/replies`, {
+    method: "POST",
+    body: JSON.stringify({ content, parentReplyId })
+  });
+  if (!response.ok) throw new Error("Failed to create forum reply");
+  return response.json();
+}
+
+export async function upvoteForumReply(postId: string, replyId: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/community/posts/${postId}/replies/${replyId}/upvote`, {
+    method: "POST"
+  });
+  if (!response.ok) throw new Error("Failed to upvote forum reply");
+  return response.json();
+}
+
+export async function acceptForumAnswer(postId: string, replyId: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/community/posts/${postId}/replies/${replyId}/accept`, {
+    method: "PUT"
+  });
+  if (!response.ok) throw new Error("Failed to accept forum answer");
+  return response.json();
+}
