@@ -1,7 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import {
   LayoutDashboard, Globe, PlusCircle, Users, User, Menu, X, Bookmark, Sparkles, MessageSquare, Settings, Sun, Moon, Mic, Trophy,
-  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock, BookOpen, Target, Activity, Calendar, HeartPulse, Rocket, Shield, Megaphone
+  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock, BookOpen, Target, Activity, Calendar, HeartPulse, Rocket, Shield, Megaphone, Search
 } from 'lucide-react';
 import { signInWithGoogle, logout } from './lib/firebase';
 import { UserProfile } from './types';
@@ -50,6 +50,7 @@ const ResumeAtsStudio = lazy(() => import('./components/tabs/ResumeAtsStudio'));
 const SkillGapStudio = lazy(() => import('./components/tabs/SkillGapStudio'));
 const InterviewPrepStudio = lazy(() => import('./components/tabs/InterviewPrepStudio'));
 const PortfolioShowcase = lazy(() => import('./components/tabs/PortfolioShowcase'));
+const MentorshipNetwork = lazy(() => import('./components/tabs/MentorshipNetwork'));
 const ResearchGrantTelemetryLab = lazy(() => import('./pages/Enterprise/ResearchGrantTelemetryLab').then(m => ({ default: m.ResearchGrantTelemetryLab })));
 const OpenSourceBountyStudio = lazy(() => import('./components/tabs/OpenSourceBountyStudio'));
 const OpportunityMatchStudio = lazy(() => import('./components/tabs/OpportunityMatchStudio'));
@@ -78,6 +79,7 @@ const CareerGoalTracker = lazy(() => import('./components/tabs/CareerGoalTracker
 const CampusAlumniMentorshipStudioPage = lazy(() => import('./pages/CampusAlumniMentorshipStudioPage'));
 const ActivityFeed = lazy(() => import('./components/tabs/ActivityFeed'));
 const Announcements = lazy(() => import('./components/tabs/Announcements'));
+const SavedSearchManager = lazy(() => import('./components/tabs/SavedSearchManager'));
 
 const CardiovascularCriticalCareHub = lazy(() => import('./pages/Enterprise/CardiovascularCriticalCareHub').then(m => ({ default: m.CardiovascularCriticalCareHub })));
 const DeadlineCalendar = lazy(() => import('./components/tabs/DeadlineCalendar'));
@@ -290,6 +292,8 @@ function App() {
         { id: 'deadline_calendar', label: 'Deadline Calendar', icon: Calendar, badge: 'NEW' },
         { id: 'opportunity_match', label: 'AI Match Studio', icon: Sparkles, badge: 'AI' },
         { id: 'teams', label: 'Team Builder', icon: Users },
+        { id: 'experiences', icon: FileText, label: 'Experiences' },
+        { id: 'saved-searches', icon: Search, label: 'Saved Searches' },
         { id: 'bookmarks', label: 'Bookmarks', icon: Bookmark },
       ]
     },
@@ -312,8 +316,11 @@ function App() {
       title: "Ecosystem & Community",
       items: [
         { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
+        { id: 'achievement_center', label: 'Achievement Center', icon: Award, badge: 'NEW' },
+        { id: 'achievement_center', label: 'Achievement Center', icon: Award, badge: 'NEW' },
         { id: 'study_groups', label: 'Study Groups', icon: Users, badge: 'NEW' },
         { id: 'mentorship', label: 'Mentorship', icon: GraduationCap },
+        { id: 'mentor_network', label: 'Mentor Network', icon: Users, badge: 'NEW' },
         { id: 'focus_room', label: 'Global Focus Room', icon: Clock },
         { id: 'bounty_board', label: 'Bounty Board', icon: Coins },
         { id: 'interview_experiences', label: 'Interview Experiences', icon: MessageSquare },
@@ -361,6 +368,8 @@ function App() {
       case 'application_tracker': return <ApplicationTracker />;
       case 'deadline_calendar': return <DeadlineCalendar />;
       case 'teams': return <Teams />;
+      case 'experiences': return <ExperiencesHub />;
+      case 'saved-searches': return <SavedSearchManager />;
       case 'bookmarks': return <Bookmarks />;
       case 'leaderboard': return <Leaderboard />;
       case 'ai_assistant': return (
@@ -395,10 +404,12 @@ function App() {
       case 'tech_ecosystem': return <TechEcosystemStudio />;
       case 'hackathon_judge': return <HackathonJudgeStudio />;
       case 'mentorship_advisory': return <MentorshipAdvisoryStudio />;
+      case 'mentor_network': return <MentorshipNetwork />;
       case 'research_grants': return <ResearchGrantPortal />;
       case 'research_patents': return <CampusResearchIpLicensingStudioPage />;
       case 'project_showcase': return <ProjectShowcaseVault />;
       case 'portfolio': return <PortfolioShowcase />;
+      case 'achievement_center': return <AchievementCenter />;
       case 'star_interview': return <StarInterviewStudio />;
       case 'submit': return <SubmitOpportunity />;
       case 'mentorship': return <MentorshipAdvisoryStudio />;
