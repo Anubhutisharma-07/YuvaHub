@@ -5,7 +5,7 @@ import {
   Code, BookOpen, GitBranch, MessageCircle, Share2, Sparkles, Gift,
   Calendar, BarChart3, ArrowRight, ChevronRight, Trophy as TrophyIcon,
   Lightbulb, Diamond, Gem, BadgeCheck, Swords, Crosshair, Compass,
-  Map, Footprints, Milestone, Flag, Sun, Moon, Cloud, Umbrella,
+  Map, Footprints, Milestone, Flag, Sun, Moon, Cloud, Umbrella, LayoutDashboard
 } from 'lucide-react';
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -758,4 +758,4 @@ export default function AchievementCenter() {
   );
 }
 
-import { LayoutDashboard, AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
