@@ -5,9 +5,8 @@ import { paginate } from "../../lib/pagination.js";
 import { AppError } from "../../lib/AppError.js";
 import { sendSuccess, sendError, sendPaginated } from "../../lib/apiResponse.js";
 
-// New Imports for Platform Stats & Moderation
-import { User } from "../../models/User.js";
-import { Opportunity } from "../../models/Opportunity.js";
+// Replaced missing model imports with MongoDB driver usage
+import { ObjectId } from "mongodb";
 import { logger } from "../../utils/logger.js";
 
 const sseClients: any[] = [];
@@ -40,8 +39,8 @@ export const adminMetrics = async (req: Request, res: Response) => {
  */
 export const getPlatformStats = async (req: Request, res: Response) => {
   try {
-    const totalUsers = await User.countDocuments();
-    const activeOpportunities = await Opportunity.countDocuments({ status: 'active' });
+    const totalUsers = await dbQuery.collection('users').countDocuments();
+    const activeOpportunities = await dbQuery.collection('opportunities').countDocuments({ status: 'active' });
 
     // Mocked daily signups for Recharts visualization (replace with actual aggregation)
     const dailySignups = [
@@ -60,7 +59,7 @@ export const getPlatformStats = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.error('Error fetching platform stats:', error);
+    logger.error(error, 'Error fetching platform stats:');
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -74,20 +73,21 @@ export const getUsersList = async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 20;
     const skip = (page - 1) * limit;
 
-    const users = await User.find()
-      .select('name email reputation_score level createdAt')
+    const users = await dbQuery.collection('users').find()
+      .project({ name: 1, email: 1, reputation_score: 1, level: 1, createdAt: 1 })
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .toArray();
 
-    const total = await User.countDocuments();
+    const total = await dbQuery.collection('users').countDocuments();
 
     res.status(200).json({
       data: users,
       pagination: { total, page, limit, totalPages: Math.ceil(total / limit) },
     });
   } catch (error) {
-    logger.error('Error fetching users list:', error);
+    logger.error(error, 'Error fetching users list:');
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -106,14 +106,14 @@ export const performModerationAction = async (req: Request, res: Response) => {
     }
 
     if (targetType === 'opportunity' && action === 'remove') {
-      await Opportunity.findByIdAndUpdate(targetId, { status: 'removed' });
+      await dbCommand.collection('opportunities').updateOne({ _id: new ObjectId(targetId) }, { $set: { status: 'removed' } });
       logger.info(`Admin ${req.user?.uid} removed opportunity ${targetId}`);
       return res.status(200).json({ message: 'Opportunity removed successfully' });
     }
 
     res.status(400).json({ error: 'Invalid target type or action' });
   } catch (error) {
-    logger.error('Error performing moderation action:', error);
+    logger.error(error, 'Error performing moderation action:');
     res.status(500).json({ error: 'Internal server error' });
   }
 };

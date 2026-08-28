@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, Target, CheckCircle, Clock, Star, TrendingUp, Award, Zap,
   Code, Database, Globe, Palette, Brain, Rocket, ChevronRight, ChevronDown,
@@ -761,4 +762,4 @@ export default function LearningPathTracker() {
 }
 
 // Re-export needed icons
-import { LayoutDashboard, AnimatePresence } from 'lucide-react';
+import { LayoutDashboard } from 'lucide-react';
