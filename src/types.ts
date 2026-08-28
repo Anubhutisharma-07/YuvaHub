@@ -50,6 +50,30 @@ export interface UserProfile {
   points?: number;
   badges?: string[];
   isPublicProfile?: boolean;
+  role?: 'student' | 'alumni' | 'employer' | string;
+  verified_skills?: string[];
+  verifiedSkills?: string[];
+}
+
+export interface QuizQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correctOptionIndex: number;
+}
+
+export interface QuizSubmission {
+  skill: string;
+  answers: { questionId: string; selectedOptionIndex: number }[];
+}
+
+export interface QuizResult {
+  passed: boolean;
+  scorePercent: number;
+  correctCount: number;
+  totalQuestions: number;
+  badgeAwarded: boolean;
+  message: string;
 }
 
 export interface RecommendationPreferences {
