@@ -13,6 +13,7 @@ import notificationRoutes from "./notificationRoutes.js";
 import applicationRoutes from "./applicationRoutes.js";
 import adminRoutes from "./adminRoutes.js";
 import communityRoutes from "./communityRoutes.js";
+import forumReplyRoutes from "./forumReplyRoutes.js";
 import teamRoutes from "./teamRoutes.js";
 import scholarshipRoutes from "./scholarshipRoutes.js";
 import mentorshipRoutes from "./mentorshipRoutes.js";
@@ -30,6 +31,17 @@ import reportRoutes from "./reportRoutes.js";
 import skillGapRoutes from "./skillGapRoutes.js";
 import careerGoalRoutes from "./careerGoalRoutes.js";
 import alumniMentorshipRoutes from "./alumniMentorshipRoutes.js";
+import activityRoutes from "./activityRoutes.js";
+import announcementRoutes from "./announcementRoutes.js";
+import opportunityNoteRoutes from "./opportunityNoteRoutes.js";
+import savedSearchRoutes from "./savedSearchRoutes.js";
+import testimonialRoutes from "./testimonialRoutes.js";
+import eventRsvpRoutes from "./eventRsvpRoutes.js";
+ feature/automated-skill-assessments
+import skillAssessmentRoutes from "./skillAssessmentRoutes.js";
+
+import voteRoutes from "./voteRoutes.js";
+ main
 import { errorHandler } from "../middlewares/errorHandler.js";
 import { apiVersionHeaders } from "../versioning/middleware.js";
 
@@ -52,6 +64,7 @@ const routes = [
   applicationRoutes,
   adminRoutes,
   communityRoutes,
+  forumReplyRoutes,
   teamRoutes,
   scholarshipRoutes,
   mentorshipRoutes,
@@ -69,6 +82,17 @@ const routes = [
   skillGapRoutes,
   careerGoalRoutes,
   alumniMentorshipRoutes,
+  activityRoutes,
+  announcementRoutes,
+  opportunityNoteRoutes,
+  savedSearchRoutes,
+  testimonialRoutes,
+  eventRsvpRoutes,
+ feature/automated-skill-assessments
+  skillAssessmentRoutes,
+
+  voteRoutes,
+ main
 ];
 
 // Mount all routes onto v1Router
