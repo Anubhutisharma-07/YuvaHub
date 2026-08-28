@@ -1255,6 +1255,42 @@ async function startServer() {
     aiCache.set(key, { data, timestamp: Date.now() });
   }
 
+  /**
+   * Build a cache key scoped to the authenticated user.
+   * Format: userId:promptHash
+   * Anonymous users get a synthetic ID derived from their IP to prevent
+   * cross-user cache leakage while still allowing per-visitor caching.
+   */
+  function buildUserScopedCacheKey(userId: string, prompt: string): string {
+    // Simple djb2 hash for deterministic, fast key generation
+    let hash = 5381;
+    for (let i = 0; i < prompt.length; i++) {
+      hash = ((hash << 5) + hash + prompt.charCodeAt(i)) | 0;
+    }
+    return `${userId}:${hash.toString(36)}`;
+  }
+
+  /**
+   * Extract user ID from Authorization header or fall back to a synthetic
+   * anonymous identifier derived from the client IP.
+   */
+  function resolveUserId(req: any): string {
+    const authHeader = req.headers?.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      try {
+        const token = authHeader.substring(7);
+        const parts = token.split(".");
+        if (parts.length === 3) {
+          const payload = JSON.parse(Buffer.from(parts[1], "base64").toString("utf-8"));
+          return payload.user_id || payload.sub || `anon:${req.ip || "unknown"}`;
+        }
+      } catch {
+        // Fall through to anonymous
+      }
+    }
+    return `anon:${req.ip || "unknown"}`;
+  }
+
   function getAIFallback(prompt: string, expectJson: boolean): string {
     const lower = prompt.toLowerCase();
     
@@ -1362,8 +1398,10 @@ Sincerely,
       const { prompt, expectJson } = req.body;
       if (!prompt) return res.status(400).json({ error: "No prompt" });
 
-      // Check cache first
-      const cached = getCachedResponse(prompt);
+      // Check cache first (scoped per user to prevent cross-user leakage)
+      const userId = resolveUserId(req);
+      const cacheKey = buildUserScopedCacheKey(userId, prompt);
+      const cached = getCachedResponse(cacheKey);
       if (cached) {
         return res.json({ text: cached });
       }
@@ -1408,7 +1446,7 @@ Sincerely,
         responseText = getAIFallback(prompt, !!expectJson);
       }
 
-      setCachedResponse(prompt, responseText);
+      setCachedResponse(cacheKey, responseText);
       res.json({ text: responseText });
     } catch (err) {
       // General safety fallback, don't fail the request
@@ -1423,7 +1461,8 @@ Sincerely,
       const { resume } = req.body;
       if (!resume) return res.status(400).json({ error: "No resume provided" });
 
-      const cacheKey = `resume_review:${resume.substring(0, 300)}`;
+      const userId = resolveUserId(req);
+      const cacheKey = buildUserScopedCacheKey(userId, `resume_review:${resume.substring(0, 300)}`);
       const cached = getCachedResponse(cacheKey);
       if (cached) {
         return res.json(cached);
@@ -1516,9 +1555,10 @@ Return JSON strictly in this format:
         return res.status(400).json({ error: "No job description provided" });
       }
 
-      // Check cache using a combination of the inputs
+      // Check cache using a combination of the inputs (scoped per user)
+      const userId = resolveUserId(req);
       const cacheInput = resumeBase64 ? resumeBase64.substring(0, 200) : (resumeText || "").substring(0, 200);
-      const cacheKey = `resume_analysis:${cacheInput}:${jobDescription.substring(0, 100)}`;
+      const cacheKey = buildUserScopedCacheKey(userId, `resume_analysis:${cacheInput}:${jobDescription.substring(0, 100)}`);
       const cached = getCachedResponse(cacheKey);
       if (cached) {
         return res.json(cached);
