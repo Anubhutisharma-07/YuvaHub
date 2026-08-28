@@ -37,8 +37,8 @@ import opportunityNoteRoutes from "./opportunityNoteRoutes.js";
 import savedSearchRoutes from "./savedSearchRoutes.js";
 import testimonialRoutes from "./testimonialRoutes.js";
 import eventRsvpRoutes from "./eventRsvpRoutes.js";
- feature/employer-hiring-portal
-import employerRoutes from "./employerRoutes.js";
+ feature/automated-skill-assessments
+import skillAssessmentRoutes from "./skillAssessmentRoutes.js";
 
 import voteRoutes from "./voteRoutes.js";
  main
@@ -88,8 +88,8 @@ const routes = [
   savedSearchRoutes,
   testimonialRoutes,
   eventRsvpRoutes,
- feature/employer-hiring-portal
-  employerRoutes,
+ feature/automated-skill-assessments
+  skillAssessmentRoutes,
 
   voteRoutes,
  main

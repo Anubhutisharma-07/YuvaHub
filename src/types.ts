@@ -53,9 +53,27 @@ export interface UserProfile {
   role?: 'student' | 'alumni' | 'employer' | string;
   verified_skills?: string[];
   verifiedSkills?: string[];
-  ats_score?: number;
-  atsScore?: number;
-  github_metrics?: { repos?: number; stars?: number; contributions?: number };
+}
+
+export interface QuizQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correctOptionIndex: number;
+}
+
+export interface QuizSubmission {
+  skill: string;
+  answers: { questionId: string; selectedOptionIndex: number }[];
+}
+
+export interface QuizResult {
+  passed: boolean;
+  scorePercent: number;
+  correctCount: number;
+  totalQuestions: number;
+  badgeAwarded: boolean;
+  message: string;
 }
 
 export interface RecommendationPreferences {

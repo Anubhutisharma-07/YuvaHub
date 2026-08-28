@@ -49,6 +49,7 @@ const CampusAlumniHub = lazy(() => import('./components/tabs/CampusAlumniHub'));
 const ResumeAtsStudio = lazy(() => import('./components/tabs/ResumeAtsStudio'));
 const SkillGapStudio = lazy(() => import('./components/tabs/SkillGapStudio'));
 const InterviewPrepStudio = lazy(() => import('./components/tabs/InterviewPrepStudio'));
+const PortfolioShowcase = lazy(() => import('./components/tabs/PortfolioShowcase'));
 const MentorshipNetwork = lazy(() => import('./components/tabs/MentorshipNetwork'));
 const AchievementCenter = lazy(() => import('./components/tabs/AchievementCenter'));
 
@@ -88,10 +89,7 @@ const DeadlineCalendar = lazy(() => import('./components/tabs/DeadlineCalendar')
 const DegreePlannerHub = lazy(() => import('./pages/DegreePlannerHub').then(m => ({ default: m.DegreePlannerHub })));
 const CampusAlumniEndowmentStudioPage = lazy(() => import('./pages/CampusAlumniEndowmentStudioPage'));
 const CampusStudentVentureStudioPage = lazy(() => import('./pages/CampusStudentVentureStudioPage'));
-const StudentMentalWellnessDeskPage = lazy(() => import('./pages/StudentMentalWellnessDeskPage'));
-const CampusResearchIpLicensingStudioPage = lazy(() => import('./pages/CampusResearchIpLicensingStudioPage'));
-const StudyGroupRooms = lazy(() => import('./components/tabs/StudyGroupRooms'));
-const ResourceVault = lazy(() => import('./components/tabs/ResourceVault'));
+
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
     <div className="flex items-center gap-3 animate-pulse">
@@ -309,7 +307,9 @@ function App() {
         { id: 'career_goals', label: 'Career Goal Tracker', icon: Target, badge: 'AI' },
         { id: 'resume_ats', label: 'Resume ATS Optimizer', icon: FileText },
         { id: 'interview_prep', label: 'AI Interview Studio', icon: Video },
+        { id: 'career_sim', label: 'Career Simulator', icon: Compass, badge: 'NEW' },
         { id: 'project_showcase', label: 'Project Vault', icon: FolderGit2 },
+        { id: 'portfolio', label: 'Portfolio Showcase', icon: FolderGit2, badge: 'NEW' },
         { id: 'mock_interview', label: 'Mock Interview Room', icon: Mic },
       ]
     },
@@ -332,7 +332,7 @@ function App() {
         { id: 'code_review', label: 'Code Review Exchange', icon: Code2, badge: 'NEW' },
         { id: 'direct_messages', label: 'Direct Messages', icon: MessageSquare, badge: 'NEW' },
         { id: 'campus_alumni', label: 'Campus & Alumni Hub', icon: Building2 },
-        { id: 'alumni_mentorship', label: 'Alumni Mentorship Studio', icon: GraduationCap, badge: 'NEW' },
+        { id: 'student_ventures', label: 'Student Venture Studio', icon: Rocket, badge: 'NEW' },
       ]
     },
     {
@@ -401,6 +401,7 @@ function App() {
       case 'resume_ats': return <ResumeAtsStudio />;
       case 'skill_gap': return <SkillGapStudio />;
       case 'interview_prep': return <InterviewPrepStudio />;
+      case 'career_sim': return <CareerPathSimulator />;
       case 'opensource_bounties': return <OpenSourceBountyStudio />;
       case 'opportunity_match': return <OpportunityMatchStudio />;
       case 'tech_ecosystem': return <TechEcosystemStudio />;
@@ -410,6 +411,7 @@ function App() {
       case 'research_grants': return <ResearchGrantPortal />;
       case 'research_patents': return <CampusResearchIpLicensingStudioPage />;
       case 'project_showcase': return <ProjectShowcaseVault />;
+      case 'portfolio': return <PortfolioShowcase />;
       case 'achievement_center': return <AchievementCenter />;
       case 'star_interview': return <StarInterviewStudio />;
       case 'submit': return <SubmitOpportunity />;
@@ -421,7 +423,7 @@ function App() {
       case 'community': return <Community />;
       case 'resource_vault': return <ResourceVault />;
       case 'poll_studio': return <PollStudio />;
-      case 'alumni_mentorship': return <CampusAlumniMentorshipStudioPage />;
+      case 'student_ventures': return <CampusStudentVentureStudioPage />;
       case 'profile': return <Profile />;
       case 'my_rsvps': return <MyRsvps />;
       case 'activity_feed': return <ActivityFeed />;
