@@ -177,3 +177,15 @@ export interface LeaderboardEntry {
   karmaEarned: number;
   bountiesResolved: number;
 }
+
+export interface InAppNotification {
+  id?: string;
+  _id?: string;
+  userId: string;
+  type: 'team_invite' | 'forum_reply' | 'mentorship_request' | 'system' | string;
+  content: string;
+  link?: string;
+  isRead: boolean;
+  read?: boolean;
+  createdAt: Date | string | number;
+}

@@ -37,7 +37,11 @@ import opportunityNoteRoutes from "./opportunityNoteRoutes.js";
 import savedSearchRoutes from "./savedSearchRoutes.js";
 import testimonialRoutes from "./testimonialRoutes.js";
 import eventRsvpRoutes from "./eventRsvpRoutes.js";
+ feature/employer-hiring-portal
 import employerRoutes from "./employerRoutes.js";
+
+import voteRoutes from "./voteRoutes.js";
+ main
 import { errorHandler } from "../middlewares/errorHandler.js";
 import { apiVersionHeaders } from "../versioning/middleware.js";
 
@@ -84,7 +88,11 @@ const routes = [
   savedSearchRoutes,
   testimonialRoutes,
   eventRsvpRoutes,
+ feature/employer-hiring-portal
   employerRoutes,
+
+  voteRoutes,
+ main
 ];
 
 // Mount all routes onto v1Router
