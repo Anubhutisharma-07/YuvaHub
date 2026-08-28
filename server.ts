@@ -15,6 +15,7 @@ import rateLimit from "express-rate-limit";
 import { RedisStore } from "rate-limit-redis";
 import Redis from "ioredis";
 import { v2 as cloudinary } from "cloudinary";
+import { AICacheMetrics } from "./src/api/services/aiCacheMetrics.js";
 
 dotenv.config();
 
@@ -1242,12 +1243,20 @@ async function startServer() {
   // In-memory cache for AI generation prompts and resume reviews
   const aiCache = new Map<string, { data: any; timestamp: number }>();
   const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+  const cacheMetrics = new AICacheMetrics();
 
   function getCachedResponse(key: string): any | null {
     const entry = aiCache.get(key);
     if (entry && (Date.now() - entry.timestamp < CACHE_TTL_MS)) {
+      cacheMetrics.recordHit();
       return entry.data;
     }
+    if (entry) {
+      // Entry expired — count as eviction and clean up
+      cacheMetrics.recordEviction();
+      aiCache.delete(key);
+    }
+    cacheMetrics.recordMiss();
     return null;
   }
 
@@ -1889,6 +1898,12 @@ Return JSON strictly in this format:
       fallbackRate: 2.1,
       apiLatency: 120
     });
+  });
+
+  // --- AI Cache Metrics ---
+  app.get("/api/v1/admin/cache-metrics", (_req, res) => {
+    const metrics = cacheMetrics.snapshot(aiCache);
+    res.json(metrics);
   });
 
   app.get("/api/v1/admin/scrapers", async (req, res) => {
