@@ -1483,6 +1483,58 @@ export async function dismissAnnouncement(id: string) {
   return response.json();
 }
 
+// ─── Opportunity Notes ────────────────────────────────────────────────────────
+
+export async function fetchOpportunityNote(opportunityId: string) {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/opportunity-notes/${opportunityId}`, {
+      method: "GET"
+    });
+    if (!response.ok) {
+      if (response.status === 404) return null;
+      throw new Error("Failed to fetch opportunity note");
+    }
+    const data = await response.json();
+    return data.data?.note || null;
+  } catch (error) {
+    console.warn("fetchOpportunityNote failed", error);
+    return null;
+  }
+}
+
+export async function upsertOpportunityNote(opportunityId: string, content: string, color: string, isPinned: boolean) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/opportunity-notes`, {
+    method: "POST",
+    body: JSON.stringify({ opportunityId, content, color, isPinned })
+  });
+  if (!response.ok) throw new Error("Failed to save opportunity note");
+  const data = await response.json();
+  return data.data?.note;
+}
+
+export async function deleteOpportunityNote(opportunityId: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/opportunity-notes/${opportunityId}`, {
+    method: "DELETE"
+  });
+  if (!response.ok) throw new Error("Failed to delete opportunity note");
+  return response.json();
+}
+
+export async function bulkGetOpportunityNotes(opportunityIds: string[]) {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/opportunity-notes/bulk`, {
+      method: "POST",
+      body: JSON.stringify({ opportunityIds })
+    });
+    if (!response.ok) throw new Error("Failed to fetch bulk opportunity notes");
+    const data = await response.json();
+    return data.data?.notes || [];
+  } catch (error) {
+    console.warn("bulkGetOpportunityNotes failed", error);
+    return [];
+  }
+}
+
 // ─── Saved Searches ────────────────────────────────────────────────────────────
 
 export async function fetchSavedSearches() {
@@ -1530,5 +1582,130 @@ export async function previewSavedSearch(filters: any) {
     body: JSON.stringify({ filters })
   });
   if (!response.ok) throw new Error("Failed to preview saved search");
+  return response.json();
+}
+
+// ─── Forum Replies ─────────────────────────────────────────────────────────────
+
+export async function getForumReplies(postId: string) {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/community/posts/${postId}/replies`, {
+      method: "GET"
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    return await response.json();
+  } catch (error) {
+    console.warn("getForumReplies failed", error);
+    return { data: [] };
+  }
+}
+
+export async function createForumReply(postId: string, content: string, parentReplyId?: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/community/posts/${postId}/replies`, {
+    method: "POST",
+    body: JSON.stringify({ content, parentReplyId })
+  });
+  if (!response.ok) throw new Error("Failed to create forum reply");
+  return response.json();
+}
+
+export async function upvoteForumReply(postId: string, replyId: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/community/posts/${postId}/replies/${replyId}/upvote`, {
+    method: "POST"
+  });
+  if (!response.ok) throw new Error("Failed to upvote forum reply");
+  return response.json();
+}
+
+export async function acceptForumAnswer(postId: string, replyId: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/community/posts/${postId}/replies/${replyId}/accept`, {
+    method: "PUT"
+  });
+  if (!response.ok) throw new Error("Failed to accept forum answer");
+  return response.json();
+}
+
+// ─── Event RSVPs ─────────────────────────────────────────────────────────────
+
+export async function registerForEvent(eventId: string, notes?: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/event-rsvps/${eventId}`, {
+    method: "POST",
+    body: JSON.stringify({ notes })
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || "Failed to register for event");
+  }
+  return response.json();
+}
+
+export async function cancelEventRegistration(eventId: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/event-rsvps/${eventId}`, {
+    method: "DELETE"
+  });
+  if (!response.ok) throw new Error("Failed to cancel RSVP");
+  return response.json();
+}
+
+export async function fetchUserRsvps() {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/event-rsvps`, {
+      method: "GET"
+    });
+    if (!response.ok) throw new Error("API_ERROR");
+    return await response.json();
+  } catch (error) {
+    console.warn("fetchUserRsvps failed", error);
+    return { data: [] };
+  }
+}
+
+// ─── Testimonials ─────────────────────────────────────────────────────────────
+
+export async function fetchPublicTestimonials(targetUid?: string) {
+  const url = targetUid ? `${API_BASE_URL}/testimonials/public?targetUid=${targetUid}` : `${API_BASE_URL}/testimonials/public`;
+  const response = await fetchWithRetry(url, {
+    method: "GET"
+  });
+  if (!response.ok) {
+    throw new Error("Failed to fetch testimonials");
+  }
+  return response.json();
+}
+
+export async function createTestimonial(data: any) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/testimonials`, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+  if (!response.ok) {
+    throw new Error("Failed to create testimonial");
+  }
+  return response.json();
+}
+
+export async function fetchTestimonialInbox() {
+  const response = await fetchWithRetry(`${API_BASE_URL}/testimonials/inbox`, {
+    method: "GET"
+  });
+  if (!response.ok) throw new Error("Failed to fetch testimonial inbox");
+  return response.json();
+}
+
+export async function updateTestimonialStatus(id: string, status: string) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/testimonials/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status })
+  });
+  if (!response.ok) throw new Error("Failed to update testimonial status");
+  return response.json();
+}
+
+export async function highlightTestimonial(id: string, isHighlighted: boolean) {
+  const response = await fetchWithRetry(`${API_BASE_URL}/testimonials/${id}/highlight`, {
+    method: "PATCH",
+    body: JSON.stringify({ isHighlighted })
+  });
+  if (!response.ok) throw new Error("Failed to highlight testimonial");
   return response.json();
 }
