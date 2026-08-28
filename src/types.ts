@@ -50,6 +50,12 @@ export interface UserProfile {
   points?: number;
   badges?: string[];
   isPublicProfile?: boolean;
+  role?: 'student' | 'alumni' | 'employer' | string;
+  verified_skills?: string[];
+  verifiedSkills?: string[];
+  ats_score?: number;
+  atsScore?: number;
+  github_metrics?: { repos?: number; stars?: number; contributions?: number };
 }
 
 export interface RecommendationPreferences {
