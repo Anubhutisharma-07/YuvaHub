@@ -310,6 +310,7 @@ function App() {
         { id: 'career_goals', label: 'Career Goal Tracker', icon: Target, badge: 'AI' },
         { id: 'resume_ats', label: 'Resume ATS Optimizer', icon: FileText },
         { id: 'interview_prep', label: 'AI Interview Studio', icon: Video },
+        { id: 'career_sim', label: 'Career Simulator', icon: Compass, badge: 'NEW' },
         { id: 'project_showcase', label: 'Project Vault', icon: FolderGit2 },
         { id: 'portfolio', label: 'Portfolio Showcase', icon: FolderGit2, badge: 'NEW' },
         { id: 'mock_interview', label: 'Mock Interview Room', icon: Mic },
@@ -403,6 +404,7 @@ function App() {
       case 'resume_ats': return <ResumeAtsStudio />;
       case 'skill_gap': return <SkillGapStudio />;
       case 'interview_prep': return <InterviewPrepStudio />;
+      case 'career_sim': return <CareerPathSimulator />;
       case 'opensource_bounties': return <OpenSourceBountyStudio />;
       case 'opportunity_match': return <OpportunityMatchStudio />;
       case 'tech_ecosystem': return <TechEcosystemStudio />;
