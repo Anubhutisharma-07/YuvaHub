@@ -63,6 +63,7 @@ async function getMongoRankedOpportunities(database: any, profile: any, page: nu
   const skip = (page - 1) * limit;
   const currentDate = new Date();
   const cursor = database.collection("opportunities").find({
+    status: { $ne: 'closed' },
     $or: [
       { endDate: { $gte: currentDate } },
       { startDate: { $gte: currentDate } },
@@ -335,6 +336,7 @@ export const getLatestOpportunities = async (req: Request, res: Response) => {
     const cursor = dbQuery.collection("opportunities")
       .find({
         created_at: { $gte: twentyFourHoursAgo },
+        status: { $ne: 'closed' },
         $or: [
           { endDate: { $gte: now } },
           { startDate: { $gte: now } },
@@ -352,6 +354,7 @@ export const getLatestOpportunities = async (req: Request, res: Response) => {
     if (items.length === 0) {
       const fallbackCursor = dbQuery.collection("opportunities")
         .find({
+          status: { $ne: 'closed' },
           $or: [
             { endDate: { $gte: now } },
             { startDate: { $gte: now } },
@@ -555,6 +558,7 @@ export const getSimilarOpportunities = async (req: Request, res: Response) => {
             },
             {
                 // Ensure we only show open/active ones, same logic as trending
+                status: { $ne: 'closed' },
                 $or: [
                     { endDate: { $gte: new Date() } },
                     { startDate: { $gte: new Date() } },

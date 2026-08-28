@@ -94,7 +94,7 @@ export default function CampusAlumniMentorshipStudioPage() {
 
   const handleBook = async (id: string) => {
     try {
-      await bookAlumniMentorshipSession(id, 'STU-9920', 'Rohan Mehta');
+      await bookAlumniMentorshipSession(id, { userId: 'STU-9920', name: 'Rohan Mehta' });
     } catch (err) {
       console.warn('API bookAlumniMentorshipSession failed, booking locally', err);
       await AlumniMentorshipEngine.bookSession(id, 'STU-9920', 'Rohan Mehta');
