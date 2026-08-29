@@ -412,11 +412,7 @@ export const ingestOpportunity = async (req: Request, res: Response) => {
       jobId: job.id,
     });
   } catch (error) {
- feat/webrtc-collaborative-study-room-895
     (logger.error as any)({ error }, 'Error ingesting opportunity:');
-
-    logger.error({ error }, 'Error ingesting opportunity:');
- main
     res.status(500).json({ error: 'Internal server error' });
   }
 };

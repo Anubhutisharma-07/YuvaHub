@@ -1,9 +1,5 @@
 import { Queue, QueueOptions } from 'bullmq';
- feat/webrtc-collaborative-study-room-895
 import { redisClient } from '../config/redis.js';
-
-import { redisClient } from '../api/redis';
- main
 
 /**
  * Queue options for the opportunity deduplication pipeline.

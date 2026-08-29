@@ -1,16 +1,8 @@
- feat/webrtc-collaborative-study-room-895
 import { eventBus } from '../utils/eventBus.js';
 import { User } from '../models/User.js';
 import { ReputationLog } from '../models/ReputationLog.js';
 import { redisClient } from '../config/redis.js';
 import { logger } from '../utils/logger.js';
-
-import { eventBus } from '../utils/eventBus';
-import { User } from '../models/User';
-import { ReputationLog } from '../models/ReputationLog';
-import { redisClient } from '../api/redis';
-import { logger } from '../utils/logger';
- main
 
 /**
  * Configuration mapping actions to point values.
@@ -59,11 +51,7 @@ export const initializeReputationWorker = () => {
 
                 logger.info(`Reputation updated for user ${data.userId}: +${points} points (${action})`);
             } catch (error) {
- feat/webrtc-collaborative-study-room-895
                 (logger.error as any)({ error }, `Error processing reputation event ${action}:`);
-
-                logger.error({ error }, `Error processing reputation event ${action}:`);
- main
             }
         });
     });
