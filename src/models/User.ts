@@ -22,16 +22,9 @@ const userSchema = new Schema<IUser>(
 );
 
 // Pre-save hook to calculate level based on reputation score
- feature/enterprise-observability-hub-851
 userSchema.pre('save', function (this: any) {
     if (this.isModified && this.isModified('reputation_score')) {
         this.level = Math.floor(Math.sqrt((this.reputation_score || 0) / 100)) + 1;
-
-userSchema.pre('save', function (next: any) {
-    if (this.isModified('reputation_score')) {
-        // Simple leveling formula: Level = floor(sqrt(reputation_score / 100)) + 1
-        this.level = Math.floor(Math.sqrt(this.reputation_score / 100)) + 1;
- main
 
         const newBadges: string[] = [];
         if (this.reputation_score >= 100) newBadges.push('Novice');

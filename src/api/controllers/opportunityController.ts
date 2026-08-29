@@ -412,11 +412,7 @@ export const ingestOpportunity = async (req: Request, res: Response) => {
       jobId: job.id,
     });
   } catch (error) {
- feature/enterprise-observability-hub-851
     (logger.error as any)({ error }, 'Error ingesting opportunity:');
-
-    logger.error({ error }, 'Error ingesting opportunity:');
- main
     res.status(500).json({ error: 'Internal server error' });
   }
 };
