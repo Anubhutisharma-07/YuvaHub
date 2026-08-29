@@ -14,6 +14,8 @@ import NotificationDropdown from './components/ui/NotificationDropdown';
 import BackToTopButton from './components/ui/BackToTopButton';
 import AccessibilityEnhancer from './components/accessibility/AccessibilityEnhancer';
 import AnnouncementBanner from './components/ui/AnnouncementBanner';
+import { CompareProvider } from './context/CompareContext';
+import { CompareBottomBar } from './components/ui/CompareBottomBar';
 
 // Route components are lazy-loaded to reduce the initial bundle size (code splitting)
 const Dashboard = lazy(() => import('./components/tabs/Dashboard'));
@@ -91,6 +93,14 @@ const CampusAlumniEndowmentStudioPage = lazy(() => import('./pages/CampusAlumniE
 const CampusStudentVentureStudioPage = lazy(() => import('./pages/CampusStudentVentureStudioPage'));
 const Insights = lazy(() => import('./pages/Insights'));
 const AdminAnalyticsDashboard = lazy(() => import('./pages/AdminAnalyticsDashboard'));
+const ScraperHealthDashboard = lazy(() => import('./pages/ScraperHealthDashboard').then(m => ({ default: m.ScraperHealthDashboard })));
+
+const StudentMentalWellnessDeskPage = lazy(() => import('./pages/StudentMentalWellnessDeskPage'));
+const CampusResearchIpLicensingStudioPage = lazy(() => import('./pages/CampusResearchIpLicensingStudioPage'));
+const CareerPathSimulator = lazy(() => import('./components/tabs/CareerPathSimulator'));
+const StudyGroupRooms = lazy(() => import('./components/tabs/StudyGroupRooms'));
+const ResourceVault = lazy(() => import('./components/tabs/ResourceVault'));
+const ComparisonStudio = lazy(() => import('./components/tabs/ComparisonStudio'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
@@ -360,7 +370,7 @@ function App() {
         { id: 'announcements', label: 'Announcements', icon: Megaphone, badge: 'NEW' },
         { id: 'auth_security', label: 'Auth & Security', icon: ShieldCheck },
         { id: 'settings', label: 'Settings', icon: Settings },
-        ...(isAdminUser ? [{ id: 'admin', label: 'Admin Panel', icon: ShieldAlert }, { id: 'admin_analytics', label: 'Platform Analytics', icon: Activity, badge: 'NEW' }, { id: 'audit_log', label: 'Audit Log', icon: Activity, badge: 'NEW' }, { id: 'devops_pipelines', label: 'Pipelines', icon: Terminal, badge: 'NEW' }, { id: 'sso_identity', label: 'SSO & Identity', icon: Shield, badge: 'NEW' }, { id: 'api_gateway', label: 'API Gateway', icon: Terminal, badge: 'NEW' }] : []),
+        ...(isAdminUser ? [{ id: 'admin', label: 'Admin Panel', icon: ShieldAlert }, { id: 'admin_scrapers', label: 'Scraper Observability', icon: Activity, badge: 'NEW' }, { id: 'admin_analytics', label: 'Platform Analytics', icon: Activity, badge: 'NEW' }, { id: 'audit_log', label: 'Audit Log', icon: Activity, badge: 'NEW' }, { id: 'devops_pipelines', label: 'Pipelines', icon: Terminal, badge: 'NEW' }, { id: 'sso_identity', label: 'SSO & Identity', icon: Shield, badge: 'NEW' }, { id: 'api_gateway', label: 'API Gateway', icon: Terminal, badge: 'NEW' }] : []),
       ]
     }
   ];
@@ -435,6 +445,7 @@ function App() {
       case 'settings': return <SettingsTab />;
       case 'auth_security': return <AuthSecurityCenter />;
       case 'admin': return <AdminDashboard />;
+      case 'admin_scrapers': return <ScraperHealthDashboard />;
       case 'admin_analytics': return <AdminAnalyticsDashboard />;
       case 'security': return <Security />;
       case 'privacy': return <Privacy />;
@@ -454,6 +465,7 @@ function App() {
       case 'devops_pipelines': return <DevopsPipelineHub />;
       case 'sso_identity': return <SsoIdentityHub />;
       case 'api_gateway': return <ApiGatewayHub />;
+      case 'comparison_studio': return <ComparisonStudio />;
 
       default: return <Dashboard />;
     }
@@ -561,6 +573,7 @@ function App() {
   }
 
   return (
+    <CompareProvider>
     <div className="flex h-screen bg-gray-50 text-gray-900 font-sans overflow-hidden dark:bg-gray-900 dark:text-gray-100">
       {/* Global accessibility enhancer: focus trap, ARIA labels, Esc handling */}
       <AccessibilityEnhancer />
@@ -817,10 +830,12 @@ function App() {
           </Suspense>
         </div>
 
+        <CompareBottomBar />
         <BackToTopButton />
       </main>
 
     </div>
+    </CompareProvider>
   );
 }
 
