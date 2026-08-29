@@ -5,6 +5,7 @@ import { scraperWorker } from "./workers/scraperWorker";
 import { initAgentWorker, stopAgentWorker } from "./workers/applicationAgentWorker";
 import { mentorshipWorker } from "./workers/mentorshipWorker";
 import { mockInterviewWorker } from "./workers/mockInterviewWorker";
+import { exportWorker, closeExportWorker } from "./workers/exportWorker";
 import { runSavedSearchMatcher } from "./services/savedSearchMatcherService";
 import { opportunityExpiryWorker } from "./workers/opportunityExpiryWorker";
 import { opportunityExpiryQueue } from "./queues/opportunityExpiryQueue";
@@ -48,6 +49,7 @@ const shutdown = async () => {
     mentorshipWorker.close(),
     mockInterviewWorker.close(),
     opportunityExpiryWorker.close(),
+    closeExportWorker(),
     stopAgentWorker()
   ]);
 

@@ -8,6 +8,7 @@ import { useAppContext } from '../../context/AppContext';
 import ResumeVersionManager from './ResumeVersionManager';
 import EndorsementHub from './EndorsementHub';
 import TestimonialInbox from '../ui/TestimonialInbox';
+import ExportCenter from './ExportCenter';
 
 export default function Profile() {
   const { user, profile, setProfile } = useAppContext();
@@ -449,6 +450,9 @@ export default function Profile() {
 
            {/* Testimonials Inbox Section */}
            <TestimonialInbox />
+           
+           {/* Export Center Section */}
+           <ExportCenter />
         </div>
       </div>
     </div>
