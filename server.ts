@@ -637,6 +637,8 @@ process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 process.on("SIGBREAK", () => gracefulShutdown("SIGBREAK"));
 
+export let io: Server;
+
 async function startServer() {
   const app = express();
   const server = http.createServer(app);
@@ -644,7 +646,7 @@ async function startServer() {
   const frontendUrl = process.env.FRONTEND_URL;
   const corsOptions = frontendUrl ? { origin: frontendUrl } : { origin: "*" };
   
-  const io = new Server(server, { cors: corsOptions });
+  io = new Server(server, { cors: corsOptions });
   const PORT = 5173;
 
   // Trust reverse proxy (Cloud Run, nginx / Cloudflare reverse proxies)

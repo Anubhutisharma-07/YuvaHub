@@ -93,6 +93,7 @@ const CampusAlumniEndowmentStudioPage = lazy(() => import('./pages/CampusAlumniE
 const CampusStudentVentureStudioPage = lazy(() => import('./pages/CampusStudentVentureStudioPage'));
 const Insights = lazy(() => import('./pages/Insights'));
 const AdminAnalyticsDashboard = lazy(() => import('./pages/AdminAnalyticsDashboard'));
+const ScraperHealthDashboard = lazy(() => import('./pages/ScraperHealthDashboard').then(m => ({ default: m.ScraperHealthDashboard })));
 
 const StudentMentalWellnessDeskPage = lazy(() => import('./pages/StudentMentalWellnessDeskPage'));
 const CampusResearchIpLicensingStudioPage = lazy(() => import('./pages/CampusResearchIpLicensingStudioPage'));
@@ -369,7 +370,7 @@ function App() {
         { id: 'announcements', label: 'Announcements', icon: Megaphone, badge: 'NEW' },
         { id: 'auth_security', label: 'Auth & Security', icon: ShieldCheck },
         { id: 'settings', label: 'Settings', icon: Settings },
-        ...(isAdminUser ? [{ id: 'admin', label: 'Admin Panel', icon: ShieldAlert }, { id: 'admin_analytics', label: 'Platform Analytics', icon: Activity, badge: 'NEW' }, { id: 'audit_log', label: 'Audit Log', icon: Activity, badge: 'NEW' }, { id: 'devops_pipelines', label: 'Pipelines', icon: Terminal, badge: 'NEW' }, { id: 'sso_identity', label: 'SSO & Identity', icon: Shield, badge: 'NEW' }, { id: 'api_gateway', label: 'API Gateway', icon: Terminal, badge: 'NEW' }] : []),
+        ...(isAdminUser ? [{ id: 'admin', label: 'Admin Panel', icon: ShieldAlert }, { id: 'admin_scrapers', label: 'Scraper Observability', icon: Activity, badge: 'NEW' }, { id: 'admin_analytics', label: 'Platform Analytics', icon: Activity, badge: 'NEW' }, { id: 'audit_log', label: 'Audit Log', icon: Activity, badge: 'NEW' }, { id: 'devops_pipelines', label: 'Pipelines', icon: Terminal, badge: 'NEW' }, { id: 'sso_identity', label: 'SSO & Identity', icon: Shield, badge: 'NEW' }, { id: 'api_gateway', label: 'API Gateway', icon: Terminal, badge: 'NEW' }] : []),
       ]
     }
   ];
@@ -444,6 +445,7 @@ function App() {
       case 'settings': return <SettingsTab />;
       case 'auth_security': return <AuthSecurityCenter />;
       case 'admin': return <AdminDashboard />;
+      case 'admin_scrapers': return <ScraperHealthDashboard />;
       case 'admin_analytics': return <AdminAnalyticsDashboard />;
       case 'security': return <Security />;
       case 'privacy': return <Privacy />;
