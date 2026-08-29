@@ -15,6 +15,8 @@ import rateLimit from "express-rate-limit";
 import { RedisStore } from "rate-limit-redis";
 import Redis from "ioredis";
 import { v2 as cloudinary } from "cloudinary";
+import { authMiddleware } from "./src/api/middlewares/auth.js";
+import { requestExport, getExportHistory } from "./src/api/controllers/exportController.js";
 import { logStartupHealthReport } from "./src/api/services/healthService.js";
 import { AICacheMetrics } from "./src/api/services/aiCacheMetrics.js";
 
@@ -785,6 +787,10 @@ async function startServer() {
       ]
     });
   });
+
+  // --- Export Routes ---
+  app.post("/api/v1/export/request", authMiddleware, requestExport);
+  app.get("/api/v1/export/history", authMiddleware, getExportHistory);
 
   // --- Real API Routes ---
   app.get("/api/v1/opportunities", async (req, res) => {
