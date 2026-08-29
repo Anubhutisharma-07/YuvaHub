@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import AdminExpiryDashboard from '../tabs/AdminExpiryDashboard';
 
 interface ScraperItem {
   name: string;
@@ -41,7 +42,7 @@ const chartData = [
 
 const AdminDashboard = () => {
   const { user } = useAppContext();
-  const [activeTab, setActiveTab] = useState<'telemetry' | 'moderation'>('telemetry');
+  const [activeTab, setActiveTab] = useState<'telemetry' | 'moderation' | 'expiry'>('telemetry');
   
   const [stats, setStats] = useState({
     activeUsers: 1540,
@@ -221,6 +222,12 @@ const AdminDashboard = () => {
             >
               Moderation Queue
               {moderationReports.length > 0 && <span className="ml-2 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full">{moderationReports.length}</span>}
+            </button>
+            <button 
+              onClick={() => setActiveTab('expiry')}
+              className={`px-4 py-2 rounded-lg uppercase tracking-wider transition-all cursor-pointer ${activeTab === 'expiry' ? 'bg-[#b56b37] text-white shadow-xs font-extrabold' : 'text-[#603620] hover:text-[#231f20]'}`}
+            >
+              Expiry Management
             </button>
           </div>
           
@@ -482,6 +489,8 @@ const AdminDashboard = () => {
             </div>
           </div>
         </>
+      ) : activeTab === 'expiry' ? (
+        <AdminExpiryDashboard />
       ) : (
         /* Moderation Queue Tab */
         <div className="bg-white rounded-2xl border border-[#e8ded1] shadow-xs p-6 space-y-6">
