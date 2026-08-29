@@ -1,7 +1,8 @@
 import React, { KeyboardEvent, MouseEvent, useState, useRef, useCallback } from "react";
-import { Bookmark, Shield, ExternalLink, X, CheckCircle, MapPin, Clock, ArrowRight, Sparkles, Building2, Coins, Calendar, Flag } from "lucide-react";
+import { Bookmark, Shield, ExternalLink, X, CheckCircle, MapPin, Clock, ArrowRight, Sparkles, Building2, Coins, Calendar, Flag, Scale } from "lucide-react";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import { ReportModal } from "./ui/ReportModal";
+import { useCompare } from "../context/CompareContext";
 
 export interface Opportunity {
     id: string;
@@ -57,6 +58,16 @@ export function OpportunityCard({
     useFocusTrap(auditModalRef, showAuditModal, closeAuditModal);
 
     const [showReportModal, setShowReportModal] = useState(false);
+    
+    // Attempt to use CompareContext if it exists in the tree
+    let compareCtx: any = null;
+    try {
+        compareCtx = useCompare();
+    } catch (e) {
+        // App might not be wrapped in CompareProvider in some tests/views
+    }
+
+    const isComparing = compareCtx?.isComparing(opp.id) || false;
 
     const orgName = opp.source_name || opp.sourceName || opp.org || opp.organization || "Verified Company";
     const title = opp.title || "Untitled Opportunity";
@@ -104,6 +115,17 @@ export function OpportunityCard({
     const handleAddToCalendar = (e: MouseEvent) => {
         e.stopPropagation();
         window.location.href = `/api/v1/opportunities/${opp.id}/calendar`;
+    };
+
+    const handleCompareClick = (e: MouseEvent) => {
+        e.stopPropagation();
+        if (compareCtx) {
+            if (isComparing) {
+                compareCtx.removeFromCompare(opp.id);
+            } else {
+                compareCtx.addToCompare(opp);
+            }
+        }
     };
 
     const typeLabel = (opp.type || 'Opportunity').toUpperCase();
@@ -170,6 +192,20 @@ export function OpportunityCard({
                                     className="text-[#8c7569] dark:text-slate-500"
                                 />
                             </button>
+                            {compareCtx && (
+                                <button
+                                    type="button"
+                                    onClick={handleCompareClick}
+                                    aria-label={isComparing ? "Remove from comparison" : "Add to comparison"}
+                                    title={isComparing ? "Remove from comparison" : "Add to comparison"}
+                                    className="p-1.5 rounded-lg text-[#8c7569] hover:text-[#b56b37] hover:bg-[#f6efe2] dark:hover:bg-slate-800 transition-colors"
+                                >
+                                    <Scale
+                                        size={18}
+                                        className={isComparing ? "text-[#b56b37]" : "text-[#8c7569] dark:text-slate-500"}
+                                    />
+                                </button>
+                            )}
                             <button
                                 type="button"
                                 onClick={handleBookmarkClick}
