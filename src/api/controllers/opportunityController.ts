@@ -408,7 +408,7 @@ export const ingestOpportunity = async (req: Request, res: Response) => {
       jobId: job.id,
     });
   } catch (error) {
-    logger.error('Error ingesting opportunity:', error);
+    (logger.error as any)({ error }, 'Error ingesting opportunity:');
     res.status(500).json({ error: 'Internal server error' });
   }
 };
