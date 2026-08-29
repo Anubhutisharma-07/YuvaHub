@@ -17,6 +17,7 @@ import Redis from "ioredis";
 import { v2 as cloudinary } from "cloudinary";
 import { authMiddleware } from "./src/api/middlewares/auth.js";
 import { requestExport, getExportHistory } from "./src/api/controllers/exportController.js";
+import { logStartupHealthReport } from "./src/api/services/healthService.js";
 import { AICacheMetrics } from "./src/api/services/aiCacheMetrics.js";
 
 dotenv.config();
@@ -3040,6 +3041,15 @@ ${JSON.stringify(userProfile, null, 2)}
 
   server.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
+
+    // Run startup health checks for all configured services
+    logStartupHealthReport({
+      redisClient: redisClient ?? null,
+      geminiApiKey: process.env.GEMINI_API_KEY,
+      firebaseInitialized: !!process.env.FIREBASE_SERVICE_ACCOUNT_BASE64,
+    }).catch((err) => {
+      console.error("[Health] Startup health check failed:", err);
+    });
     
     // Auto-open browser in development mode
     if (process.env.NODE_ENV !== "production") {
