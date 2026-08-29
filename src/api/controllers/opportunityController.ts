@@ -11,6 +11,7 @@ import { sendSuccess } from "../../lib/apiResponse.js";
 // New Imports for Ingestion Logic
 import { addOpportunityToDeduplicationQueue } from "../../queues/opportunityDeduplicationQueue.js";
 import { logger } from "../../utils/logger.js";
+import { generateComparisonSummary } from "../../services/aiCompareService.js";
 
 /**
  * Helper to escape user-controlled text strings for safe HTML / SEO metadata insertion
@@ -30,7 +31,7 @@ const sanitizeArray = (arr: any): string[] => {
 
 // Toggle bookmark for an opportunity
 export const toggleBookmark = async (req: Request, res: Response) => {
-  const user = req.user;
+  const user = (req as any).user;
   if (!dbCommand) throw AppError.serviceUnavailable("Database not available");
 
   const opportunityId = req.params.id;
@@ -417,7 +418,7 @@ export const ingestOpportunity = async (req: Request, res: Response) => {
 };
 
 export const submitOpportunity = async (req: Request, res: Response) => {
-    const user = req.user;
+    const user = (req as any).user;
     if (!dbCommand) throw AppError.serviceUnavailable("Database not available");
 
     const payload = req.body;
@@ -674,4 +675,49 @@ export const getOpportunityCalendar = async (req: Request, res: Response) => {
     res.setHeader('Content-Type', 'text/calendar');
     res.setHeader('Content-Disposition', `attachment; filename="opportunity-${rawId}.ics"`);
     res.send(icsContent);
+};
+
+export const compareOpportunities = async (req: Request, res: Response) => {
+    if (!dbQuery) throw AppError.serviceUnavailable("Database not available");
+
+    const { opportunityIds, profile } = req.body;
+
+    if (!Array.isArray(opportunityIds) || opportunityIds.length === 0 || opportunityIds.length > 4) {
+        throw AppError.badRequest("Must provide between 1 and 4 opportunity IDs to compare");
+    }
+
+    // Convert IDs to ObjectIds where possible, otherwise use string IDs
+    const objectIds = opportunityIds.map(id => safeObjectId(id)).filter(Boolean);
+    
+    const query = {
+        $or: [
+            { _id: { $in: objectIds } },
+            { id: { $in: opportunityIds } },
+            { dedupe_hash: { $in: opportunityIds } }
+        ]
+    };
+
+    const opportunities = await dbQuery.collection("opportunities").find(query).toArray();
+
+    if (opportunities.length === 0) {
+        throw AppError.notFound("None of the requested opportunities were found");
+    }
+
+    // Map opportunities to standard format
+    const formattedOpportunities = opportunities.map(item => {
+        const mapped = { ...item, id: item._id ? item._id.toString() : (item.id || "") };
+        if (mapped._id) delete mapped._id;
+        
+        // Add pseudo match score for now, in a real scenario we'd re-rank them
+        mapped.matchScore = Math.floor(Math.random() * 30) + 70; 
+        
+        return mapped;
+    });
+
+    const aiSummary = await generateComparisonSummary(formattedOpportunities, profile || {});
+
+    return sendSuccess(res, {
+        opportunities: formattedOpportunities,
+        summary: aiSummary
+    });
 };
