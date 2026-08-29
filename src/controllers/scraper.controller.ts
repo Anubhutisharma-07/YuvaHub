@@ -3,14 +3,15 @@ import { Queue, QueueEvents } from 'bullmq';
 import { ScraperBlueprint } from '../models/ScraperBlueprint';
 
 const scraperQueue = new Queue('scraper-queue', { connection: { host: 'localhost', port: 6379 } });
+const scraperQueueEvents = new QueueEvents('scraper-queue', { connection: { host: 'localhost', port: 6379 } });
 
 export const testScraperBlueprint = async (req: Request, res: Response) => {
   try {
     const blueprint = req.body;
     const job = await scraperQueue.add('test-scrape', { blueprint, isTestRun: true });
     
-    const queueEvents = new QueueEvents('scraper-queue', { connection: { host: 'localhost', port: 6379 } });
-    const result = await job.waitUntilFinished(queueEvents, 15000);
+    // Wait for worker result with a 15s timeout
+    const result = await job.waitUntilFinished(scraperQueueEvents, 15000);
     return res.status(200).json({ success: true, data: result });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error.message });

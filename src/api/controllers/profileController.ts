@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { DeveloperProfile } from '../../models/DeveloperProfile';
- // Reusing queue import structure
+// Reusing queue import structure
 import { logger } from '../../utils/logger';
 
 /**

@@ -1318,8 +1318,8 @@ export async function registerAlumniMentorshipSlot(payload: any): Promise<any> {
   return apiClientRequest('/campus/mentorship/slots', 'POST', payload);
 }
 
-export async function bookAlumniMentorshipSession(id: string, payload?: any): Promise<any> {
-  return apiClientRequest(`/campus/mentorship/slots/${encodeURIComponent(id)}/book`, 'POST', payload);
+export async function bookAlumniMentorshipSession(id: string, studentId?: string, studentName?: string): Promise<any> {
+  return apiClientRequest(`/campus/mentorship/slots/${encodeURIComponent(id)}/book`, 'POST', { studentId, studentName });
 }
 
 export async function fetchResearchPatents(...args: any[]): Promise<any> {

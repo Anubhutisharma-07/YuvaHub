@@ -11,6 +11,8 @@ const User = mongoose.models.User || mongoose.model('User', new mongoose.Schema(
 const Opportunity = mongoose.models.Opportunity || mongoose.model('Opportunity', new mongoose.Schema({}));
 
 // New Imports for Platform Stats & Moderation
+// Replaced missing model imports with MongoDB driver usage
+import { ObjectId } from "mongodb";
 import { logger } from "../../utils/logger.js";
 
 const sseClients: any[] = [];
@@ -43,8 +45,8 @@ export const adminMetrics = async (req: Request, res: Response) => {
  */
 export const getPlatformStats = async (req: Request, res: Response) => {
   try {
-    const totalUsers = await User.countDocuments();
-    const activeOpportunities = await Opportunity.countDocuments({ status: 'active' });
+    const totalUsers = await dbQuery.collection('users').countDocuments();
+    const activeOpportunities = await dbQuery.collection('opportunities').countDocuments({ status: 'active' });
 
     // Mocked daily signups for Recharts visualization (replace with actual aggregation)
     const dailySignups = [
@@ -77,13 +79,14 @@ export const getUsersList = async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 20;
     const skip = (page - 1) * limit;
 
-    const users = await User.find()
-      .select('name email reputation_score level createdAt')
+    const users = await dbQuery.collection('users').find()
+      .project({ name: 1, email: 1, reputation_score: 1, level: 1, createdAt: 1 })
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .toArray();
 
-    const total = await User.countDocuments();
+    const total = await dbQuery.collection('users').countDocuments();
 
     res.status(200).json({
       data: users,
@@ -109,7 +112,7 @@ export const performModerationAction = async (req: Request, res: Response) => {
     }
 
     if (targetType === 'opportunity' && action === 'remove') {
-      await Opportunity.updateOne({ _id: targetId }, { status: 'removed' });
+      await dbCommand.collection('opportunities').updateOne({ _id: new ObjectId(targetId) }, { $set: { status: 'removed' } });
       logger.info(`Admin ${req.user?.uid} removed opportunity ${targetId}`);
       return res.status(200).json({ message: 'Opportunity removed successfully' });
     }
