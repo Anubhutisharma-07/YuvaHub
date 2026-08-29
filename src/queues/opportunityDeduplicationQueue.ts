@@ -1,5 +1,5 @@
 import { Queue, QueueOptions } from 'bullmq';
-import { redisClient } from '../config/redis';
+import { redisClient } from '../api/redis';
 
 /**
  * Queue options for the opportunity deduplication pipeline.
