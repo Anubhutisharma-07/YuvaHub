@@ -14,6 +14,8 @@ import NotificationDropdown from './components/ui/NotificationDropdown';
 import BackToTopButton from './components/ui/BackToTopButton';
 import AccessibilityEnhancer from './components/accessibility/AccessibilityEnhancer';
 import AnnouncementBanner from './components/ui/AnnouncementBanner';
+import { CompareProvider } from './context/CompareContext';
+import { CompareBottomBar } from './components/ui/CompareBottomBar';
 
 // Route components are lazy-loaded to reduce the initial bundle size (code splitting)
 const Dashboard = lazy(() => import('./components/tabs/Dashboard'));
@@ -97,6 +99,7 @@ const CampusResearchIpLicensingStudioPage = lazy(() => import('./pages/CampusRes
 const CareerPathSimulator = lazy(() => import('./components/tabs/CareerPathSimulator'));
 const StudyGroupRooms = lazy(() => import('./components/tabs/StudyGroupRooms'));
 const ResourceVault = lazy(() => import('./components/tabs/ResourceVault'));
+const ComparisonStudio = lazy(() => import('./components/tabs/ComparisonStudio'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
@@ -460,6 +463,7 @@ function App() {
       case 'devops_pipelines': return <DevopsPipelineHub />;
       case 'sso_identity': return <SsoIdentityHub />;
       case 'api_gateway': return <ApiGatewayHub />;
+      case 'comparison_studio': return <ComparisonStudio />;
 
       default: return <Dashboard />;
     }
@@ -567,6 +571,7 @@ function App() {
   }
 
   return (
+    <CompareProvider>
     <div className="flex h-screen bg-gray-50 text-gray-900 font-sans overflow-hidden dark:bg-gray-900 dark:text-gray-100">
       {/* Global accessibility enhancer: focus trap, ARIA labels, Esc handling */}
       <AccessibilityEnhancer />
@@ -823,10 +828,12 @@ function App() {
           </Suspense>
         </div>
 
+        <CompareBottomBar />
         <BackToTopButton />
       </main>
 
     </div>
+    </CompareProvider>
   );
 }
 
