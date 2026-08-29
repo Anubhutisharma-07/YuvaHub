@@ -47,6 +47,7 @@ const GrantFellowshipStudio = lazy(() => import('./components/tabs/GrantFellowsh
 const CampusAlumniHub = lazy(() => import('./components/tabs/CampusAlumniHub'));
 const ResumeAtsStudio = lazy(() => import('./components/tabs/ResumeAtsStudio'));
 const SkillGapStudio = lazy(() => import('./components/tabs/SkillGapStudio'));
+const CodingChallengeArena = lazy(() => import("./components/tabs/CodingChallengeArena"));
 const InterviewPrepStudio = lazy(() => import('./components/tabs/InterviewPrepStudio'));
 const OpenSourceBountyStudio = lazy(() => import('./components/tabs/OpenSourceBountyStudio'));
 const OpportunityMatchStudio = lazy(() => import('./components/tabs/OpportunityMatchStudio'));
@@ -271,6 +272,7 @@ function App() {
       title: "AI & Career Studios",
       items: [
         { id: 'skill_gap', label: 'Skill Gap Analyzer', icon: Target },
+        { id: 'coding_arena', label: 'Coding Challenge Arena', icon: Swords },
         { id: 'ai_assistant', label: 'AI Assistant', icon: Brain },
         { id: 'career_match', label: 'Career Match Studio', icon: TrendingUp },
         { id: 'resume_ats', label: 'Resume ATS Optimizer', icon: FileText },
@@ -343,6 +345,7 @@ function App() {
       case 'campus_alumni': return <CampusAlumniHub />;
       case 'resume_ats': return <ResumeAtsStudio />;
       case 'skill_gap': return <SkillGapStudio />;
+      case 'coding_arena': return <CodingChallengeArena />;
       case 'interview_prep': return <InterviewPrepStudio />;
       case 'opensource_bounties': return <OpenSourceBountyStudio />;
       case 'opportunity_match': return <OpportunityMatchStudio />;
