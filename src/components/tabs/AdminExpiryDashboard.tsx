@@ -88,19 +88,19 @@ export default function AdminExpiryDashboard() {
 
   return (
     <div className="max-w-[1200px] mx-auto space-y-8 pb-12 font-sans px-4 md:px-0">
-      <header className="pt-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-[#e8ded1] pb-6">
+      <header className="pt-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-border-theme pb-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-serif font-bold tracking-tight text-[#231f20]">
+          <h1 className="text-2xl md:text-3xl font-serif font-bold tracking-tight text-text-primary">
             Lifecycle Management Dashboard
           </h1>
-          <p className="text-xs md:text-sm text-[#603620] mt-1">
+          <p className="text-xs md:text-sm text-text-secondary mt-1">
             Monitor and manage expired opportunities
           </p>
         </div>
         <button 
           onClick={fetchData}
           disabled={loading}
-          className="flex items-center gap-2 bg-white border border-[#e8ded1] px-3.5 py-2.5 rounded-xl text-xs font-bold text-[#603620] hover:bg-[#f6efe2] transition-colors shadow-xs disabled:opacity-50"
+          className="flex items-center gap-2 bg-surface border border-border-theme px-3.5 py-2.5 rounded-xl text-xs font-bold text-text-secondary hover:bg-surface-secondary transition-colors shadow-xs disabled:opacity-50"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -138,36 +138,36 @@ export default function AdminExpiryDashboard() {
               <h3 className="text-3xl font-serif font-bold text-amber-900 mt-4">{stats.expired}</h3>
             </div>
 
-            <div className="border border-[#e8ded1] bg-[#fcf9f2] rounded-2xl p-6 shadow-sm">
+            <div className="border border-border-theme bg-background rounded-2xl p-6 shadow-sm">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#603620]">Archived</p>
-                  <p className="text-[10px] text-[#8c7569]">Moved to cold storage</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-text-secondary">Archived</p>
+                  <p className="text-[10px] text-text-muted">Moved to cold storage</p>
                 </div>
-                <div className="w-8 h-8 rounded-lg bg-[#e8ded1] flex items-center justify-center text-[#603620]">
+                <div className="w-8 h-8 rounded-lg bg-[#e8ded1] flex items-center justify-center text-text-secondary">
                   <Archive className="w-4 h-4" />
                 </div>
               </div>
-              <h3 className="text-3xl font-serif font-bold text-[#231f20] mt-4">{stats.archived}</h3>
+              <h3 className="text-3xl font-serif font-bold text-text-primary mt-4">{stats.archived}</h3>
             </div>
           </div>
 
-          <div className="bg-white border border-[#e8ded1] rounded-2xl overflow-hidden shadow-xs">
-            <div className="px-6 py-4 border-b border-[#e8ded1] bg-[#fcf9f2] flex justify-between items-center">
-              <h3 className="font-serif font-bold text-[#231f20]">Recently Expired Opportunities</h3>
+          <div className="bg-surface border border-border-theme rounded-2xl overflow-hidden shadow-xs">
+            <div className="px-6 py-4 border-b border-border-theme bg-background flex justify-between items-center">
+              <h3 className="font-serif font-bold text-text-primary">Recently Expired Opportunities</h3>
             </div>
             {loading ? (
-              <div className="p-12 flex justify-center"><RefreshCw className="w-6 h-6 animate-spin text-[#b56b37]" /></div>
+              <div className="p-12 flex justify-center"><RefreshCw className="w-6 h-6 animate-spin text-primary-blue" /></div>
             ) : expiredList.length === 0 ? (
-              <div className="p-12 text-center text-[#8c7569] text-sm">No expired opportunities found.</div>
+              <div className="p-12 text-center text-text-muted text-sm">No expired opportunities found.</div>
             ) : (
               <div className="divide-y divide-[#e8ded1]">
                 {expiredList.map((opp) => (
-                  <div key={opp.id} className="p-4 sm:p-6 hover:bg-[#fcf9f2] transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div key={opp.id} className="p-4 sm:p-6 hover:bg-background transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <h4 className="font-bold text-[#231f20] mb-1">{opp.title}</h4>
-                      <p className="text-xs text-[#603620] mb-2">{opp.organization || opp.org}</p>
-                      <div className="flex items-center gap-3 text-[10px] text-[#8c7569]">
+                      <h4 className="font-bold text-text-primary mb-1">{opp.title}</h4>
+                      <p className="text-xs text-text-secondary mb-2">{opp.organization || opp.org}</p>
+                      <div className="flex items-center gap-3 text-[10px] text-text-muted">
                         <span>Expired: {new Date(opp.deadline).toLocaleDateString()}</span>
                         <span>ID: {opp.id}</span>
                       </div>

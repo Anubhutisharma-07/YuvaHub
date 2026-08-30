@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { EventWaitlist } from '../../models/EventWaitlist';
-import { Event } from '../../models/Event';
+import { Opportunity as Event } from '../../models/Opportunity';
 import { addWaitlistPromotionJob } from '../../queues/eventWaitlistQueue';
 import { logger } from '../../utils/logger';
 
@@ -22,7 +22,7 @@ export const joinWaitlist = async (req: Request, res: Response) => {
         }
 
         // Check if user is already registered or waiting
-        const existingEntry = await EventWaitlist.findOne({ eventId, userId });
+        const existingEntry = await EventWaitlist.findOne({ eventId: eventId as string, userId: userId as string });
         if (existingEntry) {
             return res.status(400).json({ error: 'Already in waitlist or registered' });
         }
@@ -32,8 +32,8 @@ export const joinWaitlist = async (req: Request, res: Response) => {
         const newPosition = waitingCount + 1;
 
         const newEntry = await EventWaitlist.create({
-            eventId,
-            userId,
+            eventId: eventId as string,
+            userId: userId as string,
             position: newPosition,
             status: 'waiting',
         });
@@ -43,7 +43,7 @@ export const joinWaitlist = async (req: Request, res: Response) => {
             data: { position: newPosition, eventId }
         });
     } catch (error) {
-        logger.error('Error joining waitlist:', error);
+        logger.error({ err: error }, 'Error joining waitlist:');
         res.status(500).json({ error: 'Internal server error' });
     }
 };
@@ -86,7 +86,7 @@ export const claimWaitlistSpot = async (req: Request, res: Response) => {
 
         res.status(200).json({ message: 'Spot successfully claimed!' });
     } catch (error) {
-        logger.error('Error claiming waitlist spot:', error);
+        logger.error({ err: error }, 'Error claiming waitlist spot:');
         res.status(500).json({ error: 'Internal server error' });
     }
 };
@@ -113,7 +113,7 @@ export const getWaitlistStatus = async (req: Request, res: Response) => {
             }
         });
     } catch (error) {
-        logger.error('Error fetching waitlist status:', error);
+        logger.error({ err: error }, 'Error fetching waitlist status:');
         res.status(500).json({ error: 'Internal server error' });
     }
 };

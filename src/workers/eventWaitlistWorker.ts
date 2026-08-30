@@ -1,7 +1,7 @@
 import { Worker, Job } from 'bullmq';
 import { redisClient } from '../config/redis';
 import { EventWaitlist } from '../models/EventWaitlist';
-import { Event } from '../models/Event';
+import { Opportunity as Event } from '../models/Opportunity';
 import { User } from '../models/User';
 import { logger } from '../utils/logger';
 import crypto from 'crypto';
@@ -56,7 +56,7 @@ export const eventWaitlistWorker = new Worker(
 
             return { status: 'promoted', userId: nextInLine.userId, claimToken };
         } catch (error) {
-            logger.error(`Waitlist promotion worker failed for event ${eventId}:`, error);
+            logger.error({ err: error }, `Waitlist promotion worker failed for event ${eventId}:`);
             throw error;
         }
     },

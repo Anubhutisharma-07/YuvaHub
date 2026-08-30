@@ -25,7 +25,7 @@ export const WaitlistStatusWidget: React.FC<WaitlistStatusWidgetProps> = ({ even
                 // Simulated response
                 const mockData = { position: 3, status: 'waiting', estimatedWaitTime: 6 };
                 setPosition(mockData.position);
-                setStatus(mockData.status);
+                setStatus(mockData.status as 'waiting' | 'promoted' | 'claimed' | 'expired' | 'loading' | 'error');
                 setEstimatedWaitTime(mockData.estimatedWaitTime);
             } catch (error) {
                 setStatus('error');
@@ -59,7 +59,7 @@ export const WaitlistStatusWidget: React.FC<WaitlistStatusWidgetProps> = ({ even
     }
 
     return (
-        <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-300">
+        <div className="p-6 bg-surface dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-300">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Waitlist Status</h3>
 
             {status === 'claimed' ? (

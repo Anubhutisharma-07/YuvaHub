@@ -25,7 +25,7 @@ export const ScraperStatusGrid: React.FC<Props> = ({ sources, onTrigger, onUpdat
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div className="bg-surface dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
       <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
         <h2 className="font-semibold text-gray-900 dark:text-white">Active Scrapers</h2>
       </div>
@@ -105,7 +105,7 @@ export const ScraperStatusGrid: React.FC<Props> = ({ sources, onTrigger, onUpdat
                         type="number" 
                         value={configForm.minSuccessRate}
                         onChange={(e) => setConfigForm(prev => ({ ...prev, minSuccessRate: Number(e.target.value) }))}
-                        className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded px-3 py-1.5 text-sm"
+                        className="w-full bg-surface dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded px-3 py-1.5 text-sm"
                       />
                     </div>
                     <div>
@@ -114,7 +114,7 @@ export const ScraperStatusGrid: React.FC<Props> = ({ sources, onTrigger, onUpdat
                         type="number" 
                         value={configForm.maxStalenessHours}
                         onChange={(e) => setConfigForm(prev => ({ ...prev, maxStalenessHours: Number(e.target.value) }))}
-                        className="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded px-3 py-1.5 text-sm"
+                        className="w-full bg-surface dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded px-3 py-1.5 text-sm"
                       />
                     </div>
                   </div>
