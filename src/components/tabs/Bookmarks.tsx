@@ -256,7 +256,7 @@ export default function Bookmarks() {
         />
       )}
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-surface p-6 rounded-2xl border border-gray-200/80 shadow-sm">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-gray-900 flex items-center gap-2">
             <BookmarkIcon className="w-6 h-6 text-blue-600 fill-blue-600" />
@@ -276,7 +276,7 @@ export default function Bookmarks() {
       </div>
 
       {/* Folders & Tag Navigation Bar */}
-      <div className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-sm space-y-4">
+      <div className="bg-surface p-5 rounded-2xl border border-gray-200/80 shadow-sm space-y-4">
         {/* Folders Row */}
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -339,7 +339,7 @@ export default function Bookmarks() {
                 className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border ${
                   selectedTag === tag
                     ? 'bg-blue-600 text-white border-blue-600 font-bold'
-                    : 'bg-white text-gray-600 hover:bg-gray-100 border-gray-200'
+                    : 'bg-surface text-gray-600 hover:bg-gray-100 border-gray-200'
                 }`}
               >
                 #{tag}
@@ -370,7 +370,7 @@ export default function Bookmarks() {
             return (
               <div
                 key={itemId || i}
-                className="clean-card p-6 flex flex-col justify-between relative group hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:-translate-y-[3px] transition-all duration-200 overflow-hidden min-w-0 bg-white rounded-2xl border border-gray-200/80"
+                className="clean-card p-6 flex flex-col justify-between relative group hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:-translate-y-[3px] transition-all duration-200 overflow-hidden min-w-0 bg-surface rounded-2xl border border-gray-200/80"
               >
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <span className="text-xs font-bold px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg">
@@ -447,7 +447,7 @@ export default function Bookmarks() {
 
                 {/* Organize / Move Modal Dropdown overlay on card */}
                 {organizingItemId === itemId && (
-                  <div className="absolute inset-0 bg-white/95 backdrop-blur-xs p-5 z-20 flex flex-col justify-between rounded-2xl animate-fade-in border border-blue-200">
+                  <div className="absolute inset-0 bg-surface/95 backdrop-blur-xs p-5 z-20 flex flex-col justify-between rounded-2xl animate-fade-in border border-blue-200">
                     <div>
                       <div className="flex justify-between items-center mb-3">
                         <h4 className="font-bold text-xs text-gray-900 flex items-center gap-1.5">
@@ -509,7 +509,7 @@ export default function Bookmarks() {
       {/* Modal: Create Folder */}
       {showFolderModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full border border-gray-200 shadow-xl space-y-4 animate-scale-up">
+          <div className="bg-surface rounded-2xl p-6 max-w-md w-full border border-gray-200 shadow-xl space-y-4 animate-scale-up">
             <div className="flex justify-between items-center">
               <h3 className="font-bold text-base text-gray-900 flex items-center gap-2">
                 <FolderPlus className="w-5 h-5 text-blue-600" /> Create Custom Folder

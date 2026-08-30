@@ -65,7 +65,7 @@ export const processExpiredOpportunities = async () => {
     }
 
   } catch (error) {
-    logger.error({ error }, "Error processing expired opportunities.");
+    logger.error({ err: error }, "Error processing expired opportunities.");
     throw error;
   }
 };

@@ -52,7 +52,7 @@ export const applyAIRedaction = async (text: string): Promise<{ redactedText: st
 
         return { redactedText, log };
     } catch (error) {
-        logger.error('AI Redaction failed:', error);
+        logger.error({ err: error }, 'AI Redaction failed:');
         throw new Error('Failed to process document with AI');
     }
 };

@@ -165,7 +165,7 @@ export const ScraperHealthDashboard: React.FC = () => {
           <button 
             onClick={fetchHealth} 
             disabled={refreshing}
-            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-surface dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
@@ -175,19 +175,19 @@ export const ScraperHealthDashboard: React.FC = () => {
 
       {healthData && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-           <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+           <div className="bg-surface dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
               <div className="text-sm text-gray-500 mb-1">Total Sources</div>
               <div className="text-2xl font-bold">{healthData.summary.totalSources}</div>
            </div>
-           <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-green-200 dark:border-green-900/50">
+           <div className="bg-surface dark:bg-gray-800 rounded-xl p-4 border border-green-200 dark:border-green-900/50">
               <div className="text-sm text-green-600 mb-1">Healthy</div>
               <div className="text-2xl font-bold text-green-700 dark:text-green-400">{healthData.summary.healthySources}</div>
            </div>
-           <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-red-200 dark:border-red-900/50">
+           <div className="bg-surface dark:bg-gray-800 rounded-xl p-4 border border-red-200 dark:border-red-900/50">
               <div className="text-sm text-red-600 mb-1">Failing</div>
               <div className="text-2xl font-bold text-red-700 dark:text-red-400">{healthData.summary.failingSources}</div>
            </div>
-           <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+           <div className="bg-surface dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
               <div className="text-sm text-gray-500 mb-1">Avg Response</div>
               <div className="text-2xl font-bold">{healthData.summary.avgResponseTimeMs}ms</div>
            </div>

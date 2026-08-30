@@ -42,22 +42,22 @@ export const ObservabilityHub: React.FC = () => {
     <div className="min-h-screen bg-slate-950 text-white p-6 space-y-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Top Header Actions */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-5 border-slate-800">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-5 border-border-theme">
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-black tracking-tight text-white">Enterprise Observability Hub</h1>
-              <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-bold uppercase tracking-wider">
+              <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/200/10 text-indigo-400 border border-indigo-500/20 text-xs font-bold uppercase tracking-wider">
                 Enterprise
               </span>
             </div>
-            <p className="text-sm text-slate-400 mt-1">Real-time system health topology telemetry, service dependencies, and SLA error budgets.</p>
+            <p className="text-sm text-text-muted mt-1">Real-time system health topology telemetry, service dependencies, and SLA error budgets.</p>
           </div>
           
           <div className="flex items-center gap-3 flex-wrap">
             <select 
               value={timeRange} 
               onChange={(e) => setTimeRange(e.target.value)}
-              className="px-3.5 py-2 border rounded-xl bg-slate-900 border-slate-800 text-xs font-semibold text-slate-200 focus:outline-none focus:border-indigo-500"
+              className="px-3.5 py-2 border rounded-xl bg-primary-blue border-border-theme text-xs font-semibold text-slate-200 focus:outline-none focus:border-indigo-500"
             >
               <option value="1h">Last 1 Hour</option>
               <option value="6h">Last 6 Hours</option>
@@ -70,8 +70,8 @@ export const ObservabilityHub: React.FC = () => {
               onClick={() => setAutoRefresh(!autoRefresh)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold transition-all ${
                 autoRefresh 
-                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' 
-                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800'
+                  ? 'bg-emerald-500/200/10 text-emerald-400 border-emerald-500/30' 
+                  : 'bg-primary-blue text-text-muted border-border-theme hover:bg-surface-secondary'
               }`}
             >
               <RefreshCw className={`h-3.5 w-3.5 ${autoRefresh ? 'animate-spin' : ''}`} />
@@ -84,15 +84,15 @@ export const ObservabilityHub: React.FC = () => {
         <ObservabilityMetricsCard healthScore={healthScore} metrics={metrics} />
 
         {/* Primary Tab Navigation */}
-        <div className="flex gap-2 border-b border-slate-800">
+        <div className="flex gap-2 border-b border-border-theme">
           {(['overview', 'dependencies', 'incidents', 'sla'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-5 py-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all -mb-px ${
                 activeTab === tab
-                  ? 'border-indigo-500 text-indigo-400 bg-indigo-500/5'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
+                  ? 'border-indigo-500 text-indigo-400 bg-indigo-500/200/5'
+                  : 'border-transparent text-text-muted hover:text-slate-200'
               }`}
             >
               {tab}
@@ -105,13 +105,13 @@ export const ObservabilityHub: React.FC = () => {
           <div className="space-y-6">
             {/* Active Incidents Alert Ribbon */}
             {incidents.length > 0 && (
-              <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-start gap-3">
+              <div className="p-4 bg-amber-500/200/10 border border-amber-500/30 rounded-2xl flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 text-amber-400 mt-0.5 flex-shrink-0" />
                 <div className="space-y-1">
                   <h4 className="font-bold text-sm text-amber-300">Active Structural Disruptions ({incidents.length})</h4>
                   {incidents.map((inc) => (
                     <p key={inc.id} className="text-xs text-amber-200/90">
-                      <span className="font-bold bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded text-[10px] mr-2">{inc.severity}</span>
+                      <span className="font-bold bg-amber-500/200/20 text-amber-300 px-1.5 py-0.5 rounded text-[10px] mr-2">{inc.severity}</span>
                       {inc.title} — Status: <span className="italic font-semibold">{inc.status}</span>
                     </p>
                   ))}
@@ -120,24 +120,24 @@ export const ObservabilityHub: React.FC = () => {
             )}
 
             {/* Filterable Search & Status Controls */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900 p-4 border border-slate-800 rounded-2xl">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-primary-blue p-4 border border-border-theme rounded-2xl">
               <div className="relative flex-1 w-full">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
                 <input
                   type="text"
                   placeholder="Search microservices by name or ID..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                  className="w-full pl-9 pr-4 py-2 bg-slate-950 border border-border-theme rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
                 />
               </div>
 
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                <Filter className="h-4 w-4 text-slate-500" />
+                <Filter className="h-4 w-4 text-text-muted" />
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-semibold text-slate-200 focus:outline-none focus:border-indigo-500"
+                  className="px-3 py-2 bg-slate-950 border border-border-theme rounded-xl text-xs font-semibold text-slate-200 focus:outline-none focus:border-indigo-500"
                 >
                   <option value="all">All Statuses</option>
                   <option value="operational">Operational</option>
@@ -148,9 +148,9 @@ export const ObservabilityHub: React.FC = () => {
             </div>
 
             {/* Service Inventory Status Table */}
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden">
+            <div className="bg-primary-blue border border-border-theme rounded-3xl overflow-hidden">
               <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-950/80 border-b border-slate-800 text-slate-400 font-bold uppercase tracking-wider">
+                <thead className="bg-slate-950/80 border-b border-border-theme text-text-muted font-bold uppercase tracking-wider">
                   <tr>
                     <th className="px-6 py-4">Service Name & ID</th>
                     <th className="px-6 py-4">Status</th>
@@ -168,8 +168,8 @@ export const ObservabilityHub: React.FC = () => {
                       </td>
                       <td className="px-6 py-4">
                         <span className={`px-2.5 py-1 text-[11px] font-bold rounded-full uppercase ${
-                          svc.status === 'operational' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                          svc.status === 'degraded' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+                          svc.status === 'operational' ? 'bg-emerald-500/200/10 text-emerald-400 border border-emerald-500/20' :
+                          svc.status === 'degraded' ? 'bg-amber-500/200/10 text-amber-400 border border-amber-500/20' :
                           'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                         }`}>
                           {svc.status}

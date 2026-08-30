@@ -15,7 +15,7 @@ export const getExpiryStats = async (req: Request, res: Response) => {
       archived: archivedQuery.data().count,
     });
   } catch (error) {
-    logger.error({ error }, "Error fetching expiry stats");
+    logger.error({ err: error }, "Error fetching expiry stats");
     res.status(500).json({ error: "Failed to fetch stats" });
   }
 };
@@ -31,7 +31,7 @@ export const getExpiredOpportunities = async (req: Request, res: Response) => {
     const opportunities = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     res.json(opportunities);
   } catch (error) {
-    logger.error({ error }, "Error fetching expired opportunities");
+    logger.error({ err: error }, "Error fetching expired opportunities");
     res.status(500).json({ error: "Failed to fetch expired opportunities" });
   }
 };
@@ -60,7 +60,7 @@ export const reactivateOpportunity = async (req: Request, res: Response) => {
 
     res.json({ success: true, message: "Opportunity reactivated" });
   } catch (error) {
-    logger.error({ error }, "Error reactivating opportunity");
+    logger.error({ err: error }, "Error reactivating opportunity");
     res.status(500).json({ error: "Failed to reactivate opportunity" });
   }
 };
@@ -87,7 +87,7 @@ export const archiveOpportunity = async (req: Request, res: Response) => {
 
     res.json({ success: true, message: "Opportunity archived manually" });
   } catch (error) {
-    logger.error({ error }, "Error archiving opportunity");
+    logger.error({ err: error }, "Error archiving opportunity");
     res.status(500).json({ error: "Failed to archive opportunity" });
   }
 };
