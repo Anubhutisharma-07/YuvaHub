@@ -60,16 +60,16 @@ export default function ComparisonStudio() {
     if (compareQueue.length < 2) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] text-center px-4">
-                <div className="w-16 h-16 bg-[#fcf9f2] dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
-                    <Scale className="w-8 h-8 text-[#b56b37] dark:text-blue-400" />
+                <div className="w-16 h-16 bg-background dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                    <Scale className="w-8 h-8 text-primary-blue dark:text-blue-400" />
                 </div>
-                <h2 className="text-xl font-bold text-[#231f20] dark:text-slate-100 mb-2">Not enough items to compare</h2>
-                <p className="text-[#8c7569] dark:text-slate-400 max-w-md mb-6">
+                <h2 className="text-xl font-bold text-text-primary dark:text-slate-100 mb-2">Not enough items to compare</h2>
+                <p className="text-text-muted dark:text-slate-400 max-w-md mb-6">
                     Add at least 2 opportunities to the comparison studio to see side-by-side analysis and AI recommendations.
                 </p>
                 <button
                     onClick={() => setActiveTab('opportunities')}
-                    className="px-6 py-2.5 bg-[#b56b37] hover:bg-[#96552a] text-white font-bold rounded-xl transition-all"
+                    className="px-6 py-2.5 bg-primary-blue hover:bg-[#96552a] text-white font-bold rounded-xl transition-all"
                 >
                     Browse Opportunities
                 </button>
@@ -81,11 +81,11 @@ export default function ComparisonStudio() {
         <div className="max-w-7xl mx-auto space-y-6">
             <div className="flex items-center justify-between mb-8">
                 <div>
-                    <h1 className="text-2xl font-bold text-[#231f20] dark:text-slate-100 flex items-center gap-3">
-                        <Scale className="text-[#b56b37] dark:text-blue-400" />
+                    <h1 className="text-2xl font-bold text-text-primary dark:text-slate-100 flex items-center gap-3">
+                        <Scale className="text-primary-blue dark:text-blue-400" />
                         Comparison Studio
                     </h1>
-                    <p className="text-sm text-[#8c7569] dark:text-slate-400 mt-1">
+                    <p className="text-sm text-text-muted dark:text-slate-400 mt-1">
                         Side-by-side analysis of your selected opportunities
                     </p>
                 </div>
@@ -94,11 +94,11 @@ export default function ComparisonStudio() {
             {loading && (
                 <div className="flex flex-col items-center justify-center h-64 gap-4">
                     <div className="flex gap-2">
-                        <div className="w-3 h-3 rounded-full bg-[#b56b37] animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                        <div className="w-3 h-3 rounded-full bg-[#b56b37] animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                        <div className="w-3 h-3 rounded-full bg-[#b56b37] animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                        <div className="w-3 h-3 rounded-full bg-primary-blue animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-3 h-3 rounded-full bg-primary-blue animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-3 h-3 rounded-full bg-primary-blue animate-bounce" style={{ animationDelay: '300ms' }}></div>
                     </div>
-                    <p className="text-sm font-medium text-[#8c7569]">AI is analyzing your options...</p>
+                    <p className="text-sm font-medium text-text-muted">AI is analyzing your options...</p>
                 </div>
             )}
 
@@ -116,22 +116,22 @@ export default function ComparisonStudio() {
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                     {/* Left Column: AI Summary */}
                     <div className="lg:col-span-1 space-y-6">
-                        <div className="bg-gradient-to-br from-[#fcf9f2] to-white dark:from-slate-800 dark:to-slate-900 p-5 rounded-2xl border border-[#e8ded1] dark:border-slate-700 shadow-sm">
+                        <div className="bg-gradient-to-br from-[#fcf9f2] to-white dark:from-slate-800 dark:to-slate-900 p-5 rounded-2xl border border-border-theme dark:border-slate-700 shadow-sm">
                             <div className="flex items-center gap-2 mb-4">
-                                <Sparkles className="w-5 h-5 text-[#b56b37] dark:text-blue-400" />
-                                <h3 className="font-bold text-[#231f20] dark:text-slate-100">AI Recommendation</h3>
+                                <Sparkles className="w-5 h-5 text-primary-blue dark:text-blue-400" />
+                                <h3 className="font-bold text-text-primary dark:text-slate-100">AI Recommendation</h3>
                             </div>
                             
-                            <p className="text-sm text-[#603620] dark:text-slate-300 leading-relaxed mb-6 font-medium bg-[#f6efe2]/50 dark:bg-slate-800/50 p-4 rounded-xl italic">
+                            <p className="text-sm text-text-secondary dark:text-slate-300 leading-relaxed mb-6 font-medium bg-surface-secondary/50 dark:bg-slate-800/50 p-4 rounded-xl italic">
                                 "{comparisonData.summary.reasoning}"
                             </p>
 
                             <div className="space-y-4">
                                 <div>
-                                    <h4 className="text-xs font-bold text-[#8c7569] uppercase tracking-wider mb-2">Key Pros</h4>
+                                    <h4 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Key Pros</h4>
                                     <ul className="space-y-2">
                                         {comparisonData.summary.pros.map((pro: string, i: number) => (
-                                            <li key={i} className="flex items-start gap-2 text-sm text-[#231f20] dark:text-slate-300">
+                                            <li key={i} className="flex items-start gap-2 text-sm text-text-primary dark:text-slate-300">
                                                 <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                                                 <span>{pro}</span>
                                             </li>
@@ -140,10 +140,10 @@ export default function ComparisonStudio() {
                                 </div>
                                 
                                 <div>
-                                    <h4 className="text-xs font-bold text-[#8c7569] uppercase tracking-wider mb-2">Considerations</h4>
+                                    <h4 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Considerations</h4>
                                     <ul className="space-y-2">
                                         {comparisonData.summary.cons.map((con: string, i: number) => (
-                                            <li key={i} className="flex items-start gap-2 text-sm text-[#231f20] dark:text-slate-300">
+                                            <li key={i} className="flex items-start gap-2 text-sm text-text-primary dark:text-slate-300">
                                                 <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                                                 <span>{con}</span>
                                             </li>
@@ -152,11 +152,11 @@ export default function ComparisonStudio() {
                                 </div>
 
                                 <div>
-                                    <h4 className="text-xs font-bold text-[#8c7569] uppercase tracking-wider mb-2">Differentiators</h4>
+                                    <h4 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Differentiators</h4>
                                     <ul className="space-y-2">
                                         {comparisonData.summary.differentiators.map((diff: string, i: number) => (
-                                            <li key={i} className="flex items-start gap-2 text-sm text-[#231f20] dark:text-slate-300">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-[#b56b37] mt-2 shrink-0" />
+                                            <li key={i} className="flex items-start gap-2 text-sm text-text-primary dark:text-slate-300">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-primary-blue mt-2 shrink-0" />
                                                 <span>{diff}</span>
                                             </li>
                                         ))}
@@ -172,36 +172,36 @@ export default function ComparisonStudio() {
                             {comparisonData.opportunities.map((opp) => (
                                 <div 
                                     key={opp.id} 
-                                    className={`w-[300px] shrink-0 bg-white dark:bg-slate-900 rounded-2xl border transition-all flex flex-col ${
+                                    className={`w-[300px] shrink-0 bg-surface dark:bg-slate-900 rounded-2xl border transition-all flex flex-col ${
                                         comparisonData.summary.recommendedWinnerId === opp.id
-                                        ? 'border-[#b56b37] dark:border-blue-500 shadow-md ring-2 ring-[#b56b37]/20 dark:ring-blue-500/20'
-                                        : 'border-[#e8ded1] dark:border-slate-800'
+                                        ? 'border-primary-blue dark:border-blue-500 shadow-md ring-2 ring-[#b56b37]/20 dark:ring-blue-500/20'
+                                        : 'border-border-theme dark:border-slate-800'
                                     }`}
                                 >
                                     {comparisonData.summary.recommendedWinnerId === opp.id && (
-                                        <div className="bg-[#b56b37] dark:bg-blue-600 text-white text-xs font-bold text-center py-1.5 rounded-t-xl tracking-wide uppercase">
+                                        <div className="bg-primary-blue dark:bg-blue-600 text-white text-xs font-bold text-center py-1.5 rounded-t-xl tracking-wide uppercase">
                                             Recommended Match
                                         </div>
                                     )}
                                     
                                     <div className="p-5 flex-1 flex flex-col">
                                         <div className="mb-4">
-                                            <h3 className="font-bold text-[#231f20] dark:text-slate-100 text-lg mb-1 leading-snug">{opp.title}</h3>
-                                            <p className="text-sm font-semibold text-[#8c7569] dark:text-slate-400">{opp.organization || opp.source_name}</p>
+                                            <h3 className="font-bold text-text-primary dark:text-slate-100 text-lg mb-1 leading-snug">{opp.title}</h3>
+                                            <p className="text-sm font-semibold text-text-muted dark:text-slate-400">{opp.organization || opp.source_name}</p>
                                         </div>
 
                                         <div className="space-y-4 flex-1">
                                             <div className="grid grid-cols-2 gap-2">
-                                                <div className="bg-[#fcf9f2] dark:bg-slate-800 p-2.5 rounded-lg border border-[#e8ded1] dark:border-slate-700">
-                                                    <span className="text-[10px] uppercase font-bold text-[#8c7569] block mb-1">Stipend/Salary</span>
+                                                <div className="bg-background dark:bg-slate-800 p-2.5 rounded-lg border border-border-theme dark:border-slate-700">
+                                                    <span className="text-[10px] uppercase font-bold text-text-muted block mb-1">Stipend/Salary</span>
                                                     <div className="flex items-center gap-1.5 text-sm font-bold text-[#63703d]">
                                                         <Coins className="w-3.5 h-3.5" />
                                                         <span className="truncate">{opp.stipend || 'Unpaid'}</span>
                                                     </div>
                                                 </div>
-                                                <div className="bg-[#fcf9f2] dark:bg-slate-800 p-2.5 rounded-lg border border-[#e8ded1] dark:border-slate-700">
-                                                    <span className="text-[10px] uppercase font-bold text-[#8c7569] block mb-1">Match Score</span>
-                                                    <div className="flex items-center gap-1.5 text-sm font-bold text-[#b56b37]">
+                                                <div className="bg-background dark:bg-slate-800 p-2.5 rounded-lg border border-border-theme dark:border-slate-700">
+                                                    <span className="text-[10px] uppercase font-bold text-text-muted block mb-1">Match Score</span>
+                                                    <div className="flex items-center gap-1.5 text-sm font-bold text-primary-blue">
                                                         <Sparkles className="w-3.5 h-3.5" />
                                                         <span>{opp.matchScore || 'N/A'}%</span>
                                                     </div>
@@ -210,44 +210,44 @@ export default function ComparisonStudio() {
 
                                             <div className="space-y-3 pt-2">
                                                 <div className="flex items-start gap-3">
-                                                    <MapPin className="w-4 h-4 text-[#8c7569] mt-0.5 shrink-0" />
-                                                    <div className="text-sm text-[#231f20] dark:text-slate-300">
-                                                        <span className="block text-[10px] font-bold text-[#8c7569] uppercase mb-0.5">Location</span>
+                                                    <MapPin className="w-4 h-4 text-text-muted mt-0.5 shrink-0" />
+                                                    <div className="text-sm text-text-primary dark:text-slate-300">
+                                                        <span className="block text-[10px] font-bold text-text-muted uppercase mb-0.5">Location</span>
                                                         {opp.location || 'Remote'}
                                                     </div>
                                                 </div>
 
                                                 <div className="flex items-start gap-3">
-                                                    <Clock className="w-4 h-4 text-[#8c7569] mt-0.5 shrink-0" />
-                                                    <div className="text-sm text-[#231f20] dark:text-slate-300">
-                                                        <span className="block text-[10px] font-bold text-[#8c7569] uppercase mb-0.5">Deadline</span>
+                                                    <Clock className="w-4 h-4 text-text-muted mt-0.5 shrink-0" />
+                                                    <div className="text-sm text-text-primary dark:text-slate-300">
+                                                        <span className="block text-[10px] font-bold text-text-muted uppercase mb-0.5">Deadline</span>
                                                         {opp.deadline || 'Rolling Admissions'}
                                                     </div>
                                                 </div>
 
                                                 <div className="flex items-start gap-3">
-                                                    <Shield className="w-4 h-4 text-[#8c7569] mt-0.5 shrink-0" />
-                                                    <div className="text-sm text-[#231f20] dark:text-slate-300">
-                                                        <span className="block text-[10px] font-bold text-[#8c7569] uppercase mb-0.5">Category</span>
+                                                    <Shield className="w-4 h-4 text-text-muted mt-0.5 shrink-0" />
+                                                    <div className="text-sm text-text-primary dark:text-slate-300">
+                                                        <span className="block text-[10px] font-bold text-text-muted uppercase mb-0.5">Category</span>
                                                         {opp.category || opp.opportunity_type || 'Opportunity'}
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="mt-6 pt-4 border-t border-[#e8ded1] dark:border-slate-800 flex flex-col gap-2">
+                                        <div className="mt-6 pt-4 border-t border-border-theme dark:border-slate-800 flex flex-col gap-2">
                                             <a
                                                 href={opp.apply_link || opp.url}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#b56b37] hover:bg-[#96552a] text-white text-sm font-bold rounded-xl transition-colors"
+                                                className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary-blue hover:bg-[#96552a] text-white text-sm font-bold rounded-xl transition-colors"
                                             >
                                                 Apply Now
                                                 <ExternalLink className="w-4 h-4" />
                                             </a>
                                             <button
                                                 onClick={() => removeFromCompare(opp.id)}
-                                                className="w-full py-2 text-xs font-bold text-[#8c7569] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
+                                                className="w-full py-2 text-xs font-bold text-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
                                             >
                                                 Dismiss from comparison
                                             </button>

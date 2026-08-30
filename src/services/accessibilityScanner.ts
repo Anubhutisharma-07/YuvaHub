@@ -42,7 +42,7 @@ export const scanContent = async (content: any): Promise<ScanResult> => {
 
         return { issues: issues.map((i: any) => ({ ...i, resolved: false })) };
     } catch (error) {
-        logger.error('AI Content Scanning failed:', error);
+        logger.error({ err: error }, 'AI Content Scanning failed:');
         // Fallback to rule-based scanning if AI fails
         const fallbackIssues = [];
         if (content.hasImagesWithoutAlt) {

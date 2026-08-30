@@ -25,7 +25,7 @@ export const SnippetViewer: React.FC<SnippetViewerProps> = ({ snippets, onSelect
                 <div
                     key={snippet._id}
                     onClick={() => onSelect(snippet._id)}
-                    className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md"
+                    className="p-4 bg-surface dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md"
                 >
                     <div className="flex items-start justify-between mb-3">
                         <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-md">

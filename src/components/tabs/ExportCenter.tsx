@@ -110,20 +110,20 @@ export default function ExportCenter() {
   };
 
   return (
-    <div className="bg-white border border-[#e8ded1] rounded-2xl p-6 shadow-xs space-y-6 mt-8">
+    <div className="bg-surface border border-border-theme rounded-2xl p-6 shadow-xs space-y-6 mt-8">
       <div>
-        <h3 className="text-lg font-serif font-bold text-[#231f20]">Data Export Center</h3>
-        <p className="text-xs text-[#8c7569]">Download a copy of your YuvaHub data for offline access or compliance.</p>
+        <h3 className="text-lg font-serif font-bold text-text-primary">Data Export Center</h3>
+        <p className="text-xs text-text-muted">Download a copy of your YuvaHub data for offline access or compliance.</p>
       </div>
 
       {error && <ErrorState title="Export Error" description={error} />}
 
       <div className="space-y-4">
         <div>
-          <label className="text-xs font-bold text-[#603620] mb-2 block">Data Sections</label>
+          <label className="text-xs font-bold text-text-secondary mb-2 block">Data Sections</label>
           <div className="flex flex-wrap gap-3">
             {['profile', 'applications', 'bookmarks'].map(sec => (
-              <label key={sec} className="flex items-center gap-2 cursor-pointer bg-[#fcf9f2] p-2 px-3 border border-[#e8ded1] rounded-xl text-xs font-semibold text-[#231f20]">
+              <label key={sec} className="flex items-center gap-2 cursor-pointer bg-background p-2 px-3 border border-border-theme rounded-xl text-xs font-semibold text-text-primary">
                 <input 
                   type="checkbox" 
                   className="accent-[#b56b37]"
@@ -137,10 +137,10 @@ export default function ExportCenter() {
         </div>
 
         <div>
-          <label className="text-xs font-bold text-[#603620] mb-2 block">Export Format</label>
+          <label className="text-xs font-bold text-text-secondary mb-2 block">Export Format</label>
           <div className="flex flex-wrap gap-3">
             {['pdf', 'csv', 'json'].map(fmt => (
-              <label key={fmt} className="flex items-center gap-2 cursor-pointer bg-[#fcf9f2] p-2 px-3 border border-[#e8ded1] rounded-xl text-xs font-semibold text-[#231f20]">
+              <label key={fmt} className="flex items-center gap-2 cursor-pointer bg-background p-2 px-3 border border-border-theme rounded-xl text-xs font-semibold text-text-primary">
                 <input 
                   type="radio" 
                   name="format"
@@ -157,33 +157,33 @@ export default function ExportCenter() {
         <button 
           onClick={handleRequestExport} 
           disabled={loading || sections.length === 0}
-          className="bg-[#b56b37] hover:bg-[#603620] text-white w-full px-6 py-3 rounded-xl text-xs font-extrabold uppercase tracking-wider flex justify-center items-center shadow-sm transition-colors cursor-pointer disabled:opacity-50 mt-4"
+          className="bg-primary-blue hover:bg-[#603620] text-white w-full px-6 py-3 rounded-xl text-xs font-extrabold uppercase tracking-wider flex justify-center items-center shadow-sm transition-colors cursor-pointer disabled:opacity-50 mt-4"
         >
           {loading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
           Request Export
         </button>
       </div>
 
-      <div className="pt-6 border-t border-[#e8ded1]">
-        <h4 className="text-xs font-bold text-[#603620] mb-3 uppercase tracking-wider">Recent Exports</h4>
+      <div className="pt-6 border-t border-border-theme">
+        <h4 className="text-xs font-bold text-text-secondary mb-3 uppercase tracking-wider">Recent Exports</h4>
         {history.length === 0 ? (
-          <p className="text-xs text-[#8c7569]">No past exports found.</p>
+          <p className="text-xs text-text-muted">No past exports found.</p>
         ) : (
           <div className="space-y-3">
             {history.map(item => (
-              <div key={item._id} className="flex items-center justify-between p-3 bg-[#fcf9f2] border border-[#e8ded1] rounded-xl">
+              <div key={item._id} className="flex items-center justify-between p-3 bg-background border border-border-theme rounded-xl">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-[#f6efe2] text-[#b56b37] flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-lg bg-surface-secondary text-primary-blue flex items-center justify-center">
                     <FileText className="w-4 h-4" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-[#231f20] uppercase">{item.format} Export</p>
-                    <p className="text-[10px] text-[#8c7569]">{new Date(item.requestedAt).toLocaleString()}</p>
+                    <p className="text-xs font-bold text-text-primary uppercase">{item.format} Export</p>
+                    <p className="text-[10px] text-text-muted">{new Date(item.requestedAt).toLocaleString()}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   {item.status === 'completed' && item.fileUrl ? (
-                    <a href={item.fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] font-extrabold bg-[#b56b37] text-white px-3 py-1.5 rounded-lg uppercase tracking-wider hover:bg-[#603620] transition-colors">
+                    <a href={item.fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] font-extrabold bg-primary-blue text-white px-3 py-1.5 rounded-lg uppercase tracking-wider hover:bg-[#603620] transition-colors">
                       <Download className="w-3 h-3" /> Download
                     </a>
                   ) : item.status === 'failed' ? (
@@ -191,7 +191,7 @@ export default function ExportCenter() {
                       <AlertTriangle className="w-3 h-3" /> Failed
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1 text-[10px] font-extrabold text-[#b56b37] uppercase tracking-wider">
+                    <span className="flex items-center gap-1 text-[10px] font-extrabold text-primary-blue uppercase tracking-wider">
                       <Clock className="w-3 h-3 animate-spin-slow" /> Processing...
                     </span>
                   )}

@@ -67,7 +67,7 @@ export const getPlatformStats = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.error({ error }, 'Error fetching platform stats:');
+    logger.error({ err: error }, 'Error fetching platform stats:');
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -95,7 +95,7 @@ export const getUsersList = async (req: Request, res: Response) => {
       pagination: { total, page, limit, totalPages: Math.ceil(total / limit) },
     });
   } catch (error) {
-    logger.error({ error }, 'Error fetching users list:');
+    logger.error({ err: error }, 'Error fetching users list:');
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -121,7 +121,7 @@ export const performModerationAction = async (req: Request, res: Response) => {
 
     res.status(400).json({ error: 'Invalid target type or action' });
   } catch (error) {
-    logger.error({ error }, 'Error performing moderation action:');
+    logger.error({ err: error }, 'Error performing moderation action:');
     res.status(500).json({ error: 'Internal server error' });
   }
 };

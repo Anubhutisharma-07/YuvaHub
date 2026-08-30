@@ -92,7 +92,7 @@ export const CollaborativeCodeEditor: React.FC<CollaborativeCodeEditorProps> = (
                         title="Copy to clipboard"
                     >
                         <Copy className="w-4 h-4" />
-         3>
+                    </button>
                         <button className="flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md transition-colors">
                             <Save className="w-4 h-4 mr-1.5" />
                             {isSaving ? 'Saving...' : 'Save'}

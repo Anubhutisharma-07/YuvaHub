@@ -76,7 +76,7 @@ export const SecureDocumentVault: React.FC = () => {
             {/* Document List */}
             <div className="space-y-4">
                 {documents.map((doc) => (
-                    <div key={doc._id} className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                    <div key={doc._id} className="p-4 bg-surface dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-between">
                         <div className="flex items-center">
                             <FileText className="w-6 h-6 text-gray-500 dark:text-gray-400 mr-3" />
                             <div>

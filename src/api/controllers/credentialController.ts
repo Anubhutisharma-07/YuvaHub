@@ -23,7 +23,7 @@ export const requestCredential = async (req: Request, res: Response) => {
             data: newVC
         });
     } catch (error) {
-        logger.error('Error requesting credential:', error);
+        logger.error({ err: error }, 'Error requesting credential:');
         res.status(500).json({ error: 'Internal server error' });
     }
 };
@@ -41,7 +41,7 @@ export const getUserWallet = async (req: Request, res: Response) => {
 
         res.status(200).json({ data: credentials });
     } catch (error) {
-        logger.error('Error fetching user wallet:', error);
+        logger.error({ err: error }, 'Error fetching user wallet:');
         res.status(500).json({ error: 'Internal server error' });
     }
 };
@@ -70,7 +70,7 @@ export const exportCredential = async (req: Request, res: Response) => {
 
         res.status(200).json(exportData);
     } catch (error) {
-        logger.error('Error exporting credential:', error);
+        logger.error({ err: error }, 'Error exporting credential:');
         res.status(500).json({ error: 'Internal server error' });
     }
 };

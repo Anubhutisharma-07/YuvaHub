@@ -79,7 +79,7 @@ export const VerifiableBadgeWallet: React.FC = () => {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {credentials.map((vc) => (
-                        <div key={vc._id} className="p-5 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+                        <div key={vc._id} className="p-5 bg-surface dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
                             <div className="flex items-start justify-between mb-4">
                                 <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
                                     <Award className="w-6 h-6 text-purple-600 dark:text-purple-400" />
