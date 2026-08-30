@@ -1,7 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import {
   LayoutDashboard, Globe, PlusCircle, Users, User, Menu, X, Bookmark, Sparkles, MessageSquare, Settings, Sun, Moon, Mic, Trophy,
-  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock, BookOpen, Target, Activity
+  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock, BookOpen, Target, Activity, Layers
 } from 'lucide-react';
 import { signInWithGoogle, logout } from './lib/firebase';
 import { UserProfile } from './types';
@@ -58,6 +58,7 @@ const ProjectShowcaseVault = lazy(() => import('./components/tabs/ProjectShowcas
 const StarInterviewStudio = lazy(() => import('./components/tabs/StarInterviewStudio'));
 const HelpCenter = lazy(() => import('./components/tabs/HelpCenter'));
 const FAQ = lazy(() => import('./components/tabs/FAQ'));
+const SystemDesignPrep = lazy(() => import("./components/tabs/SystemDesignPrep"));
 const Teams = lazy(() => import('./components/tabs/Teams'));
 const MockInterviewRoom = lazy(() => import('./pages/MockInterviewRoom'));
 const ApplicationTracker = lazy(() => import('./pages/ApplicationTracker').then(m => ({ default: m.ApplicationTracker })));
@@ -271,6 +272,7 @@ function App() {
       title: "AI & Career Studios",
       items: [
         { id: 'skill_gap', label: 'Skill Gap Analyzer', icon: Target },
+        { id: 'sys_design', label: 'System Design', icon: Layers }
         { id: 'ai_assistant', label: 'AI Assistant', icon: Brain },
         { id: 'career_match', label: 'Career Match Studio', icon: TrendingUp },
         { id: 'resume_ats', label: 'Resume ATS Optimizer', icon: FileText },
@@ -344,6 +346,7 @@ function App() {
       case 'resume_ats': return <ResumeAtsStudio />;
       case 'skill_gap': return <SkillGapStudio />;
       case 'interview_prep': return <InterviewPrepStudio />;
+      case 'sys_design': return <SystemDesignPrep />;
       case 'opensource_bounties': return <OpenSourceBountyStudio />;
       case 'opportunity_match': return <OpportunityMatchStudio />;
       case 'tech_ecosystem': return <TechEcosystemStudio />;
