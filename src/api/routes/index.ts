@@ -5,7 +5,7 @@ import bookmarkRoutes from "./bookmarkRoutes.js";
 import karmaRoutes from "./karmaRoutes.js";
 import bountyRoutes from "./bountyRoutes.js";
 import storageRoutes from "./storageRoutes.js";
-import resumeRoutes from "./resumeRoutes.js";
+import resumeBuilderRoutes from "./resumeBuilderRoutes.js";
 import opportunityRoutes from "./opportunityRoutes.js";
 import aiRoutes from "./aiRoutes.js";
 import searchRoutes from "./searchRoutes.js";
@@ -13,6 +13,7 @@ import notificationRoutes from "./notificationRoutes.js";
 import applicationRoutes from "./applicationRoutes.js";
 import adminRoutes from "./adminRoutes.js";
 import communityRoutes from "./communityRoutes.js";
+import forumReplyRoutes from "./forumReplyRoutes.js";
 import teamRoutes from "./teamRoutes.js";
 import scholarshipRoutes from "./scholarshipRoutes.js";
 import mentorshipRoutes from "./mentorshipRoutes.js";
@@ -26,7 +27,20 @@ import projectRoutes from "./projectRoutes.js";
 import endorsementRoutes from "./endorsementRoutes.js";
 import pollRoutes from "./pollRoutes.js";
 import watchlistRoutes from "./watchlistRoutes.js";
+import reportRoutes from "./reportRoutes.js";
 import skillGapRoutes from "./skillGapRoutes.js";
+import careerGoalRoutes from "./careerGoalRoutes.js";
+import alumniMentorshipRoutes from "./alumniMentorshipRoutes.js";
+import activityRoutes from "./activityRoutes.js";
+import announcementRoutes from "./announcementRoutes.js";
+import opportunityNoteRoutes from "./opportunityNoteRoutes.js";
+import savedSearchRoutes from "./savedSearchRoutes.js";
+import testimonialRoutes from "./testimonialRoutes.js";
+import eventRsvpRoutes from "./eventRsvpRoutes.js";
+import skillAssessmentRoutes from "./skillAssessmentRoutes.js";
+import voteRoutes from "./voteRoutes.js";
+import studyRoomRoutes from "./studyRoomRoutes.js";
+import observabilityRoutes from "./observabilityRoutes.js";
 import { errorHandler } from "../middlewares/errorHandler.js";
 import { apiVersionHeaders } from "../versioning/middleware.js";
 
@@ -41,7 +55,7 @@ const routes = [
   karmaRoutes,
   bountyRoutes,
   storageRoutes,
-  resumeRoutes,
+  resumeBuilderRoutes,
   opportunityRoutes,
   aiRoutes,
   searchRoutes,
@@ -49,6 +63,7 @@ const routes = [
   applicationRoutes,
   adminRoutes,
   communityRoutes,
+  forumReplyRoutes,
   teamRoutes,
   scholarshipRoutes,
   mentorshipRoutes,
@@ -62,7 +77,20 @@ const routes = [
   endorsementRoutes,
   pollRoutes,
   watchlistRoutes,
+  reportRoutes,
   skillGapRoutes,
+  careerGoalRoutes,
+  alumniMentorshipRoutes,
+  activityRoutes,
+  announcementRoutes,
+  opportunityNoteRoutes,
+  savedSearchRoutes,
+  testimonialRoutes,
+  eventRsvpRoutes,
+  skillAssessmentRoutes,
+  voteRoutes,
+  studyRoomRoutes,
+  observabilityRoutes,
 ];
 
 // Mount all routes onto v1Router
