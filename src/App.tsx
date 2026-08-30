@@ -14,8 +14,10 @@ import NotificationDropdown from './components/ui/NotificationDropdown';
 import BackToTopButton from './components/ui/BackToTopButton';
 import AccessibilityEnhancer from './components/accessibility/AccessibilityEnhancer';
 import AnnouncementBanner from './components/ui/AnnouncementBanner';
+import InstallPrompt from './components/ui/InstallPrompt';
 import { CompareProvider } from './context/CompareContext';
 import { CompareBottomBar } from './components/ui/CompareBottomBar';
+import { usePrefetchBookmarks } from './hooks/usePrefetchBookmarks';
 
 // Route components are lazy-loaded to reduce the initial bundle size (code splitting)
 const Dashboard = lazy(() => import('./components/tabs/Dashboard'));
@@ -239,6 +241,11 @@ function App() {
 
   const { isConnected, transportMode } = useSocket();
   const [avatarError, setAvatarError] = useState(false);
+
+  // Proactively warm the IndexedDB offline cache whenever the user is logged in
+  // and online. This ensures bookmarks are available offline even if the user
+  // never opens the Bookmarks tab in a given session (closes the prefetch gap).
+  usePrefetchBookmarks({ bookmarkIds: profile?.bookmarks });
 
   useEffect(() => {
     setAvatarError(false);
@@ -592,8 +599,9 @@ function App() {
         Skip to main content
       </a>
 
-      {/* Global Announcement Banner */}
+      {/* PWA Install Prompt + Global Announcement Banner */}
       <div className="absolute top-0 left-0 right-0 z-[60]">
+        <InstallPrompt />
         <AnnouncementBanner />
       </div>
 

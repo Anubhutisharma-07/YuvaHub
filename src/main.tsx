@@ -8,6 +8,7 @@ import { SocketProvider } from './context/SocketContext.tsx';
 import { ThemeProvider } from './context/ThemeContext';
 import './index.css';
 import * as Sentry from "@sentry/react";
+import { registerSW } from 'virtual:pwa-register';
 
 Sentry.init({
   dsn: import.meta.env.VITE_SENTRY_DSN_REACT,

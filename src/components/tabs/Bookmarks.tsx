@@ -4,8 +4,9 @@ import {
   Plus, Check, X, MoveRight, Layers, Sparkles, Filter
 } from 'lucide-react';
 import { fetchOpportunityById, bulkGetOpportunityNotes } from '../../services/apiClient';
-import { AsyncState } from '../ui/states';
+import { AsyncState, OfflineBanner } from '../ui/states';
 import { useAppContext } from '../../context/AppContext';
+import { saveBookmarksToIDB, getBookmarksFromIDB } from '../../lib/offlineStore';
 
 interface BookmarkFolder {
   folderId: string;
@@ -21,6 +22,8 @@ export default function Bookmarks() {
   const [retrying, setRetrying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, any>>({});
+  // True when the displayed data is served from IndexedDB (user is offline)
+  const [isOfflineFallback, setIsOfflineFallback] = useState(false);
 
   // Folder & Tag Management State
   const [folders, setFolders] = useState<BookmarkFolder[]>([
@@ -71,17 +74,37 @@ export default function Bookmarks() {
       setItems([]);
       setLoading(false);
       setError(null);
+      setIsOfflineFallback(false);
       return;
     }
 
     isRetry ? setRetrying(true) : setLoading(true);
     setError(null);
+    setIsOfflineFallback(false);
+
+    // If device is offline, skip the network round-trip immediately
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      const cached = await getBookmarksFromIDB();
+      if (cached.length > 0) {
+        setItems(cached);
+        setIsOfflineFallback(true);
+      } else {
+        setError('You are offline and no bookmarks are cached yet. Please reconnect and visit this tab once to enable offline access.');
+      }
+      setLoading(false);
+      setRetrying(false);
+      return;
+    }
 
     try {
       const results = await Promise.all(
         profile.bookmarks.map((id) => fetchOpportunityById(id)),
       );
-      setItems(results.filter(Boolean));
+      const valid = results.filter(Boolean);
+      setItems(valid);
+
+      // Persist to IDB so next offline visit has fresh data
+      void saveBookmarksToIDB(valid as Record<string, unknown>[]);
 
       // Fetch notes for bookmarks
       try {
@@ -95,7 +118,14 @@ export default function Bookmarks() {
         console.warn("Could not fetch notes", e);
       }
     } catch {
-      setError('Unable to load your bookmarks. Please try again.');
+      // Network failed mid-session — try IDB fallback
+      const cached = await getBookmarksFromIDB();
+      if (cached.length > 0) {
+        setItems(cached);
+        setIsOfflineFallback(true);
+      } else {
+        setError('Unable to load your bookmarks. Please try again.');
+      }
     } finally {
       setLoading(false);
       setRetrying(false);
@@ -218,6 +248,13 @@ export default function Bookmarks() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 px-4 md:px-0 animate-fade-in">
+      {/* Offline fallback banner — contextual, shown only when serving IDB data */}
+      {isOfflineFallback && (
+        <OfflineBanner
+          visible={isOfflineFallback}
+          message="You're offline. Showing your saved bookmarks from local storage — some details may be outdated."
+        />
+      )}
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm">
         <div>
