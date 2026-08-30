@@ -5,6 +5,7 @@ import PublicPortfolio from './pages/PublicPortfolio.tsx';
 import CustomCursor from './components/CustomCursor.tsx';
 import { AppProvider } from './context/AppContext.tsx';
 import { SocketProvider } from './context/SocketContext.tsx';
+import { ThemeProvider } from './context/ThemeContext';
 import './index.css';
 import * as Sentry from "@sentry/react";
 
@@ -25,16 +26,18 @@ const isPublicPortfolio = window.location.pathname.startsWith('/p/');
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {isPublicPortfolio ? (
-      <PublicPortfolio />
-    ) : (
-      <AppProvider>
-        <SocketProvider>
-          <CustomCursor />
-          <App />
-        </SocketProvider>
-      </AppProvider>
-    )}
+    <ThemeProvider>
+      {isPublicPortfolio ? (
+        <PublicPortfolio />
+      ) : (
+        <AppProvider>
+          <SocketProvider>
+            <CustomCursor />
+            <App />
+          </SocketProvider>
+        </AppProvider>
+      )}
+    </ThemeProvider>
   </StrictMode>,
 );
 
@@ -49,4 +52,3 @@ if ('serviceWorker' in navigator) {
       });
   });
 }
-
