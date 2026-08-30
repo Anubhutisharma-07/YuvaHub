@@ -5,6 +5,7 @@ import PublicPortfolio from './pages/PublicPortfolio.tsx';
 import CustomCursor from './components/CustomCursor.tsx';
 import { AppProvider } from './context/AppContext.tsx';
 import { SocketProvider } from './context/SocketContext.tsx';
+import { ThemeProvider } from './context/ThemeContext';
 import './index.css';
 import * as Sentry from "@sentry/react";
 import { registerSW } from 'virtual:pwa-register';
@@ -26,28 +27,29 @@ const isPublicPortfolio = window.location.pathname.startsWith('/p/');
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {isPublicPortfolio ? (
-      <PublicPortfolio />
-    ) : (
-      <AppProvider>
-        <SocketProvider>
-          <CustomCursor />
-          <App />
-        </SocketProvider>
-      </AppProvider>
-    )}
+    <ThemeProvider>
+      {isPublicPortfolio ? (
+        <PublicPortfolio />
+      ) : (
+        <AppProvider>
+          <SocketProvider>
+            <CustomCursor />
+            <App />
+          </SocketProvider>
+        </AppProvider>
+      )}
+    </ThemeProvider>
   </StrictMode>,
 );
 
-// Register the Workbox-generated service worker (managed by vite-plugin-pwa).
-// autoUpdate mode: the SW silently updates itself in the background.
-// The old hand-written /service-worker.js has been moved to /public/legacy/
-// and is no longer registered or served.
-registerSW({
-  onOfflineReady() {
-    console.info('[PWA] App is ready for offline use.');
-  },
-  onNeedRefresh() {
-    console.info('[PWA] New content available. Will update automatically.');
-  },
-});
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then((registration) => {
+        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+      })
+      .catch((error) => {
+        console.log('ServiceWorker registration failed: ', error);
+      });
+  });
+}
