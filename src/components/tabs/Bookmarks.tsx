@@ -3,9 +3,10 @@ import {
   Bookmark as BookmarkIcon, FolderPlus, Folder, Trash2, Tag, 
   Plus, Check, X, MoveRight, Layers, Sparkles, Filter
 } from 'lucide-react';
-import { fetchOpportunityById } from '../../services/apiClient';
-import { AsyncState } from '../ui/states';
+import { fetchOpportunityById, bulkGetOpportunityNotes } from '../../services/apiClient';
+import { AsyncState, OfflineBanner } from '../ui/states';
 import { useAppContext } from '../../context/AppContext';
+import { saveBookmarksToIDB, getBookmarksFromIDB } from '../../lib/offlineStore';
 
 interface BookmarkFolder {
   folderId: string;
@@ -20,6 +21,9 @@ export default function Bookmarks() {
   const [loading, setLoading] = useState(true);
   const [retrying, setRetrying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notes, setNotes] = useState<Record<string, any>>({});
+  // True when the displayed data is served from IndexedDB (user is offline)
+  const [isOfflineFallback, setIsOfflineFallback] = useState(false);
 
   // Folder & Tag Management State
   const [folders, setFolders] = useState<BookmarkFolder[]>([
@@ -70,19 +74,58 @@ export default function Bookmarks() {
       setItems([]);
       setLoading(false);
       setError(null);
+      setIsOfflineFallback(false);
       return;
     }
 
     isRetry ? setRetrying(true) : setLoading(true);
     setError(null);
+    setIsOfflineFallback(false);
+
+    // If device is offline, skip the network round-trip immediately
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      const cached = await getBookmarksFromIDB();
+      if (cached.length > 0) {
+        setItems(cached);
+        setIsOfflineFallback(true);
+      } else {
+        setError('You are offline and no bookmarks are cached yet. Please reconnect and visit this tab once to enable offline access.');
+      }
+      setLoading(false);
+      setRetrying(false);
+      return;
+    }
 
     try {
       const results = await Promise.all(
         profile.bookmarks.map((id) => fetchOpportunityById(id)),
       );
-      setItems(results.filter(Boolean));
+      const valid = results.filter(Boolean);
+      setItems(valid);
+
+      // Persist to IDB so next offline visit has fresh data
+      void saveBookmarksToIDB(valid as Record<string, unknown>[]);
+
+      // Fetch notes for bookmarks
+      try {
+        const fetchedNotes = await bulkGetOpportunityNotes(profile.bookmarks);
+        const notesMap: Record<string, any> = {};
+        fetchedNotes.forEach((note: any) => {
+          notesMap[note.opportunityId] = note;
+        });
+        setNotes(notesMap);
+      } catch (e) {
+        console.warn("Could not fetch notes", e);
+      }
     } catch {
-      setError('Unable to load your bookmarks. Please try again.');
+      // Network failed mid-session — try IDB fallback
+      const cached = await getBookmarksFromIDB();
+      if (cached.length > 0) {
+        setItems(cached);
+        setIsOfflineFallback(true);
+      } else {
+        setError('Unable to load your bookmarks. Please try again.');
+      }
     } finally {
       setLoading(false);
       setRetrying(false);
@@ -205,6 +248,13 @@ export default function Bookmarks() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 px-4 md:px-0 animate-fade-in">
+      {/* Offline fallback banner — contextual, shown only when serving IDB data */}
+      {isOfflineFallback && (
+        <OfflineBanner
+          visible={isOfflineFallback}
+          message="You're offline. Showing your saved bookmarks from local storage — some details may be outdated."
+        />
+      )}
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm">
         <div>
@@ -355,6 +405,13 @@ export default function Bookmarks() {
                 </a>
                 <p className="text-xs text-gray-500 mb-2 font-medium">{item.organization || item.org || "Company not specified"}</p>
                 <p className="text-xs text-gray-700 line-clamp-2 mb-4 leading-relaxed">{item.description || "No description available."}</p>
+
+                {notes[itemId] && (notes[itemId].content || notes[itemId].isPinned) && (
+                  <div className={`mb-4 p-2 rounded border border-gray-100 ${notes[itemId].color ? `bg-${notes[itemId].color}-50 border-${notes[itemId].color}-200 text-${notes[itemId].color}-900` : 'bg-gray-50'}`}>
+                    {notes[itemId].isPinned && <span className="font-bold block text-[10px] mb-0.5">📌 Pinned</span>}
+                    {notes[itemId].content && <p className="text-[11px] line-clamp-2 italic">{notes[itemId].content}</p>}
+                  </div>
+                )}
 
                 {/* Card Footer */}
                 <div className="flex items-center justify-between gap-2 border-t border-gray-100 pt-4 mt-auto">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import {
   LayoutDashboard, Globe, PlusCircle, Users, User, Menu, X, Bookmark, Sparkles, MessageSquare, Settings, Sun, Moon, Mic, Trophy,
-  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock, BookOpen, Target, Activity, DollarSign
+  Brain, TrendingUp, FileText, Video, FolderGit2, GraduationCap, Coins, Code2, Building2, Award, Cpu, Terminal, ShieldCheck, ShieldAlert, Briefcase, Clock, BookOpen, Target, Activity, Calendar, HeartPulse, Rocket, Shield, Megaphone, Search, Ticket, Compass, Map, Swords, DollarSign
 } from 'lucide-react';
 import { signInWithGoogle, logout } from './lib/firebase';
 import { UserProfile } from './types';
@@ -13,6 +13,11 @@ import LoadingScreen from './components/ui/LoadingScreen';
 import NotificationDropdown from './components/ui/NotificationDropdown';
 import BackToTopButton from './components/ui/BackToTopButton';
 import AccessibilityEnhancer from './components/accessibility/AccessibilityEnhancer';
+import AnnouncementBanner from './components/ui/AnnouncementBanner';
+import InstallPrompt from './components/ui/InstallPrompt';
+import { CompareProvider } from './context/CompareContext';
+import { CompareBottomBar } from './components/ui/CompareBottomBar';
+import { usePrefetchBookmarks } from './hooks/usePrefetchBookmarks';
 
 // Route components are lazy-loaded to reduce the initial bundle size (code splitting)
 const Dashboard = lazy(() => import('./components/tabs/Dashboard'));
@@ -47,8 +52,15 @@ const GrantFellowshipStudio = lazy(() => import('./components/tabs/GrantFellowsh
 const CampusAlumniHub = lazy(() => import('./components/tabs/CampusAlumniHub'));
 const ResumeAtsStudio = lazy(() => import('./components/tabs/ResumeAtsStudio'));
 const SkillGapStudio = lazy(() => import('./components/tabs/SkillGapStudio'));
-const SalaryNegotiationCoach = lazy(() => import("./components/Tabs/SalaryNegotiationCoach"));
+const SalaryNegotiationCoach = lazy(() => import('./components/tabs/SalaryNegotiationCoach'));
+const CodingChallengeArena = lazy(() => import("./components/tabs/CodingChallengeArena"));
+const LearningPathBuilder = lazy(() => import("./components/tabs/LearningPathBuilder"));
 const InterviewPrepStudio = lazy(() => import('./components/tabs/InterviewPrepStudio'));
+const PortfolioShowcase = lazy(() => import('./components/tabs/PortfolioShowcase'));
+const MentorshipNetwork = lazy(() => import('./components/tabs/MentorshipNetwork'));
+const AchievementCenter = lazy(() => import('./components/tabs/AchievementCenter'));
+
+const ResearchGrantTelemetryLab = lazy(() => import('./pages/Enterprise/ResearchGrantTelemetryLab').then(m => ({ default: m.ResearchGrantTelemetryLab })));
 const OpenSourceBountyStudio = lazy(() => import('./components/tabs/OpenSourceBountyStudio'));
 const OpportunityMatchStudio = lazy(() => import('./components/tabs/OpportunityMatchStudio'));
 const TechEcosystemStudio = lazy(() => import('./components/tabs/TechEcosystemStudio'));
@@ -59,7 +71,7 @@ const ProjectShowcaseVault = lazy(() => import('./components/tabs/ProjectShowcas
 const StarInterviewStudio = lazy(() => import('./components/tabs/StarInterviewStudio'));
 const HelpCenter = lazy(() => import('./components/tabs/HelpCenter'));
 const FAQ = lazy(() => import('./components/tabs/FAQ'));
-const Teams = lazy(() => import('./components/tabs/Teams'));
+const Teams = lazy(() => import('./components/team-builder/HackathonTeamBuilderHub'));
 const MockInterviewRoom = lazy(() => import('./pages/MockInterviewRoom'));
 const ApplicationTracker = lazy(() => import('./pages/ApplicationTracker').then(m => ({ default: m.ApplicationTracker })));
 const Leaderboard = lazy(() => import('./pages/Leaderboard').then(m => ({ default: m.Leaderboard })));
@@ -68,6 +80,32 @@ const ExperiencesHub = lazy(() => import('./components/tabs/ExperiencesHub'));
 const PollStudio = lazy(() => import('./components/tabs/PollStudio'));
 const WatchlistManager = lazy(() => import('./components/tabs/WatchlistManager'));
 const AuditLogCenter = lazy(() => import('./pages/Enterprise/AuditLogCenter').then(m => ({ default: m.AuditLogCenter })));
+const DevopsPipelineHub = lazy(() => import('./pages/Enterprise/DevopsPipelineHub').then(m => ({ default: m.DevopsPipelineHub })));
+const SsoIdentityHub = lazy(() => import('./pages/Enterprise/SsoIdentityHub').then(m => ({ default: m.SsoIdentityHub })));
+const DlpHub = lazy(() => import('./pages/Enterprise/DlpHub').then(m => ({ default: m.DlpHub })));
+const ApiGatewayHub = lazy(() => import('./pages/Enterprise/ApiGatewayHub').then(m => ({ default: m.ApiGatewayHub })));
+const CareerGoalTracker = lazy(() => import('./components/tabs/CareerGoalTracker'));
+const CampusAlumniMentorshipStudioPage = lazy(() => import('./pages/CampusAlumniMentorshipStudioPage'));
+const ActivityFeed = lazy(() => import('./components/tabs/ActivityFeed'));
+const Announcements = lazy(() => import('./components/tabs/Announcements'));
+const SavedSearchManager = lazy(() => import('./components/tabs/SavedSearchManager'));
+const MyRsvps = lazy(() => import('./components/tabs/MyRsvps').then(m => ({ default: m.MyRsvps })));
+
+const CardiovascularCriticalCareHub = lazy(() => import('./pages/Enterprise/CardiovascularCriticalCareHub').then(m => ({ default: m.CardiovascularCriticalCareHub })));
+const DeadlineCalendar = lazy(() => import('./components/tabs/DeadlineCalendar'));
+const DegreePlannerHub = lazy(() => import('./pages/DegreePlannerHub').then(m => ({ default: m.DegreePlannerHub })));
+const CampusAlumniEndowmentStudioPage = lazy(() => import('./pages/CampusAlumniEndowmentStudioPage'));
+const CampusStudentVentureStudioPage = lazy(() => import('./pages/CampusStudentVentureStudioPage'));
+const Insights = lazy(() => import('./pages/Insights'));
+const AdminAnalyticsDashboard = lazy(() => import('./pages/AdminAnalyticsDashboard'));
+const ScraperHealthDashboard = lazy(() => import('./pages/ScraperHealthDashboard').then(m => ({ default: m.ScraperHealthDashboard })));
+
+const StudentMentalWellnessDeskPage = lazy(() => import('./pages/StudentMentalWellnessDeskPage'));
+const CampusResearchIpLicensingStudioPage = lazy(() => import('./pages/CampusResearchIpLicensingStudioPage'));
+const CareerPathSimulator = lazy(() => import('./components/tabs/CareerPathSimulator'));
+const StudyGroupRooms = lazy(() => import('./components/tabs/StudyGroupRooms'));
+const ResourceVault = lazy(() => import('./components/tabs/ResourceVault'));
+const ComparisonStudio = lazy(() => import('./components/tabs/ComparisonStudio'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
@@ -152,6 +190,8 @@ const getSeoPropsForTab = (tab: string) => {
       return { title: "AI Mentorship | YuvaHub", description: "Receive AI-driven career guidance and mentorship plans on YuvaHub." };
     case 'community':
       return { title: "Community Forum | YuvaHub", description: "Participate in discussions and share resources with other ambitious students on YuvaHub." };
+    case 'resource_vault':
+      return { title: "Resource Vault | YuvaHub", description: "Discover, share, and bookmark the best learning resources curated by the student community." };
     case 'profile':
       return { title: "My Profile | YuvaHub", description: "Manage your student profile, skills, education, and resumes on YuvaHub." };
     case 'settings':
@@ -166,6 +206,8 @@ const getSeoPropsForTab = (tab: string) => {
       return { title: "Help Center & FAQ | YuvaHub", description: "Find answers to common questions, troubleshoot issues, and learn how to use YuvaHub effectively." };
     case 'poll_studio':
       return { title: "Community Polls | YuvaHub", description: "Participate in student polls and surveys." };
+    case 'code_review':
+      return { title: "Peer Code Review Exchange | YuvaHub", description: "Submit your code for review by peers and earn karma by reviewing others." };
     default:
       return {
         title: "YuvaHub | Find Student Hackathons, Scholarships & Mentorships",
@@ -200,6 +242,11 @@ function App() {
 
   const { isConnected, transportMode } = useSocket();
   const [avatarError, setAvatarError] = useState(false);
+
+  // Proactively warm the IndexedDB offline cache whenever the user is logged in
+  // and online. This ensures bookmarks are available offline even if the user
+  // never opens the Bookmarks tab in a given session (closes the prefetch gap).
+  usePrefetchBookmarks({ bookmarkIds: profile?.bookmarks });
 
   useEffect(() => {
     setAvatarError(false);
@@ -260,24 +307,34 @@ function App() {
       title: "Core Platform",
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'cardiovascular_hub', label: 'Cardiovascular & ECMO Hub', icon: HeartPulse, badge: 'CTICU' },
         { id: 'opportunities', label: 'Opportunities', icon: Globe },
         { id: 'application_tracker', label: 'Application Tracker', icon: Briefcase },
         { id: 'watchlist_manager', label: 'Watchlists & Alerts', icon: Sparkles, badge: 'NEW' },
+        { id: 'deadline_calendar', label: 'Deadline Calendar', icon: Calendar, badge: 'NEW' },
         { id: 'opportunity_match', label: 'AI Match Studio', icon: Sparkles, badge: 'AI' },
         { id: 'teams', label: 'Team Builder', icon: Users },
+        { id: 'experiences', icon: FileText, label: 'Experiences' },
+        { id: 'saved-searches', icon: Search, label: 'Saved Searches' },
         { id: 'bookmarks', label: 'Bookmarks', icon: Bookmark },
       ]
     },
     {
       title: "AI & Career Studios",
       items: [
-        { id: 'skill_gap', label: 'Skill Gap Analyzer', icon: Target },
+        { id: 'degree_planner', label: 'Degree Planner Hub', icon: Target },
         { id: 'salary_coach', label: 'Salary Coach', icon: DollarSign }
+        { id: 'skill_gap', label: 'Skill Gap Analyzer', icon: Target },
+        { id: 'coding_arena', label: 'Coding Challenge Arena', icon: Swords },
+        { id: 'learning_path', label: 'Learning Path Builder', icon: Map },
         { id: 'ai_assistant', label: 'AI Assistant', icon: Brain },
         { id: 'career_match', label: 'Career Match Studio', icon: TrendingUp },
+        { id: 'career_goals', label: 'Career Goal Tracker', icon: Target, badge: 'AI' },
         { id: 'resume_ats', label: 'Resume ATS Optimizer', icon: FileText },
         { id: 'interview_prep', label: 'AI Interview Studio', icon: Video },
+        { id: 'career_sim', label: 'Career Simulator', icon: Compass, badge: 'NEW' },
         { id: 'project_showcase', label: 'Project Vault', icon: FolderGit2 },
+        { id: 'portfolio', label: 'Portfolio Showcase', icon: FolderGit2, badge: 'NEW' },
         { id: 'mock_interview', label: 'Mock Interview Room', icon: Mic },
       ]
     },
@@ -285,14 +342,22 @@ function App() {
       title: "Ecosystem & Community",
       items: [
         { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
+        { id: 'achievement_center', label: 'Achievement Center', icon: Award, badge: 'NEW' },
+        { id: 'achievement_center', label: 'Achievement Center', icon: Award, badge: 'NEW' },
+        { id: 'study_groups', label: 'Study Groups', icon: Users, badge: 'NEW' },
         { id: 'mentorship', label: 'Mentorship', icon: GraduationCap },
+        { id: 'mentor_network', label: 'Mentor Network', icon: Users, badge: 'NEW' },
         { id: 'focus_room', label: 'Global Focus Room', icon: Clock },
         { id: 'bounty_board', label: 'Bounty Board', icon: Coins },
         { id: 'interview_experiences', label: 'Interview Experiences', icon: MessageSquare },
         { id: 'opensource_bounties', label: 'Open Source Bounties', icon: Code2 },
         { id: 'community', label: 'Community Forum', icon: MessageSquare },
+        { id: 'resource_vault', label: 'Resource Vault', icon: BookOpen },
         { id: 'poll_studio', label: 'Community Polls', icon: MessageSquare },
+        { id: 'code_review', label: 'Code Review Exchange', icon: Code2, badge: 'NEW' },
+        { id: 'direct_messages', label: 'Direct Messages', icon: MessageSquare, badge: 'NEW' },
         { id: 'campus_alumni', label: 'Campus & Alumni Hub', icon: Building2 },
+        { id: 'student_ventures', label: 'Student Venture Studio', icon: Rocket, badge: 'NEW' },
       ]
     },
     {
@@ -300,7 +365,10 @@ function App() {
       items: [
         { id: 'submit', label: 'Submit Opportunity', icon: PlusCircle },
         { id: 'grant_studio', label: 'Grants & Fellowships', icon: Award },
+        { id: 'alumni_endowments', label: 'Alumni Endowment Studio', icon: GraduationCap, badge: 'NEW' },
+        { id: 'student_venture', label: 'Student Venture Studio', icon: Rocket, badge: 'NEW' },
         { id: 'research_grants', label: 'Research Grant Portal', icon: BookOpen },
+        { id: 'research_patents', label: 'Research IP & Patents', icon: Cpu, badge: 'NEW' },
         { id: 'tech_ecosystem', label: 'Tech Ecosystem Studio', icon: Cpu },
         { id: 'developer_api', label: 'Developer API Portal', icon: Terminal },
       ]
@@ -309,9 +377,13 @@ function App() {
       title: "Account & System",
       items: [
         { id: 'profile', label: 'My Profile', icon: User },
+        { id: 'insights', label: 'My Insights', icon: Activity },
+        { id: 'my_rsvps', label: 'My RSVPs', icon: Ticket, badge: 'NEW' },
+        { id: 'activity_feed', label: 'Activity Feed', icon: Activity, badge: 'NEW' },
+        { id: 'announcements', label: 'Announcements', icon: Megaphone, badge: 'NEW' },
         { id: 'auth_security', label: 'Auth & Security', icon: ShieldCheck },
         { id: 'settings', label: 'Settings', icon: Settings },
-        ...(isAdminUser ? [{ id: 'admin', label: 'Admin Panel', icon: ShieldAlert }, { id: 'audit_log', label: 'Audit Log', icon: Activity, badge: 'NEW' }] : []),
+        ...(isAdminUser ? [{ id: 'admin', label: 'Admin Panel', icon: ShieldAlert }, { id: 'admin_scrapers', label: 'Scraper Observability', icon: Activity, badge: 'NEW' }, { id: 'admin_analytics', label: 'Platform Analytics', icon: Activity, badge: 'NEW' }, { id: 'audit_log', label: 'Audit Log', icon: Activity, badge: 'NEW' }, { id: 'devops_pipelines', label: 'Pipelines', icon: Terminal, badge: 'NEW' }, { id: 'sso_identity', label: 'SSO & Identity', icon: Shield, badge: 'NEW' }, { id: 'api_gateway', label: 'API Gateway', icon: Terminal, badge: 'NEW' }] : []),
       ]
     }
   ];
@@ -319,9 +391,13 @@ function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard': return <Dashboard />;
+      case 'cardiovascular_hub': return <CardiovascularCriticalCareHub />;
       case 'opportunities': return <Opportunities />;
       case 'application_tracker': return <ApplicationTracker />;
+      case 'deadline_calendar': return <DeadlineCalendar />;
       case 'teams': return <Teams />;
+      case 'experiences': return <ExperiencesHub />;
+      case 'saved-searches': return <SavedSearchManager />;
       case 'bookmarks': return <Bookmarks />;
       case 'leaderboard': return <Leaderboard />;
       case 'ai_assistant': return (
@@ -339,33 +415,54 @@ function App() {
         </Suspense>
       );
       case 'career_match': return <CareerMatchStudio />;
+      case 'career_goals': return <CareerGoalTracker />;
+      case 'degree_planner': return <DegreePlannerHub />;
       case 'hackathon_studio': return <HackathonStudio />;
       case 'developer_api': return <DeveloperApiPortal />;
       case 'grant_studio': return <GrantFellowshipStudio />;
+      case 'alumni_endowments': return <CampusAlumniEndowmentStudioPage />;
+      case 'student_venture': return <CampusStudentVentureStudioPage />;
+      case 'mental_wellness': return <div className="p-8 text-center text-gray-500">Mental Wellness Module Coming Soon</div>; // <StudentMentalWellnessDeskPage />;
       case 'campus_alumni': return <CampusAlumniHub />;
       case 'resume_ats': return <ResumeAtsStudio />;
       case 'skill_gap': return <SkillGapStudio />;
+      case 'salary_coach': return <SalaryNegotiationCoach />;
+      case 'coding_arena': return <CodingChallengeArena />;
+      case 'learning_path': return <LearningPathBuilder />;
       case 'interview_prep': return <InterviewPrepStudio />;
+      case 'career_sim': return <div className="p-8 text-center text-gray-500">Career Simulator Coming Soon</div>; // <CareerPathSimulator />;
       case 'opensource_bounties': return <OpenSourceBountyStudio />;
       case 'opportunity_match': return <OpportunityMatchStudio />;
-      case 'salary_coach': return <SalaryNegotiationCoach />;
       case 'tech_ecosystem': return <TechEcosystemStudio />;
       case 'hackathon_judge': return <HackathonJudgeStudio />;
       case 'mentorship_advisory': return <MentorshipAdvisoryStudio />;
+      case 'mentor_network': return <MentorshipNetwork />;
       case 'research_grants': return <ResearchGrantPortal />;
+      case 'research_patents': return <div className="p-8 text-center text-gray-500">Research & IP Module Coming Soon</div>; // <CampusResearchIpLicensingStudioPage />;
       case 'project_showcase': return <ProjectShowcaseVault />;
+      case 'portfolio': return <PortfolioShowcase />;
+      case 'achievement_center': return <AchievementCenter />;
       case 'star_interview': return <StarInterviewStudio />;
       case 'submit': return <SubmitOpportunity />;
       case 'mentorship': return <MentorshipAdvisoryStudio />;
       case 'focus_room': return <FocusRoom />;
+      case 'study_groups': return <div className="p-8 text-center text-gray-500">Study Groups Coming Soon</div>; // <StudyGroupRooms />;
       case 'bounty_board': return <BountyBoard />;
       case 'interview_experiences': return <ExperiencesHub />;
       case 'community': return <Community />;
+      case 'resource_vault': return <div className="p-8 text-center text-gray-500">Resource Vault Coming Soon</div>; // <ResourceVault />;
       case 'poll_studio': return <PollStudio />;
+      case 'student_ventures': return <CampusStudentVentureStudioPage />;
       case 'profile': return <Profile />;
+      case 'insights': return <Insights />;
+      case 'my_rsvps': return <MyRsvps />;
+      case 'activity_feed': return <ActivityFeed />;
+      case 'announcements': return <Announcements />;
       case 'settings': return <SettingsTab />;
       case 'auth_security': return <AuthSecurityCenter />;
       case 'admin': return <AdminDashboard />;
+      case 'admin_scrapers': return <ScraperHealthDashboard />;
+      case 'admin_analytics': return <AdminAnalyticsDashboard />;
       case 'security': return <Security />;
       case 'privacy': return <Privacy />;
       case 'terms': return <Terms />;
@@ -376,9 +473,16 @@ function App() {
       case 'about': return <AboutTab />;
       case 'help': return gettingStartedStep ? <GettingStartedDetail stepId={gettingStartedStep as any} /> : <HelpCenterPage />;
       case 'mock_interview': return <MockInterviewRoom />;
+      case 'research_grant_telemetry':
+      case 'grant_telemetry': return <div>Telemetry Lab (WIP)</div>;
       case 'watchlist_manager': return <WatchlistManager />;
       case 'faq': return <FAQ />;
       case 'audit_log': return <AuditLogCenter />;
+      case 'devops_pipelines': return <DevopsPipelineHub />;
+      case 'sso_identity': return <SsoIdentityHub />;
+      case 'api_gateway': return <ApiGatewayHub />;
+      case 'comparison_studio': return <ComparisonStudio />;
+
       default: return <Dashboard />;
     }
   };
@@ -436,7 +540,7 @@ function App() {
               onClick={() => { clearSelectedOpportunity(); setActiveTab('dashboard'); }} 
               className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline font-bold bg-transparent border-none cursor-pointer"
             >
-              ← Back to Home
+              â† Back to Home
             </button>
           </div>
           <Suspense fallback={<LoadingScreen />}>
@@ -485,6 +589,7 @@ function App() {
   }
 
   return (
+    <CompareProvider>
     <div className="flex h-screen bg-gray-50 text-gray-900 font-sans overflow-hidden dark:bg-gray-900 dark:text-gray-100">
       {/* Global accessibility enhancer: focus trap, ARIA labels, Esc handling */}
       <AccessibilityEnhancer />
@@ -496,6 +601,12 @@ function App() {
       >
         Skip to main content
       </a>
+
+      {/* PWA Install Prompt + Global Announcement Banner */}
+      <div className="absolute top-0 left-0 right-0 z-[60]">
+        <InstallPrompt />
+        <AnnouncementBanner />
+      </div>
 
       {/* Centralized SEO component for logged-in views */}
       {selectedOppId ? null : (
@@ -736,10 +847,12 @@ function App() {
           </Suspense>
         </div>
 
+        <CompareBottomBar />
         <BackToTopButton />
       </main>
 
     </div>
+    </CompareProvider>
   );
 }
 
